@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------
--- Function : 
+-- Function :
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
@@ -21,8 +21,13 @@ function Print_performance(Models,Data,txt,txt_reward, name, Log_Folder, truth)
 		Data1=torch.Tensor(2,3,200,200)
 		Data1[1]=image1
 		Data1[2]=image1
-		Model:forward(Data1:cuda())
-		local State1= torch.Tensor(3) 
+		if useCUDA then
+		 	Model:forward(Data1:cuda())
+		else
+		 	Model:forward(Data1)
+		end
+
+		local State1= torch.Tensor(3)
 		State1:copy(Model.output[1])
 		table.insert(list_out1,State1)
 	end
@@ -34,9 +39,9 @@ function Print_performance(Models,Data,txt,txt_reward, name, Log_Folder, truth)
 		Prop_batch=getRandomBatch(Data, 2, "Prop")
 		Temp_batch=getRandomBatch(Data, 2, "Temp")
 		Caus_batch=getRandomBatch(Data, 2, "Caus")
-		
+
 		Temp=Temp+doStuff_temp(Models,TEMP_criterion, Temp_batch)
-		Prop=Prop+doStuff_Prop(Models,PROP_criterion,Prop_batch)	
+		Prop=Prop+doStuff_Prop(Models,PROP_criterion,Prop_batch)
 		Caus=Caus+doStuff_Caus(Models,CAUS_criterion,Caus_batch)
 		Rep=Rep+doStuff_Rep(Models,REP_criterion,Prop_batch)
 	end
@@ -56,8 +61,8 @@ function print_correlation(truth,output,dimension)
 		end
 	end
 	Correlation=ComputeCorrelation(Truth,Output,dimension,"Correlation")
-	
-	mutual_info=mutual_information(Truth, Truth:float())	
+
+	mutual_info=mutual_information(Truth, Truth:float())
 	print("Mutual Info Référence")
 	print(mutual_info)
 	print("Mutual Info")
@@ -211,7 +216,7 @@ function show_figure(list_out1, Name, Variable_Name,Infos)
 			[Variable_Name.."-DIM-2"] = '-',
 			[Variable_Name.."-DIM-3"] = '-',
 			["Reward"] = '+'}
-	
+
 	accLogger.showPlot = false
 	accLogger:plot()
 end
@@ -224,7 +229,7 @@ function show_MI(list_MI,path)
 	end
 	-- plot logger
 	accLogger:style{["Information Mutuelle"] = '-'}
-	
+
 	accLogger.showPlot = false
 	accLogger:plot()
 end

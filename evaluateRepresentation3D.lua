@@ -1,6 +1,6 @@
 --[[
 
-   IS NOT WORKING IN 3D AT THE MOMENT, only 1d, need modifications !
+  THIS IS A 3D VERSION OF THE 1D VERSION IN testRepresentations.lua
 
 ]]--
 
@@ -15,8 +15,10 @@ require 'optim'
 require 'functions'
 
 local function ReprFromImgs(imgs,name)
-
-   local fileName = 'preload_folder/'..'allReprSaved'..name..'.t7'
+  -- we save all metrics that are going to be used in the network for
+  -- efficiency (images that fulfill the criteria for each prior and their stats
+  -- such as mean and std to avoid multiple computations )
+   local fileName = 'preload_folder_3D/'..'allReprSaved'..name..'.t7'
 
    if file_exists(fileName) then
       return torch.load(fileName)
@@ -96,8 +98,10 @@ local function RandomBatch(X,y,sizeBatch)
    -- print("batch",batch)
    -- print("y_temp",y_temp)
    -- io.read()
-   batch = batch:cuda()
-   y_temp = y_temp:cuda()
+   if useCUDA then
+     batch = batch:cuda()
+     y_temp = y_temp:cuda()
+   end
    return batch, y_temp
 
 end
@@ -108,9 +112,17 @@ function Rico_Training(model,batch,y,reconstruct, LR)
    local optimizer = optim.adam
 
    if reconstruct then
-      criterion = nn.SmoothL1Criterion():cuda()
+      if useCUDA then
+        criterion = nn.SmoothL1Criterion():cuda()
+      else
+        criterion = nn.SmoothL1Criterion()
+      end
    else
+     if useCUDA then
       criterion = nn.CrossEntropyCriterion():cuda()
+     else
+      criterion = nn.CrossEntropyCriterion()
+     end
    end
 
    -- create closure to evaluate f(X) and df/dX
@@ -140,7 +152,12 @@ end
 
 function accuracy(X_test,y_test,model)
    local acc = 0
-   local yhat = model:forward(X_test:cuda())
+   if useCUDA then
+    local yhat = model:forward(X_test:cuda())
+   else
+    local yhat = model:forward(X_test)
+   end
+
 
    _,yId = torch.max(yhat,2)
    for i=1,X_test:size(1) do
@@ -153,7 +170,11 @@ end
 
 function accuracy_reconstruction(X_test,y_test, model)
    local acc = 0
-   local yhat = model:forward(X_test:cuda())
+   if useCUDA then
+    local yhat = model:forward(X_test:cuda())
+   else
+    local yhat = model:forward(X_test)
+   end
 
    -- print("yhat",yhat[1][1],yhat[2][1],yhat[3][1],yhat[4][1],yhat[60][1])
    -- print("y",truth[1],truth[2],truth[3],truth[4],truth[60])
@@ -179,13 +200,21 @@ function createModelReward()
    net:add(nn.Linear(1,3))
    net:add(nn.Tanh())
    net:add(nn.Linear(3,2))
-   return net:cuda()
+   if useCUDA then
+    return net:cuda()
+   else
+    return net
+   end
 end
 
 function createModelReconstruction()
    net = nn.Sequential()
    net:add(nn.Linear(1,1))
-   return net:cuda()
+   if useCUDA then
+    return net:cuda()
+   else
+    return net
+   end
 end
 
 

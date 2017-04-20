@@ -56,8 +56,8 @@ end
 function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local nbEpoch=100
 	local NbBatch=10
-	local BatchSize=2
-	
+	local BatchSize=1--2
+
 	local name='Save'..day
 	local name_save=Log_Folder..name..'.t7'
 
@@ -69,7 +69,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local Temp_loss_list, Prop_loss_list, Rep_loss_list, Caus_loss_list = {},{},{},{}
 	local Temp_loss_list_test,Prop_loss_list_test,Rep_loss_list_test,Caus_loss_list_test = {},{},{},{}
 	local Sum_loss_train, Sum_loss_test = {},{}
-	local Temp_grad_list,Prop_grad_list,Rep_grad_list,Caus_grad_list = {},{},{},{}		
+	local Temp_grad_list,Prop_grad_list,Rep_grad_list,Caus_grad_list = {},{},{},{}
 	local list_errors,list_MI, list_corr={},{},{}
 
 	local Prop=Have_Todo(Prior_Used,'Prop')
@@ -101,14 +101,14 @@ part_test=1
 	--real_temp_loss,real_prop_loss,real_rep_loss, real_caus_loss=real_loss(txt_test)
 	--print("temp loss : "..real_temp_loss)
 	--print("prop loss : "..real_prop_loss[1])
-	--print("rep loss : "..real_rep_loss[1])	
+	--print("rep loss : "..real_rep_loss[1])
 	--print("caus loss : "..real_caus_loss[1])
 
 	print(nbList..' : sequences')
 	printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BatchSize, nbEpoch, NbBatch, model_file)
 
 
-			
+
 	for epoch=1, nbEpoch do
 		print('--------------Epoch : '..epoch..' ---------------')
 		local Temp_loss,Prop_loss,Rep_loss,Caus_loss=0,0,0,0
@@ -153,7 +153,7 @@ indice2=4
 				Grad_Rep=Grad_Rep+Grad
 				Rep_loss=Rep_loss+Loss
 			end
-			if Caus and (ThereIsReward and ThereIsReward2) then 
+			if Caus and (ThereIsReward and ThereIsReward2) then
 				Loss,Grad=Rico_Training(Models,'Caus',Data1,Data2,CAUS_criterion,coef_Caus,LR,BatchSize)
 				Grad_Caus=Grad_Caus+Grad
 				Caus_loss=Caus_loss+Loss
@@ -164,14 +164,14 @@ indice2=4
 		local id=name..epoch -- variable used to not mix several log files
 		Temp_test,Prop_test,Rep_test,Caus_test, list_estimation,M_I,corr=Print_performance(Models, Data_test,txt_test,txt_reward_test,id.."_Test",Log_Folder,truth)
 
-				
+
 		table.insert(list_MI,M_I)
 		show_MI(list_MI, Log_Folder..'Mutuelle_Info.log')
 		Print_Corr(corr,epoch,Log_Folder)
 
 		table.insert(Temp_loss_list,Temp_loss/NbBatch)
 		table.insert(Prop_loss_list,Prop_loss/NbBatch)
-		table.insert(Rep_loss_list,Rep_loss/NbBatch)		
+		table.insert(Rep_loss_list,Rep_loss/NbBatch)
 		table.insert(Caus_loss_list,Caus_loss/NbBatch)
 
 		table.insert(Temp_loss_list_test,Temp_test)
@@ -193,23 +193,40 @@ indice2=4
 		show_loss(Rep_loss_list,Rep_loss_list_test, Log_Folder..'Rep_loss.log')
 		show_loss(Caus_loss_list,Caus_loss_list_test, Log_Folder..'Caus_loss.log')
 		show_loss(Sum_loss_train,Sum_loss_test, Log_Folder..'Sum_loss.log')
-		Print_Grad(Temp_grad_list,Prop_grad_list,Rep_grad_list,Caus_grad_list,Log_Folder)		
+		Print_Grad(Temp_grad_list,Prop_grad_list,Rep_grad_list,Caus_grad_list,Log_Folder)
 		save_model(Models.Model1,name_save)
 	end
 end
 
-day="19-10"
-local UseSecondGPU= true
-local LR=0.001
-local Dimension=3
+day="10-19"--"20-04-17"
+useCUDA = false
+local UseSecondGPU= false --true
+if not useCUDA then
+	UseSecondGPU = false
+end
+local LR=0.001 --0.00001
+--[[local dataAugmentation=true
+local Log_Folder='./Log/'
+local list_folders_images, list_txt=Get_HeadCamera_HeadMvt()
 
+
+PRELOAD_FOLDER='./preload_folder/'
+if not file_exists(PRELOAD_FOLDER) then
+   lfs.mkdir(PRELOAD_FOLDER)
+end
+
+if not file_exists(Log_Folder) then
+   lfs.mkdir(Log_Folder)
+end--]]
+
+local Dimension=3
 Tests_Todo={
-{"Prop","Temp","Caus","Rep"},
+{"Prop","Temp","Caus","Rep"}} --[[,
 {"Rep","Caus","Prop"},
 {"Rep","Caus","Temp"},
 {"Rep","Prop","Temp"},
 {"Prop","Caus","Temp"},}
---[[
+
 {"Rep","Caus"},
 {"Prop","Caus"},
 {"Temp","Caus"},
@@ -223,20 +240,19 @@ Tests_Todo={
 }--]]
 
 local Log_Folder='./Log/'..day..'/'
-
 name_load='./Log/Save/'..day..'.t7'
 
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files()
 local reload=false
 local TakeWeightFromAE=false
-model_file='./models/topTripleFM_Split'
+model_file='./models/topTripleFM_Split' --naive3D'
 
 
 image_width=200
 image_height=200
 
 if UseSecondGPU then
-	cutorch.setDevice(2) 
+	cutorch.setDevice(2)
 end
 
 nbList= #list_folders_images
@@ -256,10 +272,12 @@ for nb_test=1, #Tests_Todo do
 		Model=copy_weight(Model, AE)
 	else
 		require(model_file)
-		Model=getModel(Dimension)	
+		Model=getModel(Dimension)
 		--graph.dot(Model.fg, 'Big MLP')
 	end
-	Model=Model:cuda()
+	if useCUDA then
+		Model=Model:cuda()
+	end
 	parameters,gradParameters = Model:getParameters()
 	Model2=Model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
 	Model3=Model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')

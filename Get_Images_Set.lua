@@ -6,13 +6,15 @@
 ---------------------------------------------------------------------------------------
 function images_Paths(Path)
 	local listImage={}
+	--print('files in path: '..paths)
+	print('Path: '..Path)
 	for file in paths.files(Path) do
 	   -- We only load files that match the extension
 	   if file:find('jpg' .. '$') then
 	      -- and insert the ones we care about in our table
 	      table.insert(listImage, paths.concat(Path,file))
 	   end
-	   
+
 	end
 	table.sort(listImage)
 	return listImage
@@ -20,7 +22,7 @@ end
 
 
 ---------------------------------------------------------------------------------------
--- Function : 
+-- Function :
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
@@ -36,7 +38,7 @@ function txt_path(Path,including)
 end
 
 ---------------------------------------------------------------------------------------
--- Function : 
+-- Function :
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
@@ -44,6 +46,7 @@ function Get_Folders(Path, including, excluding,list)
 	local list=list or {}
 	local incl=including or ""
 	local excl=excluding or "uyfouhjbhytfoughl" -- random motif
+
 	for file in paths.files(Path) do
 	   -- We only load files that match 2016 because we know that there are the folder we are interested in
 	   if file:find(incl) and (not file:find(excl)) then
@@ -51,13 +54,14 @@ function Get_Folders(Path, including, excluding,list)
 	      table.insert(list, paths.concat(Path,file))
 	   end
 	end
+	--print ('Path '..Path..' including '..incl..', excluding '..excl..', list of size: '.. #list)
 	return list
 end
 
 
 ---------------------------------------------------------------------------------------
 -- Function : Get_HeadCamera_HeadMvt(use_simulate_images)
--- Input (use_simulate_images) : boolean variable which say if we use or not simulate images 
+-- Input (use_simulate_images) : boolean variable which say if we use or not simulate images
 -- Output (list_head_left): list of the images directories path
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
 ---------------------------------------------------------------------------------------
@@ -96,13 +100,13 @@ function tensorFromTxt(path)
     local rawCounter, columnCounter = 0, 0
     local nbFields, labels, _line = nil, nil, nil
 
-    for line in io.lines(path)  do 
+    for line in io.lines(path)  do
         local comment = false
-        if line:sub(1,1)=='#' then 
-            comment = true            
+        if line:sub(1,1)=='#' then
+            comment = true
             line = line:sub(2)
-        end 
-        rawCounter = rawCounter +1      
+        end
+        rawCounter = rawCounter +1
         columnCounter=0
         raw = {}
         for value in line:gmatch'%S+' do
@@ -116,8 +120,8 @@ function tensorFromTxt(path)
         elseif columnCounter ~= nbFields then
             error("data dimension for " .. rawCounter .. "the sample is not consistent with previous samples'")
         end
-    
-        if comment then labels = raw else table.insert(data,raw) end 
+
+        if comment then labels = raw else table.insert(data,raw) end
     end
     return torch.Tensor(data), labels
 end
@@ -126,7 +130,7 @@ end
 ---------------------------------------------------------------------------------------
 -- Function : get_one_random_Temp_Set(list_im)
 -- Input (list_lenght) : lenght of the list of images
--- Output : 2 indices of images which are neightboor in the list (and in time) 
+-- Output : 2 indices of images which are neightboor in the list (and in time)
 ---------------------------------------------------------------------------------------
 function get_one_random_Temp_Set(list_lenght)
 	indice=torch.random(1,list_lenght-1)
@@ -281,22 +285,22 @@ end
 
 ---------------------------------------------------------------------------------------
 -- Function : getTruth(txt,use_simulate_images)
--- Input (txt) : 
--- Input (use_simulate_images) : 
+-- Input (txt) :
+-- Input (use_simulate_images) :
 -- Input (arrondit) :
--- Output (truth): 
+-- Output (truth):
 ---------------------------------------------------------------------------------------
 function getTruth(txt_joint, nb_part, part)
 	local x=2
 	local y=3
 	local z=4
-	
+
 	local tensor, label=tensorFromTxt(txt_joint)
 	local list_lenght = torch.floor((#tensor[{}])[1]/nb_part)
 	local start=list_lenght*part +1
 
 	local list_truth={}
-	for i=start, start+list_lenght do--(#tensor[{}])[1] do	
+	for i=start, start+list_lenght do--(#tensor[{}])[1] do
 		local truth=torch.Tensor(3)
 		truth[1]=tensor[i][x]
 		truth[2]=tensor[i][y]
@@ -309,9 +313,9 @@ end
 
 ---------------------------------------------------------------------------------------
 -- Function : arrondit(value)
--- Input (tensor) : 
--- Input (head_pan_indice) : 
--- Output (tensor): 
+-- Input (tensor) :
+-- Input (head_pan_indice) :
+-- Output (tensor):
 ---------------------------------------------------------------------------------------
 function arrondit(value) --0.05 precision
 	floor=math.floor(value*20)/20

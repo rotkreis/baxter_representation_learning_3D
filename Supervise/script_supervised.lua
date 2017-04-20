@@ -59,7 +59,7 @@ function show_figure_sup(list_out1, Name, Variable_Name)
 	accLogger:style{[Variable_Name.."-DIM-1"] = '-',
 			[Variable_Name.."-DIM-2"] = '-',
 			[Variable_Name.."-DIM-3"] = '-'}
-	
+
 	accLogger.showPlot = false
 	accLogger:plot()
 end
@@ -74,12 +74,12 @@ function load_Part_supervised(list,txt_state,im_lenght,im_height,nb_part,part, c
 	local tensor, label=tensorFromTxt(txt_state)
 	for i=start, start+list_lenght do
 		local Label=torch.Tensor(3)
-		table.insert(Data.Images,getImage(list[i],im_lenght,im_height,coef_DA))	
+		table.insert(Data.Images,getImage(list[i],im_lenght,im_height,coef_DA))
 		Label[1]=tensor[i][x]
 		Label[2]=tensor[i][y]
 		Label[3]=tensor[i][z]
 		table.insert(Data.Labels,Label*10)
-	end 
+	end
 	return Data
 end
 function Print_Supervised(Model,Data, name, Log_Folder,criterion)
@@ -117,6 +117,9 @@ function train_Epoch(Models,Log_Folder,LR)
 indice_test=4 --nbList
 nb_part=50
 part_test=1
+	--print('list_folders_images size: '..#list_folders_images)
+	--print('list_folders_images[4]: '..list_folders_images[indice_test])
+
 	local list_test=images_Paths(list_folders_images[indice_test])
 	local txt_test=list_txt_state[indice_test]
 	Data_test=load_Part_supervised(list_test,txt_test,image_width,image_height,nb_part,part_test,0)
@@ -126,7 +129,7 @@ part_test=1
 	show_figure_sup(Data_test.Labels, Log_Folder..'The_Truth.Log')
 
 	Print_Supervised(Models, Data_test,"First_Test",Log_Folder,criterion)
-			
+
 	for epoch=1, nbEpoch do
 		sum_loss=0
 		print('--------------Epoch : '..epoch..' ---------------')
@@ -184,14 +187,14 @@ image_width=200
 image_height=200
 
 if UseSecondGPU then
-	cutorch.setDevice(2) 
+	cutorch.setDevice(2)
 end
 
 nbList= #list_folders_images
 torch.manualSeed(123)
 
 require(model_file)
-Model=getModel(Dimension)	
+Model=getModel(Dimension)
 Model=Model:cuda()
 parameters,gradParameters = Model:getParameters()
 print("Test actuel : "..Log_Folder)

@@ -1,17 +1,24 @@
 function doStuff_temp(Models,criterion,Batch,coef)
-	
+
 	local coef= coef or 1
 
-	im1=Batch[1]:cuda()
-	im2=Batch[2]:cuda()
-	
+	if useCUDA then
+		im1=Batch[1]:cuda()
+		im2=Batch[2]:cuda()
+	else
+		im1=Batch[1]
+		im2=Batch[2]
+	end
+
 	Model=Models.Model1
 	Model2=Models.Model2
 
 	State1=Model:forward(im1)
 	State2=Model2:forward(im2)
 
-	criterion=criterion:cuda()
+	if useCUDA then
+		criterion=criterion:cuda()
+	end
 	loss=criterion:forward({State2,State1})
 	GradOutputs=criterion:backward({State2,State1})
 
@@ -24,9 +31,14 @@ end
 function doStuff_Caus(Models,criterion,Batch,coef)
 
 	local coef= coef or 1
-	im1=Batch[1]:cuda()
-	im2=Batch[2]:cuda()
-	
+	if useCUDA then
+		im1=Batch[1]:cuda()
+		im2=Batch[2]:cuda()
+	else
+		im1=Batch[1]
+		im2=Batch[2]
+	end
+
 	Model=Models.Model1
 	Model2=Models.Model2
 
@@ -34,7 +46,9 @@ function doStuff_Caus(Models,criterion,Batch,coef)
 	State2=Model2:forward(im2)
 
 
-	criterion=criterion:cuda()
+	if useCUDA then
+		criterion=criterion:cuda()
+	end
 	output=criterion:updateOutput({State1, State2})
 	--we backward with a starting gradient initialized at 1
 	GradOutputs=criterion:updateGradInput({State1, State2}, torch.ones(1))
@@ -46,13 +60,21 @@ function doStuff_Caus(Models,criterion,Batch,coef)
 end
 
 function doStuff_Prop(Models,criterion,Batch, coef)
-	
+
 	local coef= coef or 1
 
-	im1=Batch[1]:cuda()
-	im2=Batch[2]:cuda()
-	im3=Batch[3]:cuda()
-	im4=Batch[4]:cuda()
+	if useCUDA then
+		im1=Batch[1]:cuda()
+		im2=Batch[2]:cuda()
+		im3=Batch[3]:cuda()
+		im4=Batch[4]:cuda()
+	else
+		im1=Batch[1]
+		im2=Batch[2]
+		im3=Batch[3]
+		im4=Batch[4]
+	end
+
 
 	Model=Models.Model1
 	Model2=Models.Model2
@@ -66,7 +88,9 @@ function doStuff_Prop(Models,criterion,Batch, coef)
 	State4=Model4:forward(im4)
 
 
-	criterion=criterion:cuda()
+	if useCUDA then
+		criterion=criterion:cuda()
+	end
 	output=criterion:updateOutput({State1, State2, State3, State4})
 
 	--we backward with a starting gradient initialized at 1
@@ -81,14 +105,20 @@ function doStuff_Prop(Models,criterion,Batch, coef)
 end
 
 function doStuff_Rep(Models,criterion,Batch, coef)
-	
+
 	local coef= coef or 1
 
-	im1=Batch[1]:cuda()
-	im2=Batch[2]:cuda()
-	im3=Batch[3]:cuda()
-	im4=Batch[4]:cuda()
-
+	if useCUDA then
+		im1=Batch[1]:cuda()
+		im2=Batch[2]:cuda()
+		im3=Batch[3]:cuda()
+		im4=Batch[4]:cuda()
+	else
+		im1=Batch[1]
+		im2=Batch[2]
+		im3=Batch[3]
+		im4=Batch[4]
+	end
 
 	Model=Models.Model1
 	Model2=Models.Model2
@@ -100,7 +130,9 @@ function doStuff_Rep(Models,criterion,Batch, coef)
 	State3=Model3:forward(im3)
 	State4=Model4:forward(im4)
 
-	criterion=criterion:cuda()
+	if useCUDA then
+		criterion=criterion:cuda()
+	end
 	output=criterion:updateOutput({State1, State2, State3, State4})
 
 	--we backward with a starting gradient initialized at 1
@@ -169,11 +201,3 @@ function get_Caus_criterion()
 	gmod = nn.gModule({h1, h2}, {out})
 	return gmod
 end
-
-
-
-
-
-
-
-
