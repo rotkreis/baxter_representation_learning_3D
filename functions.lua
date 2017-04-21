@@ -1,11 +1,13 @@
 ---------------------------------------------------------------------------------------
--- Function :save_model(model,path) 
+-- Function :save_model(model,path)
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
 function save_model(model,path)
 	print("Saved at : "..path)
-	model:cuda()
+	if useCUDA then
+		model:cuda()
+  end
 	parameters, gradParameters = model:getParameters()
 	local lightModel = model:clone():float()
 	lightModel:clearState()
@@ -35,13 +37,13 @@ function preprocessing(im, lenght, width,coef_DA)
 	   data[{i,{},{}}]:div(std[i])
 	end
 
-	
+
 
 --[[	local neighborhood = image.gaussian1D(5) -- 5 for face detector training
 	-- Define our local normalization operator
 	local normalization = nn.SpatialContrastiveNormalization(1, neighborhood, 1e-4)
- 
- 
+
+
 	-- Normalize all channels locally:
 		-- Normalize all channels locally:
 	for c in ipairs(channels) do
@@ -61,7 +63,7 @@ local function gamma(im)
 	local mean = {}
 	local std = {}
 	for i,channel in ipairs(channels) do
-		
+
 		for j,channel in ipairs(channels) do
 	   		if i==j then Gamma[i][i] = im[{i,{},{}}]:var()
 			else
@@ -95,8 +97,8 @@ end
 -- goal : By using data augmentation we want or network to be more resistant to no task relevant perturbations like luminosity variation or noise
 ---------------------------------------------------------------------------------------
 function dataAugmentation(im, lenght, width,coef_DA)
-	local channels = {'y','u','v'}	
-	
+	local channels = {'y','u','v'}
+
 	gam=gamma(im)
 	e, V = torch.eig(gam,'V')
 	factors=torch.randn(3)*0.1
@@ -115,7 +117,7 @@ function dataAugmentation(im, lenght, width,coef_DA)
 	--[[
 	Gaus=torch.zeros(200,200)
 	foyer_x=torch.random(1,200)
-	foyer_y=torch.random(1,200)	
+	foyer_y=torch.random(1,200)
 	std_x=torch.random(1,5)
 	std_y=torch.random(1,5)
 	for x=1,200 do
@@ -130,13 +132,13 @@ end
 
 
 ---------------------------------------------------------------------------------------
--- Function :getBatch(imgs, list, indice, lenght, width, height, Type) 
+-- Function :getBatch(imgs, list, indice, lenght, width, height, Type)
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
 -- this function search the indice of associated images and take the corresponding images in imgs which are the loaded images of the folder
 function getBatch(imgs, list, indice, lenght, width, height, Type)
-	
+
 	if (indice+1)*lenght<#list.im1 then
 		start=indice*lenght
 	else
@@ -147,7 +149,7 @@ function getBatch(imgs, list, indice, lenght, width, height, Type)
 	else
 		Batch=torch.Tensor(2, lenght,1, width, height)
 	end
-	
+
 	for i=1, lenght do
 		Batch[1][i]=imgs[list.im1[start+i]]
 		Batch[2][i]=imgs[list.im2[start+i]]
@@ -161,7 +163,7 @@ function getBatch(imgs, list, indice, lenght, width, height, Type)
 
 end
 ---------------------------------------------------------------------------------------
--- Function :getRandomBatchFromSeparateList(imgs1, imgs2, txt1, txt2, lenght, image_width, image_height, Mode, use_simulate_images) 
+-- Function :getRandomBatchFromSeparateList(imgs1, imgs2, txt1, txt2, lenght, image_width, image_height, Mode, use_simulate_images)
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
@@ -202,14 +204,14 @@ end
 -- Output ():
 ---------------------------------------------------------------------------------------
 function getRandomBatch(Data1, lenght, Mode)
-	
+
 	local Dim=Data1.images[1]:size()
 	if Mode=="Prop" or Mode=="Rep" then
 		Batch=torch.Tensor(4, lenght,Dim[1], Dim[2], Dim[3])
 	else
 		Batch=torch.Tensor(2, lenght,Dim[1], Dim[2], Dim[3])
 	end
-	
+
 	for i=1, lenght do
 		if Mode=="Prop" or Mode=="Rep" then
 			Set=get_one_random_Prop_Set(Data1.Infos)
@@ -285,7 +287,7 @@ function copy_weight(model, AE)
 end
 
 ---------------------------------------------------------------------------------------
--- Function : 
+-- Function :
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
@@ -295,7 +297,7 @@ function real_loss(txt,use_simulate_images)
 	local PROP_criterion=get_Prop_criterion()
 	local CAUS_criterion=get_Caus_criterion()
 	local TEMP_criterion=nn.MSDCriterion()
-	
+
 	local truth=getTruth(txt,use_simulate_images)
 
 	local temp_loss=0
@@ -316,11 +318,11 @@ function real_loss(txt,use_simulate_images)
 		joint4=torch.Tensor(1)
 
 		joint1[1]=truth[Caus_temp.im1]
-		joint2[1]=truth[Caus_temp.im2]		
+		joint2[1]=truth[Caus_temp.im2]
 		caus_loss=caus_loss+CAUS_criterion:updateOutput({joint1, joint2})
 
 		joint1[1]=truth[Set_temp.im1]
-		joint2[1]=truth[Set_temp.im2]		
+		joint2[1]=truth[Set_temp.im2]
 		temp_loss=temp_loss+TEMP_criterion:updateOutput({joint1, joint2})
 
 		joint1[1]=truth[Set_prop.im1]
@@ -347,7 +349,7 @@ function load_list(list,lenght,height, train)
 	local height=height or 200
 	for i=1, #list do
 		table.insert(im,getImage(list[i],lenght,height,train))
-	end 
+	end
 	return im
 end
 
@@ -368,7 +370,7 @@ function load_Part_list(list,txt,txt_reward,im_lenght,im_height,nb_part,part,tra
 	local Infos,ThereIsReward=getInfos(txt,txt_reward,start,list_lenght,txt_state)
 	for i=start, start+list_lenght do
 		table.insert(im,getImage(list[i],im_lenght,im_height,train))
-	end 
+	end
 	return {images=im,Infos=Infos},ThereIsReward
 end
 
@@ -392,7 +394,7 @@ local tensor_state, label=tensorFromTxt(txt_state)
 		table.insert(Infos.dy,tensor[i][dy])
 		table.insert(Infos.dz,tensor[i][dz])
 
-if math.floor(tensor_state[i][dx]*100)%20==0 or math.floor(tensor_state[i][dy]*100)%20==0 or math.floor(tensor_state[i][dz]*100)%20==0 then 
+if math.floor(tensor_state[i][dx]*100)%20==0 or math.floor(tensor_state[i][dy]*100)%20==0 or math.floor(tensor_state[i][dz]*100)%20==0 then
 	ThereIsReward=true
 	reward=1
 else
@@ -401,7 +403,7 @@ else
 table.insert(Infos.reward,reward)
 --!!!!!!!!!!!!!!table.insert(Infos.reward,tensor_reward[i][reward_indice])
 --print(tensor_reward[i][reward_indice])
-		
+
 
 --!!!!!!!!!!!!!!if tensor_reward[i][reward_indice]==1 then ThereIsReward=true end
        end
@@ -420,7 +422,5 @@ function getImage(im,length,height, coef_DA)
 	local image1=image.load(im,3,'float')
 	local format=length.."x"..height
 	local img1_rsz=image.scale(image1,format)
-	return preprocessing(img1_rsz,length,height, coef_DA) 
+	return preprocessing(img1_rsz,length,height, coef_DA)
 end
-
-

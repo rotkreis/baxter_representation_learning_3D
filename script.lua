@@ -14,6 +14,15 @@ require 'printing.lua'
 require "Get_Images_Set"
 require 'priors'
 
+useCUDA = false
+local UseSecondGPU= false --true
+
+print('Running main script with useCUDA flag: ')
+print(useCUDA)
+print('Running main script with useSe flag: ')
+print(UseSecondGPU)
+
+
 function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 	local LR=LR or 0.001
 	local mom=0.9
@@ -76,10 +85,10 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local Temp=Have_Todo(Prior_Used,'Temp')
 	local Rep=Have_Todo(Prior_Used,'Rep')
 	local Caus=Have_Todo(Prior_Used,'Caus')
-print(Prop)
-print(Temp)
-print(Rep)
-print(Caus)
+	print(Prop)
+	print(Temp)
+	print(Rep)
+	print(Caus)
 
 	local coef_Temp=0.1
 	local coef_Prop=0.1
@@ -87,27 +96,27 @@ print(Caus)
 	local coef_Caus=1
 	local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
-indice_test=4 --nbList
+	indice_test=4 --nbList
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
-nb_part=50
-part_test=1
+	nb_part=50
+	part_test=1
 	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
-	local truth=getTruth(txt_test,nb_part,part_test)
+	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
+	print("Plotting the truth... ")
 	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
+	print("Computing performance... ")
 	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
 
 	--real_temp_loss,real_prop_loss,real_rep_loss, real_caus_loss=real_loss(txt_test)
-	--print("temp loss : "..real_temp_loss)
+	print("temp loss : "..real_temp_loss)
 	--print("prop loss : "..real_prop_loss[1])
 	--print("rep loss : "..real_rep_loss[1])
 	--print("caus loss : "..real_caus_loss[1])
 
 	print(nbList..' : sequences')
 	printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BatchSize, nbEpoch, NbBatch, model_file)
-
-
 
 	for epoch=1, nbEpoch do
 		print('--------------Epoch : '..epoch..' ---------------')
@@ -119,9 +128,21 @@ part_test=1
 		repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
 
 
+
+
+
+
+
+--- main program
 --------------------------------- only one list used---------------------------------------------------------------
+if not useCUDA then
+	UseSecondGPU = false
+end
+local LR=0.001 --0.00001
+
 indice1=4
 indice2=4
+		print('Running main script with useCUDA flag: '..useCUDA)
 		local txt1=list_txt_action[indice1]
 		local txt2=list_txt_action[indice2]
 		local txt_reward1=list_txt_button[indice1]
@@ -198,13 +219,7 @@ indice2=4
 	end
 end
 
-day="10-19"--"20-04-17"
-useCUDA = false
-local UseSecondGPU= false --true
-if not useCUDA then
-	UseSecondGPU = false
-end
-local LR=0.001 --0.00001
+
 --[[local dataAugmentation=true
 local Log_Folder='./Log/'
 local list_folders_images, list_txt=Get_HeadCamera_HeadMvt()
@@ -219,6 +234,7 @@ if not file_exists(Log_Folder) then
    lfs.mkdir(Log_Folder)
 end--]]
 
+day="10-19"--"20-04-17"
 local Dimension=3
 Tests_Todo={
 {"Prop","Temp","Caus","Rep"}} --[[,

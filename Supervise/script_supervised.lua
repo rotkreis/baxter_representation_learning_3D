@@ -22,14 +22,23 @@ function Training(Models,Mode,batch,label,criterion,coef,LR)
 
 		 -- just in case:
 	collectgarbage()
-	batch=batch:cuda()
+
+	if useCUDA then
+    batch=batch:cuda()
+  end
 	Label=torch.Tensor(2,3) --pb of batch sorry for bad programming issue
 	Label[1]=label
 	Label[2]=label
-	Label=Label:cuda()
+
+	if useCUDA then
+		Label=Label:cuda()
+	end
 	 -- reset gradients
 	State1=Model:forward(batch)
-	criterion=criterion:cuda()
+	if useCUDA then
+			criterion=criterion:cuda()
+	end
+
 	output=criterion:forward({State1, Label})
 	Model:zeroGradParameters()
 	GradOutputs=criterion:backward({State1, Label})
@@ -87,15 +96,27 @@ function Print_Supervised(Model,Data, name, Log_Folder,criterion)
 	local list_out1={}
 	local sum_loss=0
 	local loss=0
-	criterion=criterion:cuda()
+
+	if useCUDA then
+			criterion=criterion:cuda()
+	end
 
 	for i=1, #Data.Images do --#imgs do
 		image1=Data.Images[i]
-		Label=Data.Labels[i]:cuda()
+		if useCUDA then
+				Label=Data.Labels[i]:cuda()
+		else
+				Label=Data.Labels[i]
+		end
+
 		Data1=torch.Tensor(2,3,200,200)
 		Data1[1]=image1
 		Data1[2]=image1
-		Model:forward(Data1:cuda())
+		if useCUDA then
+				Model:forward(Data1:cuda())
+		else
+				Model:forward(Data1)
+		end
 		loss=loss+criterion:forward({Model.output[1], Label})
 		local State1= torch.Tensor(3)
 		State1:copy(Model.output[1])
@@ -195,7 +216,9 @@ torch.manualSeed(123)
 
 require(model_file)
 Model=getModel(Dimension)
-Model=Model:cuda()
+if useCUDA then
+     Model:cuda()
+end
 parameters,gradParameters = Model:getParameters()
 print("Test actuel : "..Log_Folder)
 train_Epoch(Model,Log_Folder,LR)
