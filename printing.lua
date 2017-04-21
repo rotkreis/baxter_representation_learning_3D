@@ -22,10 +22,8 @@ function Print_performance(Models,Data,txt,txt_reward, name, Log_Folder, truth)
 		Data1[1]=image1
 		Data1[2]=image1
 		if useCUDA then
-			print('Computing the forward pass with CUDA')
 		 	Model:forward(Data1:cuda())
 		else
-			print('Computing the forward pass')
 		 	Model:forward(Data1)
 		end
 
@@ -33,24 +31,26 @@ function Print_performance(Models,Data,txt,txt_reward, name, Log_Folder, truth)
 		State1:copy(Model.output[1])
 		table.insert(list_out1,State1)
 	end
-  print('1 ')
+
 	-- biased estimation of test loss
 	local nb_sample=100
-  print('2')
+	print('Optimization with Priors backpropagation: in CPU mode this takes forever.. ')
 	for i=1, nb_sample do
+		print('getRandomBatch for sample... ')
 		Prop_batch=getRandomBatch(Data, 2, "Prop")
 		Temp_batch=getRandomBatch(Data, 2, "Temp")
 		Caus_batch=getRandomBatch(Data, 2, "Caus")
 
+		print('Applying optimization with priors backprop... ')
 		Temp=Temp+doStuff_temp(Models,TEMP_criterion, Temp_batch)
 		Prop=Prop+doStuff_Prop(Models,PROP_criterion,Prop_batch)
 		Caus=Caus+doStuff_Caus(Models,CAUS_criterion,Caus_batch)
 		Rep=Rep+doStuff_Rep(Models,REP_criterion,Prop_batch)
 	end
-	print('6')
+	print('Computing correlation and mutual info...')
 	Correlation, mutual_info=print_correlation(truth,list_out1,3)
 	show_figure(list_out1, Log_Folder..'state'..name..'.log',"Estimation",Data.Infos)
-	print('5')
+	print('Figure saved!')
 	return Temp/nb_sample,Prop/nb_sample, Rep/nb_sample, Caus/nb_sample, list_out1, mutual_info, Correlation
 end
 
