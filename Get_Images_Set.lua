@@ -6,9 +6,9 @@
 ---------------------------------------------------------------------------------------
 function images_Paths(Path)
 	local listImage={}
-	--print('files in path: '..paths)
+	--print('images_Paths: Path: '..Path)
 	for file in paths.files(Path) do
-		 --print('Loading files:  ')		 print(paths.files(Path))
+		 --print('Loading files:  '..file)
 	   -- We only load files that match the extension
 	   if file:find('jpg' .. '$') then
 	      -- and insert the ones we care about in our table

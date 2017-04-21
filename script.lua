@@ -19,7 +19,7 @@ local UseSecondGPU= false --true
 
 print('Running main script with useCUDA flag: ')
 print(useCUDA)
-print('Running main script with useSe flag: ')
+print('Running main script with useSecondGPU flag: ')
 print(UseSecondGPU)
 
 
@@ -89,6 +89,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	print(Temp)
 	print(Rep)
 	print(Caus)
+	print(list_folders_images)
 
 	local coef_Temp=0.1
 	local coef_Prop=0.1
@@ -96,7 +97,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local coef_Caus=1
 	local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
-	indice_test=4 --nbList
+	indice_test=nbList --4 --nbList
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
@@ -235,7 +236,7 @@ if not file_exists(Log_Folder) then
 end--]]
 
 day="10-19"--"20-04-17"
-local Dimension=3
+Dimension=3
 Tests_Todo={
 {"Prop","Temp","Caus","Rep"}} --[[,
 {"Rep","Caus","Prop"},
