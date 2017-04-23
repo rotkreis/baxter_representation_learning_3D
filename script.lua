@@ -101,7 +101,9 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
-	nb_part=50
+	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
+	--  by making "nb_part" larger than 50:	
+	nb_part=100 --50
 	part_test=1
 	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
 	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
@@ -262,7 +264,13 @@ name_load='./Log/Save/'..day..'.t7'
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files()
 local reload=false
 local TakeWeightFromAE=false
-model_file='./models/topTripleFM_Split' --naive3D'
+--model_file='./models/topTripleFM_Split' 
+model_file='./models/minimalNetModel'
+
+--Different models in the way the FM (feature map) is constructed: 
+--Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua") 
+--Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
+--The model minimalNetModel.lua serves to test a small network to run on cpu only tests
 
 
 image_width=200
