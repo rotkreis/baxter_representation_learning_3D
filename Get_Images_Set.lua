@@ -15,7 +15,6 @@ function images_Paths(Path)
 	      table.insert(listImage, paths.concat(Path,file))
 				--print('Inserted image :  '..paths.concat(Path,file))
 	   end
-
 	end
 	table.sort(listImage)
 	print('Loaded images from Path: '..Path)
