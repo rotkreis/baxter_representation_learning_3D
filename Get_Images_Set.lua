@@ -66,10 +66,9 @@ end
 -- Output (list_head_left): list of the images directories path
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
 ---------------------------------------------------------------------------------------
-function Get_HeadCamera_View_Files()
+function Get_HeadCamera_View_Files(Path)
 	local use_simulate_images=use_simulate_images or false
-	local Path="../data_baxter"
-
+	print('Get_HeadCamera_View_Files(Path: '..Path)
 	local Paths=Get_Folders(Path,'record')
 	list_folder={}
 	list_txt_button={}

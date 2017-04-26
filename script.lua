@@ -14,13 +14,32 @@ require 'printing.lua'
 require "Get_Images_Set"
 require 'priors'
 
-useCUDA = false
-local UseSecondGPU= false --true
+--Different models in the way the FM (feature map) is constructed:
+--Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
+--Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
+--The model minimalNetModel.lua serves to test a small network to run on cpu only tests
 
-print('Running main script with useCUDA flag: ')
-print(useCUDA)
-print('Running main script with useSecondGPU flag: ')
-print(UseSecondGPU)
+useCUDA = false
+local UseSecondGPU= true
+if not useCUDA then
+	UseSecondGPU = false
+	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
+	--  by making "nb_part" larger than 50. --IMPORTANT NOTE: THIS MAY CAUSE ERRORs (Tensor expected, got nil,
+	-- in functions.lua's getRandomBatch() or getRandomBatchFromSeparateList() method) DUE TO NOT FINDING ENOUGH FRAMES WHERE A PRIOR'S CONDITION IS MET FOR EVALUATION PURPOSES:
+	nb_part=50--100
+	model_file='./models/minimalNetModel'
+else
+	nb_part = 50
+	model_file='./models/topTripleFM_Split'
+end
+if UseSecondGPU then
+	cutorch.setDevice(2)
+end
+print('Running main script with useCUDA flag: '..tostring(useCUDA))
+print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
+--made global for logging:
+LR=0.001 --0.00001
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR)
 
 function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 	local LR=LR or 0.001
@@ -29,31 +48,31 @@ function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 
 	local batch=getRandomBatchFromSeparateList(Data1,Data2,BatchSize,Mode)
 
-	      -- create closure to evaluate f(X) and df/dX
-      local feval = function(x)
-		 -- just in case:
-		 collectgarbage()
+  -- create closure to evaluate f(X) and df/dX
+  local feval = function(x)
+				-- just in case:
+				collectgarbage()
 
-		 -- get new parameters
-		 if x ~= parameters then
-		    parameters:copy(x)
-		 end
+				-- get new parameters
+				if x ~= parameters then
+				   parameters:copy(x)
+				end
 
-		 -- reset gradients
-		gradParameters:zero()
-		if Mode=='Simpl' then print("Simpl")
-		elseif Mode=='Temp' then loss,grad=doStuff_temp(Models,criterion, batch,coef)
-		elseif Mode=='Prop' then loss,grad=doStuff_Prop(Models,criterion,batch,coef)
-		elseif Mode=='Caus' then loss,grad=doStuff_Caus(Models,criterion,batch,coef)
-		elseif Mode=='Rep' then loss,grad=doStuff_Rep(Models,criterion,batch,coef)
-		else print("Wrong Mode")
-		end
-         	return loss,gradParameters
+				 -- reset gradients
+				gradParameters:zero()
+				if Mode=='Simpl' then print("Simpl")
+				elseif Mode=='Temp' then loss,grad=doStuff_temp(Models,criterion, batch,coef)
+				elseif Mode=='Prop' then loss,grad=doStuff_Prop(Models,criterion,batch,coef)
+				elseif Mode=='Caus' then loss,grad=doStuff_Caus(Models,criterion,batch,coef)
+				elseif Mode=='Rep' then loss,grad=doStuff_Rep(Models,criterion,batch,coef)
+				else print("Wrong Mode")
+				end
+		  	return loss,gradParameters
 	end
-        --sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
+  --sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
 	--parameters, loss=optim.sgd(feval, parameters, sgdState)
-optimState={learningRate=LR}
-parameters, loss=optim.adagrad(feval, parameters, optimState)
+	optimState={learningRate=LR}
+	parameters, loss=optim.adagrad(feval, parameters, optimState)
 
 	 -- loss[1] table of one value transformed in just a value
 	 -- grad[1] we use just the first gradient to print the figure (there are 2 or 4 gradient normally)
@@ -95,13 +114,10 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local coef_Caus=1
 	local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
-	indice_test=1 --nbList --4 --nbList
+	indice_test=nbList --4 --nbList
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
-	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
-	--  by making "nb_part" larger than 50:
-	nb_part=100 --50
 	part_test=1
 	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
 	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
@@ -111,7 +127,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
 
 	--real_temp_loss,real_prop_loss,real_rep_loss, real_caus_loss=real_loss(txt_test)
-	print("temp loss : "..real_temp_loss)
+	--print("temp loss : "..real_temp_loss)
 	--print("prop loss : "..real_prop_loss[1])
 	--print("rep loss : "..real_rep_loss[1])
 	--print("caus loss : "..real_caus_loss[1])
@@ -128,32 +144,23 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 		local indice1=torch.random(1,nbList-1)
 		repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
 
+	--------------------------------- only one list used---------------------------------------------------------------
+		if not useCUDA then
+			UseSecondGPU = false
+		end
+		--made global for login: local LR=0.001 --0.00001
 
-
-
-
-
-
---- main program
---------------------------------- only one list used---------------------------------------------------------------
-if not useCUDA then
-	UseSecondGPU = false
-end
-local LR=0.001 --0.00001
-
-indice1=4
-indice2=4
-		print('Running main script with useCUDA flag: '..useCUDA)
+		indice1=4
+		indice2=4
 		local txt1=list_txt_action[indice1]
 		local txt2=list_txt_action[indice2]
 		local txt_reward1=list_txt_button[indice1]
 		local txt_reward2=list_txt_button[indice2]
 		local txt_state1=list_txt_state[indice1]
 		local txt_state2=list_txt_state[indice2]
-		local nb_part=50
 		local part1=torch.random(2,nb_part-1)--(0,nb_part) 1 est gardée pour le test, 0 est mauvaise
 		repeat  part2=torch.random(2,nb_part-1) until (part1 ~= part2)
--- for debug
+    -- for debug
 		local list1=images_Paths(list_folders_images[indice1])
 		local list2=images_Paths(list_folders_images[indice2])
 		local Data1,ThereIsReward=load_Part_list(list1,txt1,txt_reward1,image_width,image_height,nb_part,part1,0.01,txt_state1)--with small data augmentation
@@ -185,7 +192,6 @@ indice2=4
 
 		local id=name..epoch -- variable used to not mix several log files
 		Temp_test,Prop_test,Rep_test,Caus_test, list_estimation,M_I,corr=Print_performance(Models, Data_test,txt_test,txt_reward_test,id.."_Test",Log_Folder,truth)
-
 
 		table.insert(list_MI,M_I)
 		show_MI(list_MI, Log_Folder..'Mutuelle_Info.log')
@@ -258,12 +264,11 @@ Tests_Todo={
 
 local Log_Folder='./Log/'..day..'/'
 name_load='./Log/Save/'..day..'.t7'
+local Path="./baxter_data"
 
-list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files()
+list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(Path)
 local reload=false
 local TakeWeightFromAE=false
---model_file='./models/topTripleFM_Split'
-model_file='./models/minimalNetModel'
 
 --Different models in the way the FM (feature map) is constructed:
 --Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
@@ -278,13 +283,11 @@ if UseSecondGPU then
 end
 
 nbList= #list_folders_images
-print('list_folders_images=')
-print(list_folders_images)
+--print('list_folders_images=')
+--print(list_folders_images)
 
 for nb_test=1, #Tests_Todo do
-
-	torch.manualSeed(123)
-
+	torch.manualSeed(123) --TODO/ do only once outside?
 	if reload then
 		Model = torch.load('./Log/13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'):double()
 	elseif TakeWeightFromAE then

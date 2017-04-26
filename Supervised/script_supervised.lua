@@ -14,21 +14,36 @@ require '../printing.lua'
 require "../Get_Images_Set"
 require '../priors'
 
-useCUDA = false
-local UseSecondGPU= false --true
+--Different models in the way the FM (feature map) is constructed:
+--Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
+--Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
+--The model minimalNetModel.lua serves to test a small network to run on cpu only tests
 
-print('Running main script with useCUDA flag: ')
-print(useCUDA)
-print('Running main script with useSecondGPU flag: ')
-print(UseSecondGPU)
+useCUDA = false
+local UseSecondGPU= true
+if not useCUDA then
+	UseSecondGPU = false
+	nb_part=100
+	model_file='../models/minimalNetModel'
+else
+	nb_part = 50
+	model_file= '../models/topTripleFM_Split'
+end
+-- if UseSecondGPU then
+-- 	cutorch.setDevice(2)
+-- end
+print('Running main script with useCUDA flag: '..tostring(useCUDA))
+print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
+--made global for logging:
+LR=0.005
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR)
+
 
 function Training(Models,Mode,batch,label,criterion,coef,LR)
 	local LR=LR or 0.001
 	local mom=0.0--9
         local coefL2=0,0
-
-
-		 -- just in case:
+	-- just in case:
 	collectgarbage()
 
 	if useCUDA then
@@ -147,13 +162,9 @@ function train_Epoch(Models,Log_Folder,LR)
 	print (nbList)
 
 	indice_test= nbList --4
-	--If there is RAM memory problems, one can try to split the dataset in
-	-- more parts in order to load less images into RAM at one time.
-	-- by making "nb_part" larger than 50:
-	nb_part=100 --50
 	part_test=1
-	--print('list_folders_images size: '..#list_folders_images)
-	--print('list_folders_images[4]: '..list_folders_images[indice_test])
+	print('list_folders_images size: '..#list_folders_images)
+	print('list_folders_images[indice_test]: '..list_folders_images[indice_test])
 
 	local list_test=images_Paths(list_folders_images[indice_test])
 	local txt_test=list_txt_state[indice_test]
@@ -173,7 +184,7 @@ function train_Epoch(Models,Log_Folder,LR)
 		indice1=4
 		txt_state=list_txt_state[indice1]
 
-		local nb_part=50
+		--local nb_part=50
 		local part=torch.random(2,nb_part-1)-- part 0 contain void images, 1 is for test
 		local list=images_Paths(list_folders_images[indice1])
 
@@ -206,27 +217,30 @@ end
 
 
 day="21-10"
-local LR=0.005
 local Dimension=3
 
 local Log_Folder='./Log/'..day..'/'
 name_load='./Log/Save/'..day..'.t7'
+local Path="../baxter_data/"
 
-list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files()
-local model_file='../models/minimalNetModel'--'../models/topTripleFM_Split'
-
+list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(Path)
 
 image_width=200
 image_height=200
-
-if UseSecondGPU then
-	cutorch.setDevice(2)
-end
 
 nbList= #list_folders_images
 print('list_folders_images=')
 print(list_folders_images)
 torch.manualSeed(123)
+
+--NOTE: model_file needs to be a global variable, otherwise we get:
+-- /home/natalia/torch/install/bin/luajit: /home/natalia/torch/install/share/lua/5.1/trepl/init.lua:347: attempt to index local 'name' (a nil value)
+-- stack traceback:
+-- 	/home/natalia/torch/install/share/lua/5.1/trepl/init.lua:347: in function 'require'
+-- 	script_supervised.lua:236: in main chunk
+-- 	[C]: in function 'dofile'
+-- 	...alia/torch/install/lib/luarocks/rocks/trepl/scm-1/bin/th:150: in main chunk
+-- 	[C]: at 0x00406670
 
 require(model_file)
 Model=getModel(Dimension)

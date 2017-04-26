@@ -13,19 +13,30 @@ require 'printing.lua'
 require "Get_Images_Set"
 require 'priors'
 
+--Different models in the way the FM (feature map) is constructed:
+--Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
+--Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
+--The model minimalNetModel.lua serves to test a small network to run on cpu only tests
+
 useCUDA = false
-local UseSecondGPU= false --true
+local UseSecondGPU= true
 if not useCUDA then
 	UseSecondGPU = false
+	nb_part= 50 -- ToDo: find a value less than 100 and more than 50
+	model_file='./models/minimalNetModel'
+else
+	nb_part = 50
+	model_file='./models/topTripleFM_Split'
 end
 if UseSecondGPU then
 	cutorch.setDevice(2)
 end
+print('Running main script with useCUDA flag: '..tostring(useCUDA))
+print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
+--made global for logging:
+LR=0.001 --0.00001
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR)
 
-print('Running main script with useCUDA flag: ')
-print(useCUDA)
-print('Running main script with useSecondGPU flag: ')
-print(UseSecondGPU)
 
 function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 	local LR=LR or 0.001
@@ -102,7 +113,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local coef_Caus=1
 	local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
-	indice_test=1 --nbList --4 --nbList
+	indice_test= nbList --4 --nbList
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
@@ -111,7 +122,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	print('txt_test (truth) ='..txt_test)
 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
 	--  by making "nb_part" larger than 50:
-	nb_part=100 --50
+	--nb_part=100 --50
 	part_test=1
 	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
 	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
@@ -138,9 +149,6 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 		repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
 
 		--------------------------------- only one list used---------------------------------------------------------------
-		--if not useCUDA then
-		--	UseSecondGPU = false
-		--end
 		local LR=0.001 --0.00001
 		indice1=4
 		indice2=4
@@ -259,17 +267,11 @@ Tests_Todo={
 
 local Log_Folder='./Log/'..day..'/'
 name_load='./Log/Save/'..day..'.t7'
+local Path="./baxter_data"
 
-list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files()
+list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(Path)
 local reload=false
 local TakeWeightFromAE=false
-
---Different models in the way the FM (feature map) is constructed:
---Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
---Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
---The model minimalNetModel.lua serves to test a small network to run on cpu only tests
---model_file='./models/topTripleFM_Split'
-model_file='./models/minimalNetModel'
 
 image_width=200
 image_height=200

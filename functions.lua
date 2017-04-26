@@ -200,11 +200,10 @@ function getRandomBatchFromSeparateList(Data1,Data2, lenght, Mode)
 end
 ---------------------------------------------------------------------------------------
 -- Function : getRandomBatch(imgs, txt, lenght, width, height, Mode, use_simulate_images)
--- Input ():
+-- Input (): Mode: the name of the prior being applied (Prop, Rep, Temp or Caus)
 -- Output ():
 ---------------------------------------------------------------------------------------
 function getRandomBatch(Data1, lenght, Mode)
-
 	local Dim=Data1.images[1]:size()
 	if Mode=="Prop" or Mode=="Rep" then
 		Batch=torch.Tensor(4, lenght,Dim[1], Dim[2], Dim[3])
