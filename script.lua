@@ -18,7 +18,8 @@ require 'priors'
 --Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
 --Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
 --The model minimalNetModel.lua serves to test a small network to run on cpu only tests
-
+--Path="./baxter_data"
+local Path="./baxter_data_short_seqs" -- Shorter sequences dataset
 useCUDA = false
 local UseSecondGPU= true
 if not useCUDA then
@@ -39,7 +40,7 @@ print('Running main script with useCUDA flag: '..tostring(useCUDA))
 print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
 --made global for logging:
 LR=0.001 --0.00001
-print('nb_parts per batch: '..nb_part.." LearningRate: "..LR)
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." Using data folder: "..Path)
 
 function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 	local LR=LR or 0.001
@@ -264,7 +265,7 @@ Tests_Todo={
 
 local Log_Folder='./Log/'..day..'/'
 name_load='./Log/Save/'..day..'.t7'
-local Path="./baxter_data"
+--local Path="./baxter_data" -- without this variable being local here, a global var Path in this file does not work and path is not found?!
 
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(Path)
 local reload=false

@@ -18,6 +18,8 @@ require 'priors'
 --Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
 --The model minimalNetModel.lua serves to test a small network to run on cpu only tests
 
+Path="./baxter_data"
+--Path="./baxter_data_short_seqs" -- Shorter sequences dataset
 useCUDA = false
 local UseSecondGPU= true
 if not useCUDA then
@@ -35,7 +37,7 @@ print('Running main script with useCUDA flag: '..tostring(useCUDA))
 print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
 --made global for logging:
 LR=0.001 --0.00001
-print('nb_parts per batch: '..nb_part.." LearningRate: "..LR)
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." Using data folder: "..Path)
 
 
 function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
@@ -132,7 +134,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
 
 	--real_temp_loss,real_prop_loss,real_rep_loss, real_caus_loss=real_loss(txt_test)
-	print("temp loss : "..real_temp_loss)
+	--print("temp loss : "..real_temp_loss)
 	--print("prop loss : "..real_prop_loss[1])
 	--print("rep loss : "..real_rep_loss[1])
 	--print("caus loss : "..real_caus_loss[1])
@@ -267,7 +269,6 @@ Tests_Todo={
 
 local Log_Folder='./Log/'..day..'/'
 name_load='./Log/Save/'..day..'.t7'
-local Path="./baxter_data"
 
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(Path)
 local reload=false

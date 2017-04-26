@@ -19,6 +19,8 @@ require '../priors'
 --Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
 --The model minimalNetModel.lua serves to test a small network to run on cpu only tests
 
+local Path="../baxter_data"
+--local Path="../baxter_data_short_seqs" -- Shorter sequences dataset   DOES NOT WORK
 useCUDA = false
 local UseSecondGPU= true
 if not useCUDA then
@@ -36,7 +38,7 @@ print('Running main script with useCUDA flag: '..tostring(useCUDA))
 print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
 --made global for logging:
 LR=0.005
-print('nb_parts per batch: '..nb_part.." LearningRate: "..LR)
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." Using data folder: "..Path)
 
 
 function Training(Models,Mode,batch,label,criterion,coef,LR)
@@ -164,7 +166,7 @@ function train_Epoch(Models,Log_Folder,LR)
 	indice_test= nbList --4
 	part_test=1
 	print('list_folders_images size: '..#list_folders_images)
-	print('list_folders_images[indice_test]: '..list_folders_images[indice_test])
+	--print('list_folders_images[indice_test]: '..list_folders_images[indice_test])
 
 	local list_test=images_Paths(list_folders_images[indice_test])
 	local txt_test=list_txt_state[indice_test]
@@ -218,13 +220,9 @@ end
 
 day="21-10"
 local Dimension=3
-
 local Log_Folder='./Log/'..day..'/'
 name_load='./Log/Save/'..day..'.t7'
-local Path="../baxter_data/"
-
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(Path)
-
 image_width=200
 image_height=200
 

@@ -73,7 +73,7 @@ local function topActivation(net,imgs,level)
 		tensor_2=create_superposition(Batch[1],map_2)
 		tensor_3=create_superposition(Batch[1],map_3)
 		local out=torch.cat(torch.cat(tensor_1,tensor_2,2),tensor_3,2)
-		filename=paths.home.."/Bureau/Resultat_supervise/18-10/image"..i..".jpg"
+		filename=paths.home.."/Bureau/Resultat_supervise/18-10/image"..i..".jpg"  --TODO: valid for all platforms?
 		image.save(filename,out)
 		xlua.progress(i, nbIm)
 	end

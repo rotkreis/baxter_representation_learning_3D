@@ -36,12 +36,12 @@ function Print_performance(Models,Data,txt,txt_reward, name, Log_Folder, truth)
 	local nb_sample=100
 	print('Optimization with Priors backpropagation: in CPU mode this takes forever.. ')
 	for i=1, nb_sample do
-		print('getRandomBatch for sample... ')
+		--print('getRandomBatch for sample... ')
 		Prop_batch=getRandomBatch(Data, 2, "Prop")
 		Temp_batch=getRandomBatch(Data, 2, "Temp")
 		Caus_batch=getRandomBatch(Data, 2, "Caus")
 
-		print('Applying optimization with priors backprop... ')
+		--print('Applying optimization with priors backprop... ')
 		Temp=Temp+doStuff_temp(Models,TEMP_criterion, Temp_batch)
 		Prop=Prop+doStuff_Prop(Models,PROP_criterion,Prop_batch)
 		Caus=Caus+doStuff_Caus(Models,CAUS_criterion,Caus_batch)
