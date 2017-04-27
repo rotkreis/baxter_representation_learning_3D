@@ -19,7 +19,7 @@ require 'priors'
 --Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
 --The model minimalNetModel.lua serves to test a small network to run on cpu only tests
 --Path="./baxter_data"
-local Path="./baxter_data_short_seqs" -- Shorter sequences dataset
+Path="./baxter_data_short_seqs" -- Shorter sequences dataset
 useCUDA = false
 local UseSecondGPU= true
 if not useCUDA then
@@ -141,7 +141,6 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 		local Temp_loss,Prop_loss,Rep_loss,Caus_loss=0,0,0,0
 		local Grad_Temp,Grad_Prop,Grad_Rep,Grad_Caus=0,0,0,0
 
-
 		local indice1=torch.random(1,nbList-1)
 		repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
 
@@ -150,7 +149,6 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 			UseSecondGPU = false
 		end
 		--made global for login: local LR=0.001 --0.00001
-
 		indice1=4
 		indice2=4
 		local txt1=list_txt_action[indice1]

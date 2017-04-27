@@ -24,11 +24,15 @@ useCUDA = false
 local UseSecondGPU= true
 if not useCUDA then
 	UseSecondGPU = false
-	nb_part= 50 -- ToDo: find a value less than 100 and more than 50
+	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
+	--  by making "nb_part" larger than 50: -- ToDo: find a value less than 100 and more than 50
+	nb_part= 50
 	model_file='./models/minimalNetModel'
+	BatchSize = 1
 else
 	nb_part = 50
 	model_file='./models/topTripleFM_Split'
+	BatchSize = 2
 end
 if UseSecondGPU then
 	cutorch.setDevice(2)
@@ -37,7 +41,7 @@ print('Running main script with useCUDA flag: '..tostring(useCUDA))
 print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
 --made global for logging:
 LR=0.001 --0.00001
-print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." Using data folder: "..Path)
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." BatchSize: "..BatchSize..". Using data folder: "..Path)
 
 
 function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
@@ -82,8 +86,7 @@ end
 
 function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local nbEpoch=100
-	local NbBatch=10
-	local BatchSize=1--2
+	local NbBatch=10  --	local BatchSize=1--2  --made global for cpu only flag
 
 	local name='Save'..day
 	local name_save=Log_Folder..name..'.t7'
@@ -119,12 +122,10 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
-	print('txt_reward_test (button pressed)='..txt_reward_test)
-	print('txt_test (state) ='..txt_test)
-	print('txt_test (truth) ='..txt_test)
-	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
-	--  by making "nb_part" larger than 50:
-	--nb_part=100 --50
+	-- print('txt_reward_test (button pressed)='..txt_reward_test)
+	-- print('txt_test (state) ='..txt_test)
+	-- print('txt_test (truth) ='..txt_test)
+
 	part_test=1
 	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
 	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
@@ -139,7 +140,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	--print("rep loss : "..real_rep_loss[1])
 	--print("caus loss : "..real_caus_loss[1])
 
-	print(nbList..' : sequences')
+	print(nbList..' : sequences processed. Logging parameters...')
 	printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BatchSize, nbEpoch, NbBatch, model_file)
 
 	for epoch=1, nbEpoch do
@@ -280,10 +281,9 @@ image_height=200
 nbList= #list_folders_images
 print('list_folders_images=')
 print(list_folders_images)
+torch.manualSeed(123) -- for reproducibility and debugging ToDO; only once
 
 for nb_test=1, #Tests_Todo do
-	torch.manualSeed(123)
-
 	if reload then
 		Model = torch.load('./Log/13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'):double()
 	elseif TakeWeightFromAE then

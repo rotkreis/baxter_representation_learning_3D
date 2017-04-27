@@ -6,8 +6,11 @@
 ---------------------------------------------------------------------------------------
 function images_Paths(Path)
 	local listImage={}
-	print('images_Paths: ')
+	--Path="./baxter_data_short_seqs"
+	Path="./baxter_data" -- TODO: make it work by passing it as a parameter
+	print('images Path variable suddenly becomes nil here if not reset!: ( WHY?!)')
 	print(Path)
+
 	for file in paths.files(Path) do
 		 --print('Loading files:  '..file)
 	   -- We only load files that match the extension
