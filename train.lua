@@ -19,8 +19,8 @@ inspect = require ('inspect')--require('inspect') --requires luarocks install in
 --Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
 --The model minimalNetModel.lua serves to test a small network to run on cpu only tests
 
-Path="./baxter_data"
---Path="./baxter_data_short_seqs" -- Shorter sequences dataset
+Path="./data_baxter"
+--Path="./data_baxter_short_seqs" -- Shorter sequences dataset
 useCUDA = false
 local UseSecondGPU= false --true
 if not useCUDA then
@@ -125,7 +125,8 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
-	print('txt_reward_test (button pressed)='..txt_reward_test)
+	print('txt_reward_test (button pressed)=')
+	print(txt_reward_test)
 	print('txt_test (state) ='..txt_test)
 	print('list_truth ='..inspect(list_truth))
 

@@ -6,8 +6,8 @@
 function Print_performance(Models,Data,txt,txt_reward, name, Log_Folder, truth)
 	print('Data')
 	print(Data)
-	print(Data.dim())
-	print(Data.size())
+	--print(Data:dim())
+	--print(Data:size())
 	local imgs=Data.images
 	local REP_criterion=get_Rep_criterion()
 	local PROP_criterion=get_Prop_criterion()
