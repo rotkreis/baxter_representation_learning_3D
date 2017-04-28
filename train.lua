@@ -12,6 +12,7 @@ require 'functions.lua'
 require 'printing.lua'
 require "Get_Images_Set"
 require 'priors'
+inspect = require ('inspect')--require('inspect') --requires luarocks install inspect in terminal
 
 --Different models in the way the FM (feature map) is constructed:
 --Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
@@ -21,7 +22,7 @@ require 'priors'
 Path="./baxter_data"
 --Path="./baxter_data_short_seqs" -- Shorter sequences dataset
 useCUDA = false
-local UseSecondGPU= true
+local UseSecondGPU= false --true
 if not useCUDA then
 	UseSecondGPU = false
 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
@@ -118,19 +119,27 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local coef_Caus=1
 	local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
+	--Extracting rewards: 0 when button is not being pushed, 1 when it is pushed.
+	--No visual feedback at the moment, just logging for evaluation purposes
 	indice_test= nbList --4 --nbList
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
-	-- print('txt_reward_test (button pressed)='..txt_reward_test)
-	-- print('txt_test (state) ='..txt_test)
-	-- print('txt_test (truth) ='..txt_test)
+	print('txt_reward_test (button pressed)='..txt_reward_test)
+	print('txt_test (state) ='..txt_test)
+	print('list_truth ='..inspect(list_truth))
 
 	part_test=1
-	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
-	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
-	print("Plotting the truth... ")
-	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
+	Data_test=load_Part_list(list_truth, txt_test, txt_reward_test, image_width, image_height, nb_part, part_test, 0, txt_test)
+	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3?
+
+	--print("show_figure for truth : "..inspect(truth)..' and Data_test (.Infos):'..inspect(Data_test).. ' Log_Folder'..Log_Folder..' Data_test.Infos: ')
+	print("show_figure for truth : ")
+	print(truth)
+	print(' and Data_test (.Infos):')
+	print(Data_test)
+	print(' Log_Folder'..Log_Folder)--..' Data_test.Infos: ')
+	--show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
 	print("Computing performance... ")
 	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
 
@@ -152,7 +161,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 		repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
 
 		--------------------------------- only one list used---------------------------------------------------------------
-		local LR=0.001 --0.00001
+		--local LR=0.001 --0.00001
 		indice1=4
 		indice2=4
 		local txt1=list_txt_action[indice1]
@@ -250,24 +259,7 @@ end--]]
 day="10-19"--"20-04-17"
 Dimension=3
 Tests_Todo={
-{"Prop","Temp","Caus","Rep"}} --[[,
-{"Rep","Caus","Prop"},
-{"Rep","Caus","Temp"},
-{"Rep","Prop","Temp"},
-{"Prop","Caus","Temp"},}
-
-{"Rep","Caus"},
-{"Prop","Caus"},
-{"Temp","Caus"},
-{"Temp","Prop"},
-{"Rep","Prop"},
-{"Rep","Temp"},
-{"Rep"},
-{"Temp"},
-{"Caus"},
-{"Prop"}
-}--]]
-
+{"Prop","Temp","Caus","Rep"}}
 local Log_Folder='./Log/'..day..'/'
 name_load='./Log/Save/'..day..'.t7'
 

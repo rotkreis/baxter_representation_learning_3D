@@ -4,7 +4,10 @@
 -- Output ():
 ---------------------------------------------------------------------------------------
 function Print_performance(Models,Data,txt,txt_reward, name, Log_Folder, truth)
-
+	print('Data')
+	print(Data)
+	print(Data.dim())
+	print(Data.size())
 	local imgs=Data.images
 	local REP_criterion=get_Rep_criterion()
 	local PROP_criterion=get_Prop_criterion()
@@ -205,7 +208,6 @@ function show_figure(list_out1, Name, Variable_Name,Infos)
 	local Variable_Name=Variable_Name or 'out1'
 	-- log results to files
 	local accLogger = optim.Logger(Name)
-
 
 	for i=1, #list_out1 do
 	-- update logger

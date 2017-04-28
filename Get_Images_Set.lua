@@ -6,8 +6,8 @@
 ---------------------------------------------------------------------------------------
 function images_Paths(Path)
 	local listImage={}
-	--Path="./baxter_data_short_seqs"
-	Path="./baxter_data" -- TODO: make it work by passing it as a parameter
+	--Path="./data_baxter_short_seqs"
+	Path="./data_baxter" -- TODO: make it work by passing it as a parameter
 	print('images Path variable suddenly becomes nil here if not reset!: ( WHY?!)')
 	print(Path)
 

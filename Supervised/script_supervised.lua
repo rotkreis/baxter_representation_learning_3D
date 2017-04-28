@@ -19,10 +19,10 @@ require '../priors'
 --Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
 --The model minimalNetModel.lua serves to test a small network to run on cpu only tests
 
-local Path="../baxter_data"
---local Path="../baxter_data_short_seqs" -- Shorter sequences dataset   DOES NOT WORK
+local Path="../data_baxter"
+--local Path="../data_baxter_short_seqs" -- Shorter sequences dataset
 useCUDA = false
-local UseSecondGPU= true
+local UseSecondGPU= false --true
 if not useCUDA then
 	UseSecondGPU = false
 	nb_part=100

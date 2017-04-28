@@ -18,10 +18,10 @@ require 'priors'
 --Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
 --Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
 --The model minimalNetModel.lua serves to test a small network to run on cpu only tests
---Path="./baxter_data"
-Path="./baxter_data_short_seqs" -- Shorter sequences dataset
+--Path="./data_baxter"
+Path="./data_baxter_short_seqs" -- Shorter sequences dataset
 useCUDA = false
-local UseSecondGPU= true
+local UseSecondGPU= false --true
 if not useCUDA then
 	UseSecondGPU = false
 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
@@ -263,7 +263,7 @@ Tests_Todo={
 
 local Log_Folder='./Log/'..day..'/'
 name_load='./Log/Save/'..day..'.t7'
---local Path="./baxter_data" -- without this variable being local here, a global var Path in this file does not work and path is not found?!
+--local Path="./data_baxter" -- without this variable being local here, a global var Path in this file does not work and path is not found?!
 
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(Path)
 local reload=false

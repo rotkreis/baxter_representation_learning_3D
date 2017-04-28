@@ -204,6 +204,10 @@ end
 -- Output ():
 ---------------------------------------------------------------------------------------
 function getRandomBatch(Data1, lenght, Mode)
+	print('getRandomBatch: Data: '..Data1:size())
+	print(Data1)
+	print('getRandomBatch: Data.images'.. Data1.images:size())
+	print(Data1.images)
 	local Dim=Data1.images[1]:size()
 	if Mode=="Prop" or Mode=="Rep" then
 		Batch=torch.Tensor(4, lenght,Dim[1], Dim[2], Dim[3])
