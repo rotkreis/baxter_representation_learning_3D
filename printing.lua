@@ -243,7 +243,8 @@ end
 function printParamInAFile(path,coef_list, LR, optim, BatchSize, nbEpoch, NbBatch, model)
 	local file=path.."info.txt"
 	local f=io.open(file, "w")
-	f:write("Coef Temp    : "..coef_list[1].."\n")
+	print('file: '..file)
+	f.write("Coef Temp    : "..coef_list[1].."\n")
 	f:write("Coef Prop    : "..coef_list[2].."\n")
 	f:write("Coef Rep     : "..coef_list[3].."\n")
 	f:write("Coef Caus    : "..coef_list[4].."\n")

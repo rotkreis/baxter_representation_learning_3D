@@ -19,8 +19,8 @@ inspect = require ('inspect')--require('inspect') --requires luarocks install in
 --Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
 --The model minimalNetModel.lua serves to test a small network to run on cpu only tests
 
---Path="./data_baxter"
-Path="./data_baxter_short_seqs" -- Shorter sequences dataset
+Path="./data_baxter"
+--Path="./data_baxter_short_seqs" -- Shorter sequences dataset
 useCUDA = false
 local UseSecondGPU= false --true
 if not useCUDA then
@@ -153,7 +153,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	--print("caus loss : "..real_caus_loss[1])
 
 	print(nbList..' : sequences processed. Logging parameters...')
-	printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BatchSize, nbEpoch, NbBatch, model_file)
+	--printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BatchSize, nbEpoch, NbBatch, model_file)
 
 	for epoch=1, nbEpoch do
 		print('--------------Epoch : '..epoch..' ---------------')

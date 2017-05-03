@@ -168,7 +168,10 @@ end
 -- Output ():
 ---------------------------------------------------------------------------------------
 function getRandomBatchFromSeparateList(Data1,Data2, lenght, Mode)
-
+	print (#Data1.images)
+	print(#Data2.images)
+	print('images respectively')
+	--print (Data1.images)  # TODO: this 2 Data.images are empty
 	local Dim=Data1.images[1]:size()
 	if Mode=="Prop" or Mode=="Rep" then
 		Batch=torch.Tensor(4, lenght,Dim[1], Dim[2], Dim[3])
