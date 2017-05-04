@@ -18,8 +18,8 @@ require 'priors'
 --Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
 --Using a shared top feature map for the three dimensions ("topUniqueFM_Deeper2.lua")
 --The model minimalNetModel.lua serves to test a small network to run on cpu only tests
---Path="./data_baxter"
-Path="./data_baxter_short_seqs" -- Shorter sequences dataset
+Path="./data_baxter"
+--Path="./data_baxter_short_seqs" -- Shorter sequences dataset
 useCUDA = false
 UseSecondGPU= true
 if not useCUDA then

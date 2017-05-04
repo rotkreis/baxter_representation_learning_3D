@@ -26,8 +26,8 @@ UseSecondGPU= true
 if not useCUDA then
 	UseSecondGPU = false
 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
-	--  by making "nb_part" larger than 50: -- ToDo: find a value less than 100 and more than 50
-	nb_part= 50
+	--  by making "nb_part" larger than 50: -- ToDo: find a value less than 80 and more than 50 for data_baxter_short_seqs and <100 for data_baxter?
+	nb_part= 60
 	model_file='./models/minimalNetModel'
 	BatchSize = 1
 else
@@ -134,6 +134,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	Data_test=load_Part_list(list_truth, txt_test, txt_reward_test, image_width, image_height, nb_part, part_test, 0, txt_test)
 	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3?
 
+	print(' Log_Folder'..Log_Folder)--..' Data_test.Infos: ')
 	--print("show_figure for truth : "..inspect(truth)..' and Data_test (.Infos):'..inspect(Data_test).. ' Log_Folder'..Log_Folder..' Data_test.Infos: ')
 	print("show_figure for truth : ")
 	--print(truth:size())
@@ -142,10 +143,9 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	-- print(Data_test)
 	-- print ('infos')
 	-- print(Data_test.Infos)
-	print(' Log_Folder'..Log_Folder)--..' Data_test.Infos: ')
-	--show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
+	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
 	print("Computing performance... ")
-	--Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
+	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
 
 	--real_temp_loss,real_prop_loss,real_rep_loss, real_caus_loss=real_loss(txt_test)
 	--print("temp loss : "..real_temp_loss)

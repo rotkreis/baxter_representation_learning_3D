@@ -25,7 +25,7 @@ useCUDA = false
 local UseSecondGPU= false --true
 if not useCUDA then
 	UseSecondGPU = false
-	nb_part=100
+	nb_part=50
 	model_file='../models/minimalNetModel'
 else
 	nb_part = 50
