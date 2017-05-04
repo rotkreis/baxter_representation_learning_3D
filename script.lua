@@ -21,13 +21,13 @@ require 'priors'
 --Path="./data_baxter"
 Path="./data_baxter_short_seqs" -- Shorter sequences dataset
 useCUDA = false
-local UseSecondGPU= false --true
+UseSecondGPU= true
 if not useCUDA then
 	UseSecondGPU = false
 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
 	--  by making "nb_part" larger than 50. --IMPORTANT NOTE: THIS MAY CAUSE ERRORs (Tensor expected, got nil,
 	-- in functions.lua's getRandomBatch() or getRandomBatchFromSeparateList() method) DUE TO NOT FINDING ENOUGH FRAMES WHERE A PRIOR'S CONDITION IS MET FOR EVALUATION PURPOSES:
-	nb_part=50--100
+	nb_part=55--100
 	model_file='./models/minimalNetModel'
 else
 	nb_part = 50
@@ -84,7 +84,7 @@ end
 function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local nbEpoch=100
 	local NbBatch=10
-	local BatchSize=1--2
+	local BatchSize=2
 
 	local name='Save'..day
 	local name_save=Log_Folder..name..'.t7'
@@ -145,9 +145,9 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 		repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
 
 	--------------------------------- only one list used---------------------------------------------------------------
-		if not useCUDA then
-			UseSecondGPU = false
-		end
+		-- if not useCUDA then
+		-- 	UseSecondGPU = false
+		-- end
 		--made global for login: local LR=0.001 --0.00001
 		indice1=4
 		indice2=4
@@ -277,9 +277,9 @@ local TakeWeightFromAE=false
 image_width=200
 image_height=200
 
-if UseSecondGPU then
-	cutorch.setDevice(2)
-end
+-- if UseSecondGPU then
+-- 	cutorch.setDevice(2)
+-- end
 
 nbList= #list_folders_images
 --print('list_folders_images=')

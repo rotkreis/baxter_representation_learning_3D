@@ -6,9 +6,7 @@
 ---------------------------------------------------------------------------------------
 function images_Paths(Path)
 	local listImage={}
-	--Path="./data_baxter_short_seqs"	--Path="./data_baxter"
-	print('images Path variable suddenly becomes nil here if not reset!: ( WHY?!)')
-	print(Path)
+	--print('images_Paths: ', Path)
 
 	for file in paths.files(Path) do
 		 --print('Loading files:  '..file)

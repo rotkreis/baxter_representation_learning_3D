@@ -12,7 +12,7 @@ require 'functions.lua'
 require 'printing.lua'
 require "Get_Images_Set"
 require 'priors'
-inspect = require ('inspect')--require('inspect') --requires luarocks install inspect in terminal
+inspect = require ('inspect')--allows nicer printing of tensors --requires doing 'luarocks install inspect' in terminal
 
 --Different models in the way the FM (feature map) is constructed:
 --Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
@@ -22,7 +22,7 @@ inspect = require ('inspect')--require('inspect') --requires luarocks install in
 Path="./data_baxter"
 --Path="./data_baxter_short_seqs" -- Shorter sequences dataset
 useCUDA = false
-local UseSecondGPU= false --true
+UseSecondGPU= true
 if not useCUDA then
 	UseSecondGPU = false
 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
@@ -54,25 +54,25 @@ function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 
   -- create closure to evaluate f(X) and df/dX
   local feval = function(x)
-	-- just in case:
-	collectgarbage()
+		-- just in case:
+		collectgarbage()
 
-	-- get new parameters
-	if x ~= parameters then
-	   parameters:copy(x)
-	end
+		-- get new parameters
+		if x ~= parameters then
+		   parameters:copy(x)
+		end
 
-	 -- reset gradients
-	gradParameters:zero()
-	if Mode=='Simpl' then print("Simpl")
-	elseif Mode=='Temp' then loss,grad=doStuff_temp(Models,criterion, batch,coef)
-	elseif Mode=='Prop' then loss,grad=doStuff_Prop(Models,criterion,batch,coef)
-	elseif Mode=='Caus' then loss,grad=doStuff_Caus(Models,criterion,batch,coef)
-	elseif Mode=='Rep' then loss,grad=doStuff_Rep(Models,criterion,batch,coef)
-	else print("Wrong Mode")
+		 -- reset gradients
+		gradParameters:zero()
+		if Mode=='Simpl' then print("Simpl")
+		elseif Mode=='Temp' then loss,grad=doStuff_temp(Models,criterion, batch,coef)
+		elseif Mode=='Prop' then loss,grad=doStuff_Prop(Models,criterion,batch,coef)
+		elseif Mode=='Caus' then loss,grad=doStuff_Caus(Models,criterion,batch,coef)
+		elseif Mode=='Rep' then loss,grad=doStuff_Rep(Models,criterion,batch,coef)
+		else print("Wrong Mode")
+		end
+	  return loss,gradParameters
 	end
-  return loss,gradParameters
-end
 
 	--sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
 	--parameters, loss=optim.sgd(feval, parameters, sgdState)
@@ -125,10 +125,10 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
-	print('txt_reward_test (button pressed)=')
-	print(txt_reward_test)
-	print('txt_test (state) ='..txt_test)
-	print('list_truth ='..inspect(list_truth))
+	-- print('txt_reward_test (button pressed)=')
+	-- print(txt_reward_test)
+	-- print('txt_test (state) ='..txt_test)
+	-- print('list_truth ='..inspect(list_truth))
 
 	part_test=1
 	Data_test=load_Part_list(list_truth, txt_test, txt_reward_test, image_width, image_height, nb_part, part_test, 0, txt_test)
@@ -136,11 +136,12 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 
 	--print("show_figure for truth : "..inspect(truth)..' and Data_test (.Infos):'..inspect(Data_test).. ' Log_Folder'..Log_Folder..' Data_test.Infos: ')
 	print("show_figure for truth : ")
-	print(truth)
-	print(' and Data_test (.Infos):')
-	print(Data_test)
-	print ('infos')
-	print(Data_test.Infos)
+	--print(truth:size())
+	--print(truth)
+	--print(' and Data_test (.Infos):')
+	-- print(Data_test)
+	-- print ('infos')
+	-- print(Data_test.Infos)
 	print(' Log_Folder'..Log_Folder)--..' Data_test.Infos: ')
 	--show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
 	print("Computing performance... ")
@@ -187,7 +188,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 			if Temp then
 				Loss,Grad=Rico_Training(Models,'Temp',Data1,Data2,TEMP_criterion, coef_Temp,LR,BatchSize)
 				Grad_Temp=Grad_Temp+Grad
-					Temp_loss=Temp_loss+Loss
+				Temp_loss=Temp_loss+Loss
 			end
 			if Prop then
 				Loss,Grad=Rico_Training(Models,'Prop',Data1,Data2, PROP_criterion, coef_Prop,LR,BatchSize)
@@ -274,11 +275,11 @@ image_width=200
 image_height=200
 
 nbList= #list_folders_images
-print('list_folders_images=')
-print(list_folders_images)
-torch.manualSeed(123) -- for reproducibility and debugging ToDO; only once
+-- print('list_folders_images=')
+-- print(list_folders_images)
 
 for nb_test=1, #Tests_Todo do
+	torch.manualSeed(123) -- for reproducibility and debugging ToDO; only once?
 	if reload then
 		Model = torch.load('./Log/13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'):double()
 	elseif TakeWeightFromAE then

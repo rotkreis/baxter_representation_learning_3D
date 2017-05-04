@@ -12,11 +12,11 @@ function doStuff_temp(Models,criterion,Batch,coef)
 
 	Model=Models.Model1
 	Model2=Models.Model2
-	print('im1 and 2')
-	print(Batch)
-	print(im1)
-	print(im2)
-	os.exit()
+	--print('im1 and 2')
+	-- print(Batch)
+	-- print(im1)
+	-- print(im2)
+	--os.exit()
 	State1=Model:forward(im1)
 	State2=Model2:forward(im2)
 

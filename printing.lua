@@ -4,8 +4,8 @@
 -- Output ():
 ---------------------------------------------------------------------------------------
 function Print_performance(Models,Data,txt,txt_reward, name, Log_Folder, truth)
-	print('Data')
-	print(Data)
+	-- print('Data')
+	-- print(Data)
 	--print(Data:dim())
 	--print(Data:size())
 	local imgs=Data.images
@@ -37,7 +37,7 @@ function Print_performance(Models,Data,txt,txt_reward, name, Log_Folder, truth)
 
 	-- biased estimation of test loss
 	local nb_sample=100
-	print('Optimization with Priors backpropagation: in CPU mode this takes forever.. ')
+	print('Optimization with Priors backpropagation: bewarn, in CPU mode, takes forever.. ')
 	for i=1, nb_sample do
 		--print('getRandomBatch for sample... ')
 		Prop_batch=getRandomBatch(Data, 2, "Prop")
@@ -244,7 +244,7 @@ function printParamInAFile(path,coef_list, LR, optim, BatchSize, nbEpoch, NbBatc
 	local file=path.."info.txt"
 	local f=io.open(file, "w")
 	print('file: '..file)
-	f.write("Coef Temp    : "..coef_list[1].."\n")
+	f:write("Coef Temp    : "..coef_list[1].."\n")
 	f:write("Coef Prop    : "..coef_list[2].."\n")
 	f:write("Coef Rep     : "..coef_list[3].."\n")
 	f:write("Coef Caus    : "..coef_list[4].."\n")

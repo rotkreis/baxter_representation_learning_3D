@@ -168,9 +168,9 @@ end
 -- Output ():
 ---------------------------------------------------------------------------------------
 function getRandomBatchFromSeparateList(Data1,Data2, lenght, Mode)
-	print (#Data1.images)
-	print(#Data2.images)
-	print('images respectively')
+	-- print (#Data1.images)
+	-- print(#Data2.images)
+	-- print('images respectively')
 	--print (Data1.images)  # TODO: this 2 Data.images are empty
 	local Dim=Data1.images[1]:size()
 	if Mode=="Prop" or Mode=="Rep" then
@@ -207,9 +207,10 @@ end
 -- Output ():
 ---------------------------------------------------------------------------------------
 function getRandomBatch(Data1, lenght, Mode)
-	print('getRandomBatch: Data: ')
-	print(Data1)
-	print('getRandomBatch: Data.images size: '..#Data1.images)--NOTE we cant do .. Data1.images:size())
+	--print('getRandomBatch: Data: ')
+	--print(Data1)
+	--print('getRandomBatch: Data.images size: '..#Data1.images)
+	--NOTE we cant do .. Data1.images:size())
 	--print(Data1.images)
 	--print(Data1.images):size())
 	local Dim=Data1.images[1]:size()
