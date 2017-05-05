@@ -77,7 +77,7 @@ function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 	--sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
 	--parameters, loss=optim.sgd(feval, parameters, sgdState)
 	optimState={learningRate=LR}
-	parameters, loss=optim.adagrad(feval, parameters, optimState)
+	parameters, loss = optim.adagrad(feval, parameters, optimState)
 
 	 -- loss[1] table of one value transformed in just a value
 	 -- grad[1] we use just the first gradient to print the figure (there are 2 or 4 gradient normally)
@@ -88,6 +88,7 @@ end
 function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local nbEpoch=100
 	local NbBatch=10  --	local BatchSize=1--2  --made global for cpu only flag
+	-- TODO Shouldnt this value be computed according to NbBatch?
 
 	local name='Save'..day
 	local name_save=Log_Folder..name..'.t7'
@@ -246,19 +247,19 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 end
 
 ----------------MAIN PROGRAM?---------------------------
---[[local dataAugmentation=true
 local Log_Folder='./Log/'
 local list_folders_images, list_txt=Get_HeadCamera_HeadMvt()
 
 
-PRELOAD_FOLDER='./preload_folder/'
+PRELOAD_FOLDER='./preload_folder_3D/'
 if not file_exists(PRELOAD_FOLDER) then
    lfs.mkdir(PRELOAD_FOLDER)
 end
 
 if not file_exists(Log_Folder) then
    lfs.mkdir(Log_Folder)
-end--]]
+end
+--[[local dataAugmentation=true--]]
 
 day="10-19"--"20-04-17"
 Dimension=3

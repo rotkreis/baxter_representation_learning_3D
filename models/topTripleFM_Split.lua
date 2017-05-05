@@ -41,7 +41,7 @@ function getModel()
 	W_2=nn.ReLU()(nn.Linear(47*47, 100)(View_2))
 	W_3=nn.ReLU()(nn.Linear(47*47, 100)(View_3))
 
-  	W2_1=nn.ReLU()(nn.Linear(100, 100)(W_1))
+  W2_1=nn.ReLU()(nn.Linear(100, 100)(W_1))
 	W2_2=nn.ReLU()(nn.Linear(100, 100)(W_2))
 	W2_3=nn.ReLU()(nn.Linear(100, 100)(W_3))
 

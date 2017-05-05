@@ -10,7 +10,6 @@ require 'nn'
 require 'cutorch'
 require 'cunn'
 require 'optim'
-
 --require 'Get_Baxter_Files'
 require 'functions'
 
@@ -22,7 +21,12 @@ local function ReprFromImgs(imgs,name)
 
    if file_exists(fileName) then
       return torch.load(fileName)
+   else
+      print('Preloaded model does not exist: '..fileName..' Run train.lua first! ')
+      os.exit()
    end
+   print("Calculating all 3D representations with the model: "..fileName)
+   print("Number of sequences to calculate :"..#imgs..' totalBatch: '..totalBatch)
 
    X = {}
    local model = torch.load(MODEL_PATH..MODEL_NAME)
@@ -272,11 +276,11 @@ MODEL_PATH = 'Log/'
 --MODEL_NAME, name = 'Save97Win/reprLearner1d.t7', '97'
 --MODEL_NAME,name = 'reprLearner1dWORKS.t7', 'works'
 
-MODEL_NAME,name = 'reprLearner1d.t7', 'default'
--- if this doesn't exist, it means you didn't run 'script.lua'
+MODEL_NAME,name = 'reprLearner3d.t7', 'default'
+-- if this doesn't exist, it means you didn't run 'train.lua'
 
 PATH_RAW_DATA = 'moreData/'
-PATH_PRELOAD_DATA = 'preload_folder/'
+PATH_PRELOAD_DATA = 'preload_folder_3D/'
 DATA = PATH_PRELOAD_DATA..'imgsCv1.t7'
 
 SIZE_BATCH=60
@@ -300,6 +304,7 @@ else
 end
 
 --X = HeadPosFromTxts(list_txt,true)
+-- predict:
 X = ReprFromImgs(imgs, name)
 
 NB_BATCH=math.floor(X:size(1)/SIZE_BATCH)
