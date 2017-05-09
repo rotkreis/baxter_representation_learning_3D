@@ -290,7 +290,12 @@ PLOT = true
 LOADING = true
 
 TASK = 2
+-- Our representation learnt should be coordinate independent, as it is not aware of
+-- what is x,y,z and thus, we should be able to reconstruct the state by switching
+-- to y,x,z, or if we add Gaussian noise to the true positions x,y,z of Baxter arm.
+-- These will be our score baseline to compare with
 reconstructingTask = true
+
 
 local imgs = torch.load(DATA)
 imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values

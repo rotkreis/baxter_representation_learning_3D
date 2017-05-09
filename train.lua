@@ -2,6 +2,7 @@ require 'nn'
 require 'optim'
 require 'image'
 require 'torch'
+require 'cutorch'
 require 'xlua'
 require 'math'
 require 'string'
@@ -10,8 +11,10 @@ require 'nngraph'
 require 'MSDC'
 require 'functions.lua'
 require 'printing.lua'
-require "Get_Images_Set"
+require 'Get_Images_Set'
+require 'Get_Baxter_Files'
 require 'priors'
+require "userscripts"
 inspect = require ('inspect')--allows nicer printing of tensors --requires doing 'luarocks install inspect' in terminal
 
 --Different models in the way the FM (feature map) is constructed:
@@ -44,6 +47,11 @@ print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
 LR=0.001 --0.00001
 print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." BatchSize: "..BatchSize..". Using data folder: "..Path)
 
+function file_exists(name)
+	--tests whether the file can be opened for reading
+   local f=io.open(name,"r")
+   if f~=nil then io.close(f) return true else return false end
+end
 
 function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 	local LR=LR or 0.001
