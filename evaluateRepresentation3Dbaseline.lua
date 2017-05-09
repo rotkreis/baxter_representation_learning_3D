@@ -222,7 +222,7 @@ function createModelReconstruction()
 end
 
 
-function train_and_evaluate_representations_quality(X,y, reconstruct)
+function train(X,y, reconstruct)
    reconstruct = reconstruct or true
 
    local nbList = 10
@@ -314,4 +314,4 @@ X = ReprFromImgs(imgs, name)
 
 NB_BATCH=math.floor(X:size(1)/SIZE_BATCH)
 
-train_and_evaluate_representations_quality(X,y,reconstructingTask)
+train(X,y,reconstructingTask)

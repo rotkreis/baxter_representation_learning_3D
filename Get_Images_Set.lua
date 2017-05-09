@@ -62,7 +62,7 @@ end
 
 
 ---------------------------------------------------------------------------------------
--- Function : Get_HeadCamera_HeadMvt(use_simulate_images)
+-- Function : Get_HeadCamera_HeadMvt(use_simulate_images) --TODO: Get_HeadCamera_HeadMvt?
 -- Input (use_simulate_images) : boolean variable which say if we use or not simulate images
 -- Output (list_head_left): list of the images directories path
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
@@ -86,6 +86,10 @@ function Get_HeadCamera_View_Files(Path)
 	table.sort(list_txt_action)
 	table.sort(list_txt_state)
 	table.sort(list_folder)
+	print(list_txt_button)
+	print(list_txt_action)
+	print(list_txt_state)
+	print(list_folder)
 	return list_folder, list_txt_action,list_txt_button, list_txt_state
 end
 

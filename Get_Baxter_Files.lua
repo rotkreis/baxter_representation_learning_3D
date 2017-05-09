@@ -7,6 +7,8 @@ local randomFactor = 20 -- For rep and prop priors
 ---------------------------------------------------------------------------------------
 function images_Paths(Path)
    local listImage={}
+   print('images_Paths:')
+   print(Path)
    for file in paths.files(Path) do
       -- We only load files that match the extension
       if file:find('jpg' .. '$') then
@@ -60,7 +62,8 @@ end
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
 ---------------------------------------------------------------------------------------
 function Get_HeadCamera_HeadMvt(Path)
-   local Path= Path or "./moreData/"
+   --print('Get_HeadCamera_HeadMvt Path:'..Path )
+   local Path= Path or "./moreData/"  --TODO: why Path becomes nil here if not reset again?
    local Paths_Folder, list_txt=Get_Folders(Path,'head_pan')
 
    table.sort(list_txt)

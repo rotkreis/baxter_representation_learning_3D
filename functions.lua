@@ -432,3 +432,10 @@ function getImage(im,length,height, coef_DA)
 	local img1_rsz=image.scale(image1,format)
 	return preprocessing(img1_rsz,length,height, coef_DA)
 end
+
+
+function file_exists(name)
+	--tests whether the file can be opened for reading
+   local f=io.open(name,"r")
+   if f~=nil then io.close(f) return true else return false end
+end

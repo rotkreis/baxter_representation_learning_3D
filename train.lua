@@ -14,7 +14,7 @@ require 'printing.lua'
 require 'Get_Images_Set'
 require 'Get_Baxter_Files'
 require 'priors'
-require "userscripts"
+require 'lfs'
 inspect = require ('inspect')--allows nicer printing of tensors --requires doing 'luarocks install inspect' in terminal
 
 --Different models in the way the FM (feature map) is constructed:
@@ -46,12 +46,6 @@ print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
 --made global for logging:
 LR=0.001 --0.00001
 print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." BatchSize: "..BatchSize..". Using data folder: "..Path)
-
-function file_exists(name)
-	--tests whether the file can be opened for reading
-   local f=io.open(name,"r")
-   if f~=nil then io.close(f) return true else return false end
-end
 
 function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 	local LR=LR or 0.001
@@ -131,6 +125,8 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	--Extracting rewards: 0 when button is not being pushed, 1 when it is pushed.
 	--No visual feedback at the moment, just logging for evaluation purposes
 	indice_test= nbList --4 --nbList
+	print('list_folders_images')
+	print(list_folders_images)
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
@@ -254,10 +250,9 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	end
 end
 
-----------------MAIN PROGRAM?---------------------------
+----------------MAIN PROGRAM---------------------------
 local Log_Folder='./Log/'
-local list_folders_images, list_txt=Get_HeadCamera_HeadMvt()
-
+--local list_folders_images, list_txt= Get_HeadCamera_HeadMvt()
 
 PRELOAD_FOLDER='./preload_folder_3D/'
 if not file_exists(PRELOAD_FOLDER) then
@@ -276,7 +271,7 @@ Tests_Todo={
 local Log_Folder='./Log/'..day..'/'
 name_load='./Log/Save/'..day..'.t7'
 
-list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(Path)
+list_folders_images, list_txt_action,list_txt_button, list_txt_state= Get_HeadCamera_View_Files(Path)
 local reload=false
 local TakeWeightFromAE=false
 
@@ -284,8 +279,8 @@ image_width=200
 image_height=200
 
 nbList= #list_folders_images
--- print('list_folders_images=')
--- print(list_folders_images)
+print('list_folders_images=')
+print(list_folders_images)
 
 for nb_test=1, #Tests_Todo do
 	torch.manualSeed(123) -- for reproducibility and debugging ToDO; only once?
