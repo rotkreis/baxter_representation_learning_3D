@@ -12,7 +12,7 @@ require 'MSDC'
 require 'functions.lua'
 require 'printing.lua'
 require 'Get_Images_Set'
-require 'Get_Baxter_Files'
+--require 'Get_Baxter_Files'
 require 'priors'
 require 'lfs'
 inspect = require ('inspect')--allows nicer printing of tensors --requires doing 'luarocks install inspect' in terminal
@@ -148,9 +148,11 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	-- print(Data_test)
 	-- print ('infos')
 	-- print(Data_test.Infos)
-	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
+
+	--TODO uncomment:
+	-- show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
 	print("Computing performance... ")
-	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
+	--Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
 
 	--real_temp_loss,real_prop_loss,real_rep_loss, real_caus_loss=real_loss(txt_test)
 	--print("temp loss : "..real_temp_loss)
@@ -159,7 +161,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	--print("caus loss : "..real_caus_loss[1])
 
 	print(nbList..' : sequences processed. Logging parameters...')
-	--printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BatchSize, nbEpoch, NbBatch, model_file)
+	printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BatchSize, nbEpoch, NbBatch, model_file)
 
 	for epoch=1, nbEpoch do
 		print('--------------Epoch : '..epoch..' ---------------')
@@ -279,8 +281,8 @@ image_width=200
 image_height=200
 
 nbList= #list_folders_images
-print('list_folders_images=')
-print(list_folders_images)
+--print('list_folders_images=')
+--print(list_folders_images)
 
 for nb_test=1, #Tests_Todo do
 	torch.manualSeed(123) -- for reproducibility and debugging ToDO; only once?

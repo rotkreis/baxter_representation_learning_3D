@@ -7,6 +7,7 @@
 function images_Paths(Path)
 	local listImage={}
 	--print('images_Paths: ', Path)
+	Path="./data_baxter" -- TODO: make it work by passing it as a parameter
 
 	for file in paths.files(Path) do
 		 --print('Loading files:  '..file)
@@ -70,6 +71,7 @@ end
 function Get_HeadCamera_View_Files(Path)
 	local use_simulate_images=use_simulate_images or false
 	print('Get_HeadCamera_View_Files(Path: '..Path)
+	local Path="data_baxter"
 	local Paths=Get_Folders(Path,'record')
 	list_folder={}
 	list_txt_button={}
@@ -86,10 +88,10 @@ function Get_HeadCamera_View_Files(Path)
 	table.sort(list_txt_action)
 	table.sort(list_txt_state)
 	table.sort(list_folder)
-	print(list_txt_button)
-	print(list_txt_action)
-	print(list_txt_state)
-	print(list_folder)
+	-- print(list_txt_button)
+	-- print(list_txt_action)
+	-- print(list_txt_state)
+	-- print(list_folder)
 	return list_folder, list_txt_action,list_txt_button, list_txt_state
 end
 
