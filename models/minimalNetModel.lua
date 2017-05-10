@@ -1,5 +1,3 @@
-
-
 require 'nn'
 
 -- network-----mini size net for cpu test runs only--------------------------------------------------

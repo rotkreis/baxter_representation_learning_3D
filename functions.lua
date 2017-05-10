@@ -1,3 +1,5 @@
+-- require 'nn'
+-- require 'nngraph'
 ---------------------------------------------------------------------------------------
 -- Function :save_model(model,path)
 -- Input ():
@@ -14,19 +16,19 @@ function save_model(model,path)
 	torch.save(path,lightModel)
 end
 
-
-
 ---------------------------------------------------------------------------------------
 -- Function : preprocessing(im, lenght, width, SpacialNormalization)
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
 function preprocessing(im, lenght, width,coef_DA)
-
-		-- Name channels for convenience
+	-- Name channels for convenience
 	local channels = {'y','u','v'}
 	local mean = {}
 	local std = {}
+	print("im")
+	print (im)
+	print(im[1])
 	data = torch.Tensor( 3, im:size(2), im:size(3))
 	data:copy(im)
 	for i,channel in ipairs(channels) do
@@ -168,10 +170,12 @@ end
 -- Output ():
 ---------------------------------------------------------------------------------------
 function getRandomBatchFromSeparateList(Data1,Data2, lenght, Mode)
-	-- print (#Data1.images)
-	-- print(#Data2.images)
-	-- print('images respectively')
-	--print (Data1.images)  # TODO: this 2 Data.images are empty
+	print (#Data1.images)
+	print(#Data2.images)
+	print('images respectively')
+	-- print (Data1.images) --TODO: this 2 Data.images are empty
+	-- print(Data1)
+	-- print(Data2)
 	local Dim=Data1.images[1]:size()
 	if Mode=="Prop" or Mode=="Rep" then
 		Batch=torch.Tensor(4, lenght,Dim[1], Dim[2], Dim[3])
@@ -434,8 +438,73 @@ function getImage(im,length,height, coef_DA)
 end
 
 
+----
 function file_exists(name)
 	--tests whether the file can be opened for reading
    local f=io.open(name,"r")
    if f~=nil then io.close(f) return true else return false end
+end
+
+
+--from Get_Baxter_Files:
+---------------------------------------------------------------------------------------
+-- Function :
+-- Input ():
+-- Output ():
+---------------------------------------------------------------------------------------
+function Get_Folders(Path, including)
+   local list= {}
+   local list_txt={}
+   for file in paths.files(Path) do
+      if file:find(including) then
+         Path_Folder= paths.concat(Path,file)
+         table.insert(list,paths.concat(Path_Folder,"Images"))
+         table.insert(list_txt, paths.concat(Path_Folder,"robot_joint_states.txt"))
+      end
+   end
+   return list, list_txt
+end
+
+---------------------------------------------------------------------------------------
+-- Function : Get_HeadCamera_HeadMvt(use_simulate_images)
+-- Input (use_simulate_images) : boolean variable which say if we use or not simulate images
+-- Output (list_head_left): list of the images directories path
+-- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
+---------------------------------------------------------------------------------------
+function Get_HeadCamera_HeadMvt(Path)
+   local Path= Path or "./moreData/"
+   local Paths_Folder, list_txt=Get_Folders(Path,'head_pan')
+
+   table.sort(list_txt)
+   table.sort(Paths_Folder)
+
+   return Paths_Folder, list_txt
+end
+
+--From functions 1D
+
+function loadTrainTest(list_folders_images, crossValStep, PRELOAD_FOLDER)
+   imgs = {}
+   preload_name = PRELOAD_FOLDER..'saveImgsRaw.t7'
+   print("Loading Images")
+
+   if not file_exists(preload_name) then
+      print("nbList",nbList)
+      for i=1,nbList do
+         list=images_Paths(list_folders_images[i])
+         table.insert(imgs,load_list(list,image_width,image_height,false))
+      end
+      torch.save(preload_name,imgs)
+   else
+      imgs = torch.load(preload_name)
+   end
+
+   -- switch value, because all functions consider the last element to be the test element
+   imgs[crossValStep], imgs[#imgs] = imgs[#imgs], imgs[crossValStep]
+   print("Preprocessing")
+   imgs,mean,std = preprocessing(imgs)
+
+   imgs_test = imgs[#imgs]
+   return imgs, imgs_test
+
 end

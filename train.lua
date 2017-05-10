@@ -31,7 +31,7 @@ if not useCUDA then
 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
 	--  by making "nb_part" larger than 50: -- ToDo: find a value less than 80 and more than 50 for data_baxter_short_seqs and <100 for data_baxter?
 	nb_part= 60
-	model_file='./models/minimalNetModel'
+	model_file='./models/minimalNetModel' -- TODO update model_file='./models/topTripleFM_Split'
 	BatchSize = 1
 else
 	nb_part = 50

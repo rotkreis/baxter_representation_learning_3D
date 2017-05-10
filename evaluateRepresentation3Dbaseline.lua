@@ -6,12 +6,16 @@
 
 
 require 'torch'
-require 'nn'
+--require 'nn'
 require 'cutorch'
-require 'cunn'
+--require 'cunn'
 require 'optim'
+--require 'xlua'
+--require 'nngraph'--require 'image'
 --require 'Get_Baxter_Files'
+require 'Get_Images_Set' -- images_Paths(Path)
 require 'functions'
+require 'lfs'
 
 local function ReprFromImgs(imgs,name)
   -- we save all metrics that are going to be used in the network for
@@ -271,14 +275,141 @@ function train(X,y, reconstruct)
    end
 end
 
-MODEL_PATH = 'Log/'
 
+function createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_simulate_images,LR, MODEL_FULL_PATH, preload_folder)
+   local BatchSize=16
+   local nbEpoch=2
+   local totalBatch=20
+   --local name_save=Log_Folder..'reprLearner1d.t7'
+   local coef_Temp=1
+   local coef_Prop=1
+   local coef_Rep=1
+   local coef_Caus=2
+   local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
+   local list_corr={}
+
+   local plot = true
+   local loading = true
+
+   nbList= #list_folders_images
+
+   for crossValStep=1,nbList do
+      models = createModels(MODEL_FULL_PATH)
+      currentLogFolder=Log_Folder..'CrossVal'..crossValStep..'/' --*
+      current_preload_file = preload_folder..'imgsCv'..crossValStep..'.t7'
+
+      if file_exists(current_preload_file) and loading then
+         print("Data Already Exists, Loading")
+         imgs = torch.load(current_preload_file)
+         imgs_test = imgs[#imgs]
+      else
+         local imgs, imgs_test = loadTrainTest(list_folders_images,crossValStep, preload_folder)
+         torch.save(current_preload_file, imgs)
+      end
+
+      -- we use last list as test
+      list_txt[crossValStep],list_txt[#list_txt] = list_txt[#list_txt], list_txt[crossValStep]
+      local txt_test=list_txt[#list_txt]
+      local truth=getTruth(txt_test,use_simulate_images)
+
+      assert(#imgs_test==#truth,"Different number of images and corresponding ground truth, something is wrong \nNumber of Images : "..#imgs_test.." and Number of truth value : "..#truth)
+
+      if plot then
+         show_figure(truth,currentLogFolder..'GroundTruth.log')
+      end
+      corr=Print_performance(models, imgs_test,txt_test,"First_Test",currentLogFolder,truth,false)
+      print("Correlation before training : ", corr)
+      table.insert(list_corr,corr)
+      print("Training")
+      for epoch=1, nbEpoch do
+         print('--------------Epoch : '..epoch..' ---------------')
+         local lossTemp=0
+         local lossRep=0
+         local lossProp=0
+         local lossCaus=0
+
+         local causAdded = 0
+
+         for numBatch=1,totalBatch do
+            indice1=torch.random(1,nbList-1)
+            repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
+
+            txt1=list_txt[indice1]
+            txt2=list_txt[indice2]
+
+            imgs1=imgs[indice1]
+            imgs2=imgs[indice2]
+
+            batch=getRandomBatch(imgs1,imgs2,txt1,txt2,BatchSize,"Temp")
+            lossTemp = lossTemp + Rico_Training(models,'Temp',batch, coef_Temp,LR)
+
+            batch=getRandomBatch(imgs1,imgs2,txt1,txt2,BatchSize,"Caus")
+            lossCaus = lossCaus + Rico_Training(models, 'Caus',batch, 1,LR)
+
+            batch=getRandomBatch(imgs1,imgs2,txt1,txt2,BatchSize,"Prop")
+            lossProp = lossProp + Rico_Training(models, 'Prop',batch, coef_Prop,LR)
+
+            batch=getRandomBatch(imgs1,imgs2,txt1,txt2,BatchSize,"Rep")
+            lossRep = lossRep + Rico_Training(models,'Rep',batch, coef_Rep,LR)
+
+            xlua.progress(numBatch, totalBatch)
+
+         end
+         corr=Print_performance(models, imgs_test,txt_test,"Test",currentLogFolder,truth,false)
+         print("Correlation : ", corr)
+         print("lossTemp",lossTemp/totalBatch)
+         print("lossProp",lossProp/totalBatch)
+         print("lossRep",lossRep/totalBatch)
+         print("lossCaus",lossCaus/(totalBatch+causAdded))
+         table.insert(list_corr,corr)
+
+      end
+      corr=Print_performance(models, imgs_test,txt_test,"Test",currentLogFolder,truth,plot)
+      --show_figure(list_corr,currentLogFolder..'correlation.log','-')
+
+      --for reiforcement, we need mean and std to normalize representation
+      print("SAVING MODEL AND REPRESENTATIONS")
+      saveMeanAndStdRepr(imgs)
+      models.model1:float()
+      --save_model(models.model1,name_save)
+      list_txt[crossValStep],list_txt[#list_txt] = list_txt[#list_txt], list_txt[crossValStep]
+   end
+end
+
+--from functions 1D
+function createModels(MODEL_FULL_PATH)
+   if LOADING then
+      print("Loading Model..."..MODEL_FULL_PATH)
+      if file_exists(MODEL_FULL_PATH) then
+         model = torch.load(MODEL_FULL_PATH)  --Log_Folder..'20e.t7'
+      else
+         print("Model file does not exist!")
+         os.exit()
+      end
+   else
+      model=getModel()
+      print(model)
+   end
+
+   model=model:cuda()
+   parameters,gradParameters = model:getParameters()
+   model2=model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
+   model3=model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
+   model4=model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
+
+   models={model1=model,model2=model2,model3=model3,model4=model4}
+   return models
+
+end
+
+
+MODEL_PATH = 'Log/'
 --MODEL_NAME, name = 'Save97Win/reprLearner1d.t7', '97'
 --MODEL_NAME,name = 'reprLearner1dWORKS.t7', 'works'
 
-MODEL_NAME,name = 'reprLearner3d.t7', 'default'
+MODEL_NAME,name = 'reprLearner3d.t7', 'default'  --TODO create
 -- if this doesn't exist, it means you didn't run 'train.lua'
-
+MODEL_FULL_PATH = MODEL_PATH..MODEL_NAME
 PATH_RAW_DATA = 'moreData/'
 PATH_PRELOAD_DATA = 'preload_folder_3D/'
 DATA = PATH_PRELOAD_DATA..'imgsCv1.t7'
@@ -287,7 +418,7 @@ SIZE_BATCH=60
 NB_EPOCH=100
 LR=0.01
 PLOT = true
-LOADING = true
+LOADING = false --true
 
 TASK = 2
 -- Our representation learnt should be coordinate independent, as it is not aware of
@@ -296,6 +427,25 @@ TASK = 2
 -- These will be our score baseline to compare with
 reconstructingTask = true
 
+---------------------------------
+
+local LR=0.00001
+local dataAugmentation=true
+Log_Folder='./Log/'
+local list_folders_images, list_txt=Get_HeadCamera_HeadMvt()
+
+if not file_exists(PATH_PRELOAD_DATA) then
+   lfs.mkdir(PATH_PRELOAD_DATA)
+end
+
+if not file_exists(Log_Folder) then
+   lfs.mkdir(Log_Folder)
+end
+
+require('./models/convolutional')
+createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_simulate_images,LR,MODEL_FULL_PATH, PATH_PRELOAD_DATA)
+imgs={}
+------------------------------------
 
 local imgs = torch.load(DATA)
 imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values
