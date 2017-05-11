@@ -183,16 +183,13 @@ local Log_Folder='./Log/'..day..'/'
 
 name_load='./Log/Save/'..day..'.t7'
 
-list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files()
+list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 local reload=false
 local TakeWeightFromAE=false
 model_file='./models/topTripleFM_Split'
 
-if UseSecondGPU then
-   cutorch.setDevice(2) 
-end
-
 nbList= #list_folders_images
+
 torch.manualSeed(123)
 
 for nb_test=1, #Tests_Todo do
@@ -212,7 +209,11 @@ for nb_test=1, #Tests_Todo do
       Model=getModel()
       --graph.dot(Model.fg, 'Big MLP')
    end
-   Model=Model:cuda()
+
+   if USE_CUDA then
+      Model=Model:cuda()
+   end
+   
    parameters,gradParameters = Model:getParameters()
    Model2=Model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
    Model3=Model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')

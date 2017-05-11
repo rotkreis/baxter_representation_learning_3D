@@ -7,9 +7,6 @@ require 'const'
 ---------------------------------------------------------------------------------------
 function save_model(model,path)
    print("Saved at : "..path)
-   if useCUDA then
-      model:cuda()
-   end
    parameters, gradParameters = model:getParameters()
    local lightModel = model:clone():float()
    lightModel:clearState()
@@ -26,9 +23,9 @@ function preprocess_image(im, length, width,coef_DA)
    local channels = {'y','u','v'}
    local mean = {}
    local std = {}
-   print("preprocess_image: im:")
-   print (im)
-   print(im[1])
+   -- print("preprocess_image: im:")
+   -- print (im)
+   -- print(im[1])
 
    data = torch.Tensor( 3, im:size(2), im:size(3))
    data:copy(im)
@@ -460,38 +457,8 @@ function getImage(im,length,height, coef_DA)
    return preprocess_image(img1_rsz,length,height, coef_DA)
 end
 
-----
 function file_exists(name)
    --tests whether the file can be opened for reading
    local f=io.open(name,"r")
    if f~=nil then io.close(f) return true else return false end
-end
-
----------------------------------------------------------------------------------------
--- Function : getTruth(txt,use_simulate_images)   3D function
--- Input (txt) :
--- Input (use_simulate_images) :
--- Input (arrondit) :
--- Output (truth):
----------------------------------------------------------------------------------------
-function get_Truth_3D(txt_joint, nb_part, part)
-   local x=2
-   local y=3
-   local z=4
-   print ('get_Truth_3D for nb_part: ')
-   print(nb_part)
-   part = 1
-   local tensor, label=tensorFromTxt(txt_joint)
-   local list_length = torch.floor((#tensor[{}])[1]/nb_part)
-   local start=list_length*part +1
-   local part_last_index = start+list_length
-   local list_truth={}
-   for i=start,part_last_index do--(#tensor[{}])[1] do
-      local truth=torch.Tensor(3)
-      truth[1]=tensor[i][x]
-      truth[2]=tensor[i][y]
-      truth[3]=tensor[i][z]
-      table.insert(list_truth,truth)
-   end
-   return list_truth, part_last_index
 end
