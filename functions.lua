@@ -1,5 +1,6 @@
 -- require 'nn'
 -- require 'nngraph'
+--require 'lfs'
 ---------------------------------------------------------------------------------------
 -- Function :save_model(model,path)
 -- Input ():
@@ -373,9 +374,22 @@ function load_Part_list(list,txt,txt_reward,im_lenght,im_height,nb_part,part,tra
 	local start=list_lenght*part +1
 	local Infos,ThereIsReward=getInfos(txt,txt_reward,start,list_lenght,txt_state)
 	for i=start, start+list_lenght do
-		table.insert(im,getImage(list[i],im_lenght,im_height,train))
+		table.insert(im, getImage(list[i],im_lenght,im_height,train))
 	end
 	return {images=im,Infos=Infos},ThereIsReward
+end
+
+---------------------------------------------------------------------------------------
+-- Function : getImage(im,length,height,SpacialNormalization)
+-- Input ():
+-- Output ():
+---------------------------------------------------------------------------------------
+function getImage(im,length,height, coef_DA)
+	if im=='' or im==nil then return nil end
+	local image1=image.load(im,3,'float')
+	local format=length.."x"..height
+	local img1_rsz=image.scale(image1,format)
+	return preprocess_image(img1_rsz,length,height, coef_DA)
 end
 
 
@@ -416,20 +430,6 @@ table.insert(Infos.reward,reward)
 
 end
 
----------------------------------------------------------------------------------------
--- Function : getImage(im,length,height,SpacialNormalization)
--- Input ():
--- Output ():
----------------------------------------------------------------------------------------
-function getImage(im,length,height, coef_DA)
-	if im=='' or im==nil then return nil end
-	local image1=image.load(im,3,'float')
-	local format=length.."x"..height
-	local img1_rsz=image.scale(image1,format)
-	return preprocess_image(img1_rsz,length,height, coef_DA)
-end
-
-
 ----
 function file_exists(name)
 	--tests whether the file can be opened for reading
@@ -437,44 +437,7 @@ function file_exists(name)
    if f~=nil then io.close(f) return true else return false end
 end
 
-
 --from Get_Baxter_Files:
----------------------------------------------------------------------------------------
--- Function :
--- Input ():
--- Output ():
----------------------------------------------------------------------------------------
-function Get_Folders(Path, including)
-   local list= {}
-   local list_txt={}
-   for file in paths.files(Path) do
-      if file:find(including) then
-         Path_Folder= paths.concat(Path,file)
-         table.insert(list,paths.concat(Path_Folder,"Images"))
-         table.insert(list_txt, paths.concat(Path_Folder,"robot_joint_states.txt"))
-      end
-   end
-   return list, list_txt
-end
-
----------------------------------------------------------------------------------------
--- Function : Get_HeadCamera_HeadMvt(use_simulate_images)
--- Input (use_simulate_images) : boolean variable which say if we use or not simulate images
--- Output (list_head_left): list of the images directories path
--- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
----------------------------------------------------------------------------------------
--- function Get_HeadCamera_HeadMvt(Path)
---    local Path= Path or "./moreData/"
---    local Paths_Folder, list_txt=Get_Folders(Path,'head_pan')
---
---    table.sort(list_txt)
---    table.sort(Paths_Folder)
---
---    return Paths_Folder, list_txt
--- end
-
---From functions 1D
-
 function loadTrainTest(list_folders_images, crossValStep, PRELOAD_FOLDER)
    imgs = {}
    preload_name = PRELOAD_FOLDER..'saveImgsRaw.t7'

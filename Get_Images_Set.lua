@@ -1,35 +1,60 @@
 
 ---------------------------------------------------------------------------------------
--- Function : images_Paths(path)
--- Input (Path): path of a Folder which contained jpg images
+-- Function : images_Paths(path)  #TODO remove to avoid conflict with 1D
+-- Input (Path): path of a Folder which contains jpg images
 -- Output : list of the jpg files path
 ---------------------------------------------------------------------------------------
-function images_Paths(Path)
+function images_Paths(folder_containing_jpgs)
 	local listImage={}
-	--print('images_Paths: ', Path)
-	Path="./data_baxter" -- TODO: make it work by passing it as a parameter
+	print('images_Paths: ', folder_containing_jpgs)
+	--folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
 
-	for file in paths.files(Path) do
-		 --print('Loading files:  '..file)
+	for file in paths.files(folder_containing_jpgs) do
+		 print('getting image path:  '..file)
 	   -- We only load files that match the extension
 	   if file:find('jpg' .. '$') then
 	      -- and insert the ones we care about in our table
-	      table.insert(listImage, paths.concat(Path,file))
-				--print('Inserted image :  '..paths.concat(Path,file))
+	      table.insert(listImage, paths.concat(folder_containing_jpgs,file))
+				print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
 	   end
 	end
 	table.sort(listImage)
-	print('Loaded images from Path: '..Path)
+	print('Loaded images from Path: '..folder_containing_jpgs)
+	print(listImage)
 	return listImage
 end
 
+---------------------------------------------------------------------------------------
+-- Function : images_Paths(path)
+-- Input (Path): path of a Folder which contains jpg images
+-- Output : list of the jpg files path
+---------------------------------------------------------------------------------------
+function get_images_paths(folder_containing_jpgs)
+	local listImage={}
+	print('get_images_paths: ', folder_containing_jpgs)
+	--folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
+
+	for file in paths.files(folder_containing_jpgs) do
+		 print('getting image path:  '..file)
+	   -- We only load files that match the extension
+	   if file:find('jpg' .. '$') then
+	      -- and insert the ones we care about in our table
+	      table.insert(listImage, paths.concat(folder_containing_jpgs,file))
+				print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
+	   end
+	end
+	table.sort(listImage)
+	print('got_images_paths from Path: '..folder_containing_jpgs)
+	print(listImage)
+	return listImage
+end
 
 ---------------------------------------------------------------------------------------
 -- Function :
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function txt_path(Path,including)
+function txt_path(Path, including)
 	local including=including or ""
 	local txt=nil
 	for file in paths.files(Path) do
@@ -49,18 +74,18 @@ function Get_Folders(Path, including, excluding,list)
 	local list=list or {}
 	local incl=including or ""
 	local excl=excluding or "uyfouhjbhytfoughl" -- random motif
-
 	for file in paths.files(Path) do
 	   -- We only load files that match 2016 because we know that there are the folder we are interested in
 	   if file:find(incl) and (not file:find(excl)) then
 	      -- and insert the ones we care about in our table
+				--print('Get_Folders '..Path..' found pattern in filename: '..paths.concat(Path,file))
 	      table.insert(list, paths.concat(Path,file))
-	   end
+	   else
+			 print('Get_Folders '..Path..' did not find pattern :'..incl..' Check the structure of your data folders')
+		 end
 	end
-	--print ('Path '..Path..' including '..incl..', excluding '..excl..', list of size: '.. #list)
 	return list
 end
-
 
 ---------------------------------------------------------------------------------------
 -- Function : Get_HeadCamera_HeadMvt(use_simulate_images) --TODO: Get_HeadCamera_HeadMvt?
@@ -70,7 +95,7 @@ end
 ---------------------------------------------------------------------------------------
 function Get_HeadCamera_View_Files(Path)
 	local use_simulate_images=use_simulate_images or false
-	print('Get_HeadCamera_View_Files(Path: '..Path)
+	--print('Get_HeadCamera_View_Files(Path: '..Path)
 	--local Path="./data_baxter"
 	local Paths=Get_Folders(Path,'record')
 	print (Paths)

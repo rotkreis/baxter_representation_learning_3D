@@ -10,7 +10,8 @@ require 'cutorch'
 require 'cunn'
 require 'optim'
 --require 'xlua'
---require 'nngraph'--require 'image'
+--require 'nngraph'
+require 'image'
 --require 'Get_Baxter_Files'
 require 'Get_Images_Set' -- images_Paths(Path)
 require 'functions'
@@ -479,8 +480,6 @@ end
 -- to y,x,z, or if we add Gaussian noise to the true positions x,y,z of Baxter arm.
 -- These will be our score baseline to compare with
 reconstructingTask = true
-
----------------------------------
 local dataAugmentation=true
 --local list_folders_images, list_txt=Get_HeadCamera_HeadMvt() local _, list_txt=Get_HeadCamera_HeadMvt(PATH_RAW_DATA)
 
@@ -492,17 +491,18 @@ if not file_exists(Log_Folder) then
 end
 
 ---
-indice_test = nbList --4 --nbList
+indice_test = 1--nbList --4 --nbList
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(PATH_RAW_DATA)
-print("list_folders_images")
-print(list_folders_images)
+print("Got list_folders_images: ")
+print(#list_folders_images)
 if #list_folders_images >0 then
-	local list_truth=images_Paths(list_folders_images[indice_test])
+	--print('get_images_paths'..list_folders_images[indice_test])
+	local list_image_paths= get_images_paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
 	part_test=1
-	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
-	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
+	Data_test=load_Part_list(list_image_paths,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
+	local truth=get_Truth_3D(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
 	print("Plotting the truth... ")
 	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
 	print("Computing performance... ")
