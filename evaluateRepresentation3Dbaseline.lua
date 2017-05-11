@@ -4,11 +4,10 @@
  BASELINE
 ]]--
 
-
 require 'torch'
---require 'nn'
+require 'nn'
 require 'cutorch'
---require 'cunn'
+require 'cunn'
 require 'optim'
 --require 'xlua'
 --require 'nngraph'--require 'image'
@@ -17,11 +16,58 @@ require 'Get_Images_Set' -- images_Paths(Path)
 require 'functions'
 require 'lfs'
 
-local function ReprFromImgs(imgs,name)
+
+
+------------------------------------ MAIN PROGRAM
+-----------------SETTINGS
+useCUDA = false
+UseSecondGPU= true
+nb_part = 50
+if not useCUDA then
+	UseSecondGPU = false
+	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
+	--  by making "nb_part" larger than 50: -- ToDo: find a value less than 80 and more than 50 for data_baxter_short_seqs and <100 for data_baxter?
+	nb_part= 60
+	model_file='./models/minimalNetModel' -- TODO update model_file='./models/topTripleFM_Split'
+	SIZE_BATCH= 1 --60
+else
+	model_file='./models/topTripleFM_Split'
+	SIZE_BATCH = 2 --60
+end
+if UseSecondGPU then
+	cutorch.setDevice(2)
+end
+---------------------------------------
+
+MODEL_PATH = 'Log/'
+Log_Folder = './Log/'
+--MODEL_NAME, name = 'Save97Win/reprLearner1d.t7', '97'
+--MODEL_NAME,name = 'reprLearner1dWORKS.t7', 'works'
+
+MODEL_NAME, representationsName = 'reprLearner3d.t7', 'default'  --TODO create
+-- if this doesn't exist, it means you didn't run 'train.lua'
+MODEL_FULL_PATH = MODEL_PATH..MODEL_NAME
+PATH_RAW_DATA = './data_baxter/'
+--PATH_RAW_DATA ="./data_baxter_short_seqs" -- Shorter sequences dataset
+PATH_PRELOAD_DATA = 'preload_folder_3D/'
+DATA = PATH_PRELOAD_DATA..'imgsCv1.t7'
+
+NB_EPOCH=100
+LR=0.01
+PLOT = true
+LOADING = false --true
+TASK = 2
+print('Running main script with useCUDA flag: '..tostring(useCUDA))
+print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." BatchSize: "..SIZE_BATCH..". Using data folder: "..PATH_RAW_DATA.." Model file Torch: "..model_file..'Preloaded DATA: '..DATA)
+
+
+
+local function getReprFromImgs(imgs, preload_folder, epresentations_name, model_full_path)
   -- we save all metrics that are going to be used in the network for
   -- efficiency (images that fulfill the criteria for each prior and their stats
   -- such as mean and std to avoid multiple computations )
-   local fileName = 'preload_folder_3D/'..'allReprSaved'..name..'.t7'
+   local fileName = preload_folder..'allReprSaved'..representations_name..'.t7'
 
    if file_exists(fileName) then
       return torch.load(fileName)
@@ -33,7 +79,8 @@ local function ReprFromImgs(imgs,name)
    print("Number of sequences to calculate :"..#imgs..' totalBatch: '..totalBatch)
 
    X = {}
-   local model = torch.load(MODEL_PATH..MODEL_NAME)
+   print('getReprFromImgs by loading model: '..MODEL_PATH..MODEL_NAME)
+   local model = torch.load(model_full_path)
    for numSeq,seq in ipairs(imgs) do
       print("numSeq",numSeq)
       for i,img in ipairs(seq) do
@@ -51,7 +98,6 @@ end
 local function HeadPosFromTxts(txts, isData)
    --Since i use this function for creating X tensor for debugging
    -- or y tensor, the label tensor, i need a flag just to tell if i need X or y
-
    --isData = true => X tensor      isData = false => y tensor
 
    T = {}
@@ -61,7 +107,6 @@ local function HeadPosFromTxts(txts, isData)
          T[#T+1] = head_pos
       end
    end
-
    T = torch.Tensor(T)
 
    if isData then --is it X or y that you need ?
@@ -69,7 +114,6 @@ local function HeadPosFromTxts(txts, isData)
       Ttemp[{{},1}] = T
       T = Ttemp
    end
-
    return T
 end
 
@@ -87,12 +131,10 @@ local function RewardsFromTxts(txts)
          end
       end
    end
-
    return torch.Tensor(y)
 end
 
 local function RandomBatch(X,y,sizeBatch)
-
    local numSeq = X:size(1)
    batch = torch.zeros(sizeBatch,1)
    y_temp = torch.zeros(sizeBatch)
@@ -102,7 +144,6 @@ local function RandomBatch(X,y,sizeBatch)
       batch[{i,1}] = X[{id,1}]
       y_temp[i] = y[id]
    end
-
    -- print("batch",batch)
    -- print("y_temp",y_temp)
    -- io.read()
@@ -111,14 +152,11 @@ local function RandomBatch(X,y,sizeBatch)
      y_temp = y_temp:cuda()
    end
    return batch, y_temp
-
 end
 
 function Rico_Training(model,batch,y,reconstruct, LR)
-
    local criterion
    local optimizer = optim.adam
-
    if reconstruct then
       if useCUDA then
         criterion = nn.SmoothL1Criterion():cuda()
@@ -143,16 +181,13 @@ function Rico_Training(model,batch,y,reconstruct, LR)
       end
       -- reset gradients
       gradParameters:zero()
-
       local yhat = model:forward(batch)
       local loss = criterion:forward(yhat,y)
-
       local grad = criterion:backward(yhat,y)
       model:backward(batch, grad)
 
       return loss,gradParameters
    end
-
    optimState={learningRate=LR}
    parameters, loss=optimizer(feval, parameters, optimState)
    return loss[1]
@@ -164,8 +199,7 @@ function accuracy(X_test,y_test,model)
     local yhat = model:forward(X_test:cuda())
    else
     local yhat = model:forward(X_test)
-   end
-
+  end
 
    _,yId = torch.max(yhat,2)
    for i=1,X_test:size(1) do
@@ -183,7 +217,6 @@ function accuracy_reconstruction(X_test,y_test, model)
    else
     local yhat = model:forward(X_test)
    end
-
    -- print("yhat",yhat[1][1],yhat[2][1],yhat[3][1],yhat[4][1],yhat[60][1])
    -- print("y",truth[1],truth[2],truth[3],truth[4],truth[60])
 
@@ -225,7 +258,6 @@ function createModelReconstruction()
    end
 end
 
-
 function train(X,y, reconstruct)
    reconstruct = reconstruct or true
 
@@ -255,9 +287,7 @@ function train(X,y, reconstruct)
    parameters,gradParameters = model:getParameters()
 
    for epoch=1, NB_EPOCH do
-
       local lossTemp=0
-
       for numBatch=1, NB_BATCH do
          batch_temp, y = RandomBatch(X_train,y_train,SIZE_BATCH)
          lossTemp = lossTemp + Rico_Training(model,batch_temp,y, reconstruct, LR)
@@ -275,8 +305,7 @@ function train(X,y, reconstruct)
    end
 end
 
-
-function createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_simulate_images,LR, MODEL_FULL_PATH, preload_folder)
+function createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_simulate_images,LR, model_full_path, preload_folder)
    local BatchSize=16
    local nbEpoch=2
    local totalBatch=20
@@ -291,18 +320,22 @@ function createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_s
    local plot = true
    local loading = true
 
+	 print('list_folders_images')
+	 print(list_folders_images)
    nbList= #list_folders_images
-
+   local part = 1 --
+   local next_part_start_index = part
    for crossValStep=1,nbList do
-      models = createModels(MODEL_FULL_PATH)
+      models = createModels(model_full_path)
       currentLogFolder=Log_Folder..'CrossVal'..crossValStep..'/' --*
       current_preload_file = preload_folder..'imgsCv'..crossValStep..'.t7'
 
       if file_exists(current_preload_file) and loading then
-         print("Data Already Exists, Loading")
+         print("Preloaded Data Already Exists, Loading...")
          imgs = torch.load(current_preload_file)
          imgs_test = imgs[#imgs]
       else
+         print("Preloaded Data Does Not Exists. Loading Training and Test and saving to "..current_preload_file)
          local imgs, imgs_test = loadTrainTest(list_folders_images,crossValStep, preload_folder)
          torch.save(current_preload_file, imgs)
       end
@@ -310,16 +343,18 @@ function createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_s
       -- we use last list as test
       list_txt[crossValStep],list_txt[#list_txt] = list_txt[#list_txt], list_txt[crossValStep]
       local txt_test=list_txt[#list_txt]
-      local truth=getTruth(txt_test,use_simulate_images)
+      local truth, next_part_start_index = get_Truth_3D(txt_test,nb_part, next_part_start_index)-- getTruth(txt_test,use_simulate_images)
+      print (txt_test)
+      print(list_txt)
 
-      assert(#imgs_test==#truth,"Different number of images and corresponding ground truth, something is wrong \nNumber of Images : "..#imgs_test.." and Number of truth value : "..#truth)
+      assert(#imgs_test==#truth,"Different number of images and corresponding ground truth, something is wrong \nNumber of Images : "..#imgs_test.." and Number of truth values : "..#truth)
 
       if plot then
          show_figure(truth,currentLogFolder..'GroundTruth.log')
       end
-      corr=Print_performance(models, imgs_test,txt_test,"First_Test",currentLogFolder,truth,false)
-      print("Correlation before training : ", corr)
-      table.insert(list_corr,corr)
+      -- corr=Print_performance(models, imgs_test,txt_test,"First_Test",currentLogFolder,truth,false)
+      -- print("Correlation before training : ", corr)
+      -- table.insert(list_corr,corr)
       print("Training")
       for epoch=1, nbEpoch do
          print('--------------Epoch : '..epoch..' ---------------')
@@ -355,14 +390,11 @@ function createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_s
             xlua.progress(numBatch, totalBatch)
 
          end
-         corr=Print_performance(models, imgs_test,txt_test,"Test",currentLogFolder,truth,false)
-         print("Correlation : ", corr)
+         --corr=Print_performance(models, imgs_test,txt_test,"Test",currentLogFolder,truth,false)
          print("lossTemp",lossTemp/totalBatch)
          print("lossProp",lossProp/totalBatch)
          print("lossRep",lossRep/totalBatch)
          print("lossCaus",lossCaus/(totalBatch+causAdded))
-         table.insert(list_corr,corr)
-
       end
       corr=Print_performance(models, imgs_test,txt_test,"Test",currentLogFolder,truth,plot)
       --show_figure(list_corr,currentLogFolder..'correlation.log','-')
@@ -396,31 +428,52 @@ function createModels(MODEL_FULL_PATH)
    model2=model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
    model3=model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
    model4=model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
-
    models={model1=model,model2=model2,model3=model3,model4=model4}
    return models
-
 end
 
 
-MODEL_PATH = 'Log/'
---MODEL_NAME, name = 'Save97Win/reprLearner1d.t7', '97'
---MODEL_NAME,name = 'reprLearner1dWORKS.t7', 'works'
+local function getHandPosFromTxts(txts, nb_part, part)
+   --Since i use this function for creating X tensor for debugging
+   -- or y tensor, the label tensor, i need a flag just to tell if i need X or y
+   --isData = true => X tensor      isData = false => y tensor
+   T = {}
+   for l, txt in ipairs(txts) do
+      truth, part = get_Truth_3D(txt, nb_part, part)
+      for i, hand_pos in ipairs(truth) do
+         T[#T+1] = hand_pos
+      end
+   end
 
-MODEL_NAME,name = 'reprLearner3d.t7', 'default'  --TODO create
--- if this doesn't exist, it means you didn't run 'train.lua'
-MODEL_FULL_PATH = MODEL_PATH..MODEL_NAME
-PATH_RAW_DATA = 'moreData/'
-PATH_PRELOAD_DATA = 'preload_folder_3D/'
-DATA = PATH_PRELOAD_DATA..'imgsCv1.t7'
+   T = torch.Tensor(T)
 
-SIZE_BATCH=60
-NB_EPOCH=100
-LR=0.01
-PLOT = true
-LOADING = false --true
+   if isData then --is it X or y that you need ?
+      Ttemp = torch.zeros(T:size(1),1)
+      Ttemp[{{},1}] = T
+      T = Ttemp
+   end
 
-TASK = 2
+   return T
+end
+
+local function getRewardsFromTxts(txt_joint, nb_parts, part)
+   y = {}
+    for l, txt in ipairs(txt_joint) do
+       truth, part = get_Truth_3D(txt_joint, nb_part, part)
+       for i, head_pos in ipairs(truth) do
+          if head_pos.x < 0.1 and head_pos.x > -0.1 then
+						--TODO: get real positions of the button
+             y[#y+1] = 1  -- negative vs positive reward
+          else
+             y[#y+1] = 2
+          end
+       end
+    end
+   return torch.Tensor(y)
+end
+
+
+------------------------------------
 -- Our representation learnt should be coordinate independent, as it is not aware of
 -- what is x,y,z and thus, we should be able to reconstruct the state by switching
 -- to y,x,z, or if we add Gaussian noise to the true positions x,y,z of Baxter arm.
@@ -428,40 +481,56 @@ TASK = 2
 reconstructingTask = true
 
 ---------------------------------
-
-local LR=0.00001
 local dataAugmentation=true
-Log_Folder='./Log/'
-local list_folders_images, list_txt=Get_HeadCamera_HeadMvt()
+--local list_folders_images, list_txt=Get_HeadCamera_HeadMvt() local _, list_txt=Get_HeadCamera_HeadMvt(PATH_RAW_DATA)
 
 if not file_exists(PATH_PRELOAD_DATA) then
    lfs.mkdir(PATH_PRELOAD_DATA)
 end
-
 if not file_exists(Log_Folder) then
    lfs.mkdir(Log_Folder)
 end
 
-require('./models/convolutional')
-createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_simulate_images,LR,MODEL_FULL_PATH, PATH_PRELOAD_DATA)
-imgs={}
-------------------------------------
+---
+indice_test = nbList --4 --nbList
+list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(PATH_RAW_DATA)
+print("list_folders_images")
+print(list_folders_images)
+if #list_folders_images >0 then
+	local list_truth=images_Paths(list_folders_images[indice_test])
+	txt_test=list_txt_state[indice_test]
+	txt_reward_test=list_txt_button[indice_test]
+	part_test=1
+	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
+	local truth=getTruth(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
+	print("Plotting the truth... ")
+	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
+	print("Computing performance... ")
+	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
+	---
 
-local imgs = torch.load(DATA)
-imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values
+	require('./models/convolutional')
+	createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_simulate_images,LR,MODEL_FULL_PATH, PATH_PRELOAD_DATA)
+	imgs={}
+	------------------------------------
+	local imgs = torch.load(DATA)
+	imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values
 
-local _, list_txt=Get_HeadCamera_HeadMvt(PATH_RAW_DATA)
 
-if reconstructingTask then
-   y = HeadPosFromTxts(list_txt,false)
+	if reconstructingTask then
+	   y = getHandPosFromTxts(list_txt, nb_part, 1)
+	else
+	   y = getHandPosRewardsFromTxts(list_txt, nb_part, 1)
+	end
+
+	--X = HeadPosFromTxts(list_txt,true)
+	-- predict:
+	X = getReprFromImgs(imgs, PATH_PRELOAD_DATA,representationsName, MODEL_FULL_PATH)
+
+	NB_BATCH=math.floor(X:size(1)/SIZE_BATCH)
+
+	train(X,y,reconstructingTask)
 else
-   y = RewardsFromTxts(list_txt)
+	print("Input image files not found, check your PATH_RAW_DATA global variable")
+	os.exit()
 end
-
---X = HeadPosFromTxts(list_txt,true)
--- predict:
-X = ReprFromImgs(imgs, name)
-
-NB_BATCH=math.floor(X:size(1)/SIZE_BATCH)
-
-train(X,y,reconstructingTask)

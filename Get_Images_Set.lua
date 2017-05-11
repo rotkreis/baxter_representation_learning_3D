@@ -71,8 +71,9 @@ end
 function Get_HeadCamera_View_Files(Path)
 	local use_simulate_images=use_simulate_images or false
 	print('Get_HeadCamera_View_Files(Path: '..Path)
-	local Path="data_baxter"
+	--local Path="./data_baxter"
 	local Paths=Get_Folders(Path,'record')
+	print (Paths)
 	list_folder={}
 	list_txt_button={}
 	list_txt_action={}
@@ -287,34 +288,6 @@ function get_one_random_Caus_Set(Infos1,Infos2)
 		WatchDog=WatchDog+1
 	end
 	print("CAUS WATCHDOG ATTACK!!!!!!!!!!!!!!!!!!")
-end
-
-
----------------------------------------------------------------------------------------
--- Function : getTruth(txt,use_simulate_images)
--- Input (txt) :
--- Input (use_simulate_images) :
--- Input (arrondit) :
--- Output (truth):
----------------------------------------------------------------------------------------
-function getTruth(txt_joint, nb_part, part)
-	local x=2
-	local y=3
-	local z=4
-
-	local tensor, label=tensorFromTxt(txt_joint)
-	local list_lenght = torch.floor((#tensor[{}])[1]/nb_part)
-	local start=list_lenght*part +1
-
-	local list_truth={}
-	for i=start, start+list_lenght do--(#tensor[{}])[1] do
-		local truth=torch.Tensor(3)
-		truth[1]=tensor[i][x]
-		truth[2]=tensor[i][y]
-		truth[3]=tensor[i][z]
-		table.insert(list_truth,truth)
-	end
-	return list_truth
 end
 
 

@@ -17,18 +17,19 @@ function save_model(model,path)
 end
 
 ---------------------------------------------------------------------------------------
--- Function : preprocessing(im, lenght, width, SpacialNormalization)
+-- Function : preprocess_image(im, lenght, width, SpacialNormalization) former preprocess
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function preprocessing(im, lenght, width,coef_DA)
+function preprocess_image(im, lenght, width,coef_DA)
 	-- Name channels for convenience
 	local channels = {'y','u','v'}
 	local mean = {}
 	local std = {}
-	print("im")
+	print("preprocess_image: im:")
 	print (im)
 	print(im[1])
+
 	data = torch.Tensor( 3, im:size(2), im:size(3))
 	data:copy(im)
 	for i,channel in ipairs(channels) do
@@ -38,9 +39,6 @@ function preprocessing(im, lenght, width,coef_DA)
 	   data[{i,{},{}}]:add(-mean[i])
 	   data[{i,{},{}}]:div(std[i])
 	end
-
-
-
 --[[	local neighborhood = image.gaussian1D(5) -- 5 for face detector training
 	-- Define our local normalization operator
 	local normalization = nn.SpatialContrastiveNormalization(1, neighborhood, 1e-4)
@@ -131,8 +129,6 @@ function dataAugmentation(im, lenght, width,coef_DA)
 	return im+noise*coef_DA
 end
 
-
-
 ---------------------------------------------------------------------------------------
 -- Function :getBatch(imgs, list, indice, lenght, width, height, Type)
 -- Input ():
@@ -160,9 +156,7 @@ function getBatch(imgs, list, indice, lenght, width, height, Type)
 			Batch[4][i]=imgs[list.im4[start+i]]
 		end
 	end
-
 	return Batch
-
 end
 ---------------------------------------------------------------------------------------
 -- Function :getRandomBatchFromSeparateList(imgs1, imgs2, txt1, txt2, lenght, image_width, image_height, Mode, use_simulate_images)
@@ -203,7 +197,6 @@ function getRandomBatchFromSeparateList(Data1,Data2, lenght, Mode)
 		end
 	end
 	return Batch
-
 end
 ---------------------------------------------------------------------------------------
 -- Function : getRandomBatch(imgs, txt, lenght, width, height, Mode, use_simulate_images)
@@ -245,7 +238,6 @@ function getRandomBatch(Data1, lenght, Mode)
 	end
 	return Batch
 end
-
 
 ---------------------------------------------------------------------------------------
 -- Function :	Have_Todo(list_prior,prior)
@@ -434,7 +426,7 @@ function getImage(im,length,height, coef_DA)
 	local image1=image.load(im,3,'float')
 	local format=length.."x"..height
 	local img1_rsz=image.scale(image1,format)
-	return preprocessing(img1_rsz,length,height, coef_DA)
+	return preprocess_image(img1_rsz,length,height, coef_DA)
 end
 
 
@@ -471,40 +463,224 @@ end
 -- Output (list_head_left): list of the images directories path
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
 ---------------------------------------------------------------------------------------
-function Get_HeadCamera_HeadMvt(Path)
-   local Path= Path or "./moreData/"
-   local Paths_Folder, list_txt=Get_Folders(Path,'head_pan')
-
-   table.sort(list_txt)
-   table.sort(Paths_Folder)
-
-   return Paths_Folder, list_txt
-end
+-- function Get_HeadCamera_HeadMvt(Path)
+--    local Path= Path or "./moreData/"
+--    local Paths_Folder, list_txt=Get_Folders(Path,'head_pan')
+--
+--    table.sort(list_txt)
+--    table.sort(Paths_Folder)
+--
+--    return Paths_Folder, list_txt
+-- end
 
 --From functions 1D
 
 function loadTrainTest(list_folders_images, crossValStep, PRELOAD_FOLDER)
    imgs = {}
    preload_name = PRELOAD_FOLDER..'saveImgsRaw.t7'
-   print("Loading Images")
-
    if not file_exists(preload_name) then
       print("nbList",nbList)
       for i=1,nbList do
          list=images_Paths(list_folders_images[i])
          table.insert(imgs,load_list(list,image_width,image_height,false))
       end
+			print ('list_folders_images')
+			print (list_folders_images)
+			print ('list')
+			print (list)
       torch.save(preload_name,imgs)
+			print("loadTrainTest folder does not exist. Loaded and saved images to "..preload_name)
    else
       imgs = torch.load(preload_name)
+			print("loadTrainTest loaded images: "..#imgs.." from "..preload_name)
+			print(imgs)
    end
 
    -- switch value, because all functions consider the last element to be the test element
    imgs[crossValStep], imgs[#imgs] = imgs[#imgs], imgs[crossValStep]
-   print("Preprocessing")
-   imgs,mean,std = preprocessing(imgs)
+   print("Preprocess_images... "..#imgs)
+	 print(imgs)
+   imgs,mean,std = preprocess_images(imgs)--, meanStd) LEARN THAT OPTIONAL PARAMETERS CAN BE OMITED BY JUST NOT BEING PROVIDED
 
    imgs_test = imgs[#imgs]
    return imgs, imgs_test
+end
 
+function normalize(im,mean,std)
+   for i=1,3 do
+      im[{i,{},{}}] = (im[{i,{},{}}]:add(-mean[i])):cdiv(std[i])
+   end
+   return im
+end
+
+function preprocessingTest(imgs,mean,std)
+   --Normalizing all images
+   for i=1,#imgs do
+      im = imgs[i]
+      imgs[i] = normalize(im,mean,std)
+   end
+   return imgs
+end
+
+function preprocess_images(imgs, meanStd)
+   -- Calculate reformat imgs, mean and std for images in train set
+   -- normalize train set and apply to test
+
+   imgs = scaleAndCrop(imgs)
+   if not meanStd then
+		 print('computing meanAndStd for images:')
+		 print(imgs)
+      mean, std = meanAndStd(imgs)
+   else
+      mean, std = meanStd[1], meanStd[2]
+   end
+
+   numSeq = #imgs-1
+   for i=1,numSeq do
+      for j=1,#(imgs[i]) do
+         im = imgs[i][j]
+         imgs[i][j] =  dataAugmentation(im, mean,std)
+      end
+   end
+   imgs[#imgs] = preprocessingTest(imgs[#imgs], mean,std)
+   return imgs, mean, std
+end
+
+function scaleAndCrop(imgs, length, height)
+   -- Why do i scale and crop after ? Because this is the way it's done under python,
+   -- so we need to do the same conversion
+
+   local lengthBeforeCrop = 320
+   local lengthAfterCrop = length or 200
+   local height = height or 200
+   local formatBefore=lengthBeforeCrop.."x"..height
+
+   for s=1,#imgs do
+      for i=1,#imgs[s] do
+         local img=image.scale(imgs[s][i],formatBefore)
+         local img= image.crop(img, 'c', lengthAfterCrop, height)
+         imgs[s][i] = img:float()
+         -- image.display(img)
+         -- io.read()
+      end
+   end
+   return imgs
+end
+
+function scaleAndRandomCrop(imgs, length, height)
+   local length = length or 200
+   local height = height or 200
+   local cropSize = 32
+
+   for s=1,#imgs do
+      -- Apply random modification on the images for the whole sequence
+      local format=length+cropSize.."x"..height+cropSize
+      local posX, posY = torch.random(cropSize),torch.random(cropSize)
+
+      for i=1,#imgs[s] do
+         local img1_rsz=image.scale(imgs[s][i],format)
+         local img = image.crop(img1_rsz, posX, posY, posX+length, posY+height)
+         imgs[s][i] = img:float()
+         -- image.display(img)
+         -- io.read()
+      end
+   end
+   return imgs
+end
+
+function meanAndStd(imgs)
+	print ('meanAndStd for Imgs:')
+	print(imgs)
+   local length,height = imgs[1][1][1]:size(1), imgs[1][1][1]:size(2)
+
+   local mean = {torch.zeros(length,height),torch.zeros(length,height),torch.zeros(length,height)}
+   local std = {torch.zeros(length,height),torch.zeros(length,height),torch.zeros(length,height)}
+
+   for i=1,3 do
+      mean[i] = mean[i]:float()
+      std[i] = std[i]:float()
+   end
+
+   local numSeq = #imgs-1
+   local totImg = 0
+
+   for i=1,numSeq do
+      for j=1,#(imgs[i]) do
+         mean[1] = mean[1]:add(imgs[i][j][{1,{},{}}]:float())
+         mean[2] = mean[2]:add(imgs[i][j][{2,{},{}}]:float())
+         mean[3] = mean[3]:add(imgs[i][j][{3,{},{}}]:float())
+         totImg = totImg+1
+      end
+   end
+
+   mean[1] = mean[1] / totImg
+   mean[2] = mean[2] / totImg
+   mean[3] = mean[3] / totImg
+
+   for i=1,numSeq do
+      for j=1,#(imgs[i]) do
+         std[1] = std[1]:add(torch.pow(imgs[i][j][{1,{},{}}]:float() - mean[1],2))
+         std[2] = std[2]:add(torch.pow(imgs[i][j][{2,{},{}}]:float() - mean[2],2))
+         std[3] = std[3]:add(torch.pow(imgs[i][j][{3,{},{}}]:float() - mean[3],2))
+      end
+   end
+
+   std[1] = torch.sqrt(std[1] / totImg)
+   std[2] = torch.sqrt(std[2] / totImg)
+   std[3] = torch.sqrt(std[3] / totImg)
+
+   torch.save('Log/meanStdImages.t7',{mean,std})
+   return mean,std
+end
+
+
+
+----all getTruth together:
+
+---------------------------------------------------------------------------------------
+-- Function : getTruth(txt,use_simulate_images)   1D
+-- Input (txt) :
+-- Input (use_simulate_images) :
+-- Input (arrondit) :
+-- Output (truth):
+---------------------------------------------------------------------------------------
+function getTruth(txt)
+   local truth={}
+   local head_pan_indice=2
+   local tensor, label=tensorFromTxt(txt)
+
+   for i=1, (#tensor[{}])[1] do
+      table.insert(truth, tensor[i][head_pan_indice])
+   end
+   return truth
+end
+
+
+---------------------------------------------------------------------------------------
+-- Function : getTruth(txt,use_simulate_images)   3D function
+-- Input (txt) :
+-- Input (use_simulate_images) :
+-- Input (arrondit) :
+-- Output (truth):
+---------------------------------------------------------------------------------------
+function get_Truth_3D(txt_joint, nb_part, part)
+	local x=2
+	local y=3
+	local z=4
+	print ('get_Truth_3D for nb_part: ')
+	print(nb_part)
+	part = 1
+	local tensor, label=tensorFromTxt(txt_joint)
+	local list_lenght = torch.floor((#tensor[{}])[1]/nb_part)
+	local start=list_lenght*part +1
+  local part_last_index = start+list_lenght
+	local list_truth={}
+	for i=start,part_last_index do--(#tensor[{}])[1] do
+		local truth=torch.Tensor(3)
+		truth[1]=tensor[i][x]
+		truth[2]=tensor[i][y]
+		truth[3]=tensor[i][z]
+		table.insert(list_truth,truth)
+	end
+	return list_truth, part_last_index
 end

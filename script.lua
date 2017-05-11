@@ -115,7 +115,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local coef_Caus=1
 	local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
-	indice_test=nbList --4 --nbList
+	indice_test = nbList --4 --nbList
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
