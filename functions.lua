@@ -1,5 +1,4 @@
 require 'const'
-
 ---------------------------------------------------------------------------------------
 -- Function :save_model(model,path)
 -- Input ():
@@ -359,8 +358,9 @@ function real_loss(txt,use_simulate_images)
    return temp_loss/nb_sample, prop_loss/nb_sample, rep_loss/nb_sample, caus_loss/nb_sample
 end
 
-
 function load_data(id)
+
+   list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 
    string_preloaded_data = PRELOAD_FOLDER..'preloadedSeq'..id..'.t7'
 
@@ -461,4 +461,9 @@ function file_exists(name)
    --tests whether the file can be opened for reading
    local f=io.open(name,"r")
    if f~=nil then io.close(f) return true else return false end
+end
+
+
+function visualize_image_from_seq_id(seq_id,image_id)
+   data = load_data(seq_id)
 end

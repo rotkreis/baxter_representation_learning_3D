@@ -22,6 +22,9 @@ EXTRAPOLATE_ACTION = false
 -- if you want to visualize images, use 'qlua' instead of 'th'
 VISUALIZE_IMAGES_TAKEN = false
 
+LR=0.001
+DIMENSION=3
+
 BATCH_SIZE = 3
 NB_EPOCHS=100
 
@@ -29,6 +32,7 @@ IM_LENGTH = 200
 IM_HEIGHT = 200
 
 DATA_AUGMENTATION = 0.01
+
 USE_CUDA = true
 USE_SECOND_GPU = true
 

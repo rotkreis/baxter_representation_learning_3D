@@ -156,9 +156,6 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 end
 
 day="19-10"
-local UseSecondGPU=true
-local LR=0.001
-local Dimension=3
 
 Tests_Todo={
    {"Prop","Temp","Caus","Rep"}
@@ -183,14 +180,14 @@ local Log_Folder='./Log/'..day..'/'
 
 name_load='./Log/Save/'..day..'.t7'
 
-list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
+local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 local reload=false
 local TakeWeightFromAE=false
 model_file='./models/topTripleFM_Split'
 
 nbList= #list_folders_images
 
-torch.manualSeed(123)
+torch.manualSeed(100)
 
 for nb_test=1, #Tests_Todo do
 
@@ -205,7 +202,7 @@ for nb_test=1, #Tests_Todo do
       Model=copy_weight(Model, AE)
    else
       require(model_file)
-      --Model=getModel(Dimension)	-- actual model in topTripleFM_Split.lua don't need dimension as input 
+      --Model=getModel(DIMENSION)	-- actual model in topTripleFM_Split.lua don't need dimension as input 
       Model=getModel()
       --graph.dot(Model.fg, 'Big MLP')
    end
