@@ -9,66 +9,60 @@ require 'nn'
 require 'cutorch'
 require 'cunn'
 require 'optim'
---require 'xlua'
---require 'nngraph'
+require 'xlua'   -- xlua provides useful tools, like progress bars
+require 'nngraph'
 require 'image'
 --require 'Get_Baxter_Files'
-require 'Get_Images_Set' -- images_Paths(Path)
+require 'Get_Images_Set' -- for images_Paths(Path) Get_HeadCamera_View_Files
 require 'functions'
+require 'const'
+require 'printing' --for show_figure
+require 'priors'--for get_Rep_criterion
 require 'lfs'
 
+require 'math'
+require 'string'
+require 'MSDC'
 
 
------------------------------------- MAIN PROGRAM
+
 -----------------SETTINGS
-useCUDA = false
-UseSecondGPU= true
+USE_CUDA = false
 nb_part = 50
-if not useCUDA then
-	UseSecondGPU = false
+if not USE_CUDA then
 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
 	--  by making "nb_part" larger than 50: -- ToDo: find a value less than 80 and more than 50 for data_baxter_short_seqs and <100 for data_baxter?
 	nb_part= 60
-	model_file='./models/minimalNetModel' -- TODO update model_file='./models/topTripleFM_Split'
-	SIZE_BATCH= 1 --60
+	MODEL_ARCHITECTURE_FILE ='./models/minimalNetModel' -- TODO update model_file='./models/topTripleFM_Split'
+	--BATCH_SIZE= 1
 else
-	model_file='./models/topTripleFM_Split'
-	SIZE_BATCH = 2 --60
+	MODEL_ARCHITECTURE_FILE ='./models/topTripleFM_Split'
+	--BATCH_SIZE = 2 --60
 end
-if UseSecondGPU then
-	cutorch.setDevice(2)
-end
----------------------------------------
 
-MODEL_PATH = 'Log/'
-Log_Folder = './Log/'
+--MODEL
+--MODEL_FILE = MODEL_PATH..MODEL_FILE
+require(MODEL_ARCHITECTURE_FILE)
+Model = getModel()
+
+---------------------------------------
 --MODEL_NAME, name = 'Save97Win/reprLearner1d.t7', '97'
 --MODEL_NAME,name = 'reprLearner1dWORKS.t7', 'works'
-
 MODEL_NAME, representationsName = 'reprLearner3d.t7', 'default'  --TODO create
 -- if this doesn't exist, it means you didn't run 'train.lua'
 MODEL_FULL_PATH = MODEL_PATH..MODEL_NAME
-PATH_RAW_DATA = './data_baxter/'
---PATH_RAW_DATA ="./data_baxter_short_seqs" -- Shorter sequences dataset
-PATH_PRELOAD_DATA = 'preload_folder_3D/'
-DATA = PATH_PRELOAD_DATA..'imgsCv1.t7'
-
-NB_EPOCH=100
-LR=0.01
+DATA = PRELOAD_FOLDER..'imgsCv1.t7'
 PLOT = true
 LOADING = false --true
-TASK = 2
-print('Running main script with useCUDA flag: '..tostring(useCUDA))
-print('Running main script with useSecondGPU flag: '..tostring(UseSecondGPU))
-print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." BatchSize: "..SIZE_BATCH..". Using data folder: "..PATH_RAW_DATA.." Model file Torch: "..model_file..'Preloaded DATA: '..DATA)
 
+print('Running main script with USE_CUDA flag: '..tostring(USE_CUDA))
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." BatchSize: "..BATCH_SIZE..". Using data folder: "..DATA_FOLDER.." Model file Torch: "..MODEL_ARCHITECTURE_FILE..'Preloaded DATA: '..DATA)
 
-
-local function getReprFromImgs(imgs, preload_folder, epresentations_name, model_full_path)
+local function getReprFromImgs(imgs, PRELOAD_FOLDER, epresentations_name, model_full_path)
   -- we save all metrics that are going to be used in the network for
   -- efficiency (images that fulfill the criteria for each prior and their stats
   -- such as mean and std to avoid multiple computations )
-   local fileName = preload_folder..'allReprSaved'..representations_name..'.t7'
+   local fileName = PRELOAD_FOLDER..'allReprSaved'..representations_name..'.t7'
 
    if file_exists(fileName) then
       return torch.load(fileName)
@@ -147,7 +141,7 @@ local function RandomBatch(X,y,sizeBatch)
    -- print("batch",batch)
    -- print("y_temp",y_temp)
    -- io.read()
-   if useCUDA then
+   if USE_CUDA then
      batch = batch:cuda()
      y_temp = y_temp:cuda()
    end
@@ -158,13 +152,13 @@ function Rico_Training(model,batch,y,reconstruct, LR)
    local criterion
    local optimizer = optim.adam
    if reconstruct then
-      if useCUDA then
+      if USE_CUDA then
         criterion = nn.SmoothL1Criterion():cuda()
       else
         criterion = nn.SmoothL1Criterion()
       end
    else
-     if useCUDA then
+     if USE_CUDA then
       criterion = nn.CrossEntropyCriterion():cuda()
      else
       criterion = nn.CrossEntropyCriterion()
@@ -195,7 +189,7 @@ end
 
 function accuracy(X_test,y_test,model)
    local acc = 0
-   if useCUDA then
+   if USE_CUDA then
     local yhat = model:forward(X_test:cuda())
    else
     local yhat = model:forward(X_test)
@@ -212,7 +206,7 @@ end
 
 function accuracy_reconstruction(X_test,y_test, model)
    local acc = 0
-   if useCUDA then
+   if USE_CUDA then
     local yhat = model:forward(X_test:cuda())
    else
     local yhat = model:forward(X_test)
@@ -241,7 +235,7 @@ function createModelReward()
    net:add(nn.Linear(1,3))
    net:add(nn.Tanh())
    net:add(nn.Linear(3,2))
-   if useCUDA then
+   if USE_CUDA then
     return net:cuda()
    else
     return net
@@ -251,7 +245,7 @@ end
 function createModelReconstruction()
    net = nn.Sequential()
    net:add(nn.Linear(1,1))
-   if useCUDA then
+   if USE_CUDA then
     return net:cuda()
    else
     return net
@@ -305,11 +299,11 @@ function train(X,y, reconstruct)
    end
 end
 
-function createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_simulate_images,LR, model_full_path, preload_folder)
+function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_simulate_images,LR, model_full_path)
    local BatchSize=16
    local nbEpoch=2
    local totalBatch=20
-   --local name_save=Log_Folder..'reprLearner1d.t7'
+   --local name_save=LOG_FOLDER..'reprLearner1d.t7'
    local coef_Temp=1
    local coef_Prop=1
    local coef_Rep=1
@@ -320,15 +314,15 @@ function createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_s
    local plot = true
    local loading = true
 
-	 print('list_folders_images')
-	 print(list_folders_images)
+	--  print('list_folders_images')
+	--  print(list_folders_images)
    nbList= #list_folders_images
    local part = 1 --
    local next_part_start_index = part
    for crossValStep=1,nbList do
       models = createModels(model_full_path)
-      currentLogFolder=Log_Folder..'CrossVal'..crossValStep..'/' --*
-      current_preload_file = preload_folder..'imgsCv'..crossValStep..'.t7'
+      currentLogFolder=LOG_FOLDER..'CrossVal'..crossValStep..'/' --*
+      current_preload_file = PRELOAD_FOLDER..'imgsCv'..crossValStep..'.t7'
 
       if file_exists(current_preload_file) and loading then
          print("Preloaded Data Already Exists, Loading...")
@@ -336,7 +330,7 @@ function createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_s
          imgs_test = imgs[#imgs]
       else
          print("Preloaded Data Does Not Exists. Loading Training and Test and saving to "..current_preload_file)
-         local imgs, imgs_test = loadTrainTest(list_folders_images,crossValStep, preload_folder)
+         local imgs, imgs_test = loadTrainTest(list_folders_images,crossValStep, PRELOAD_FOLDER)
          torch.save(current_preload_file, imgs)
       end
 
@@ -413,7 +407,7 @@ function createModels(MODEL_FULL_PATH)
    if LOADING then
       print("Loading Model..."..MODEL_FULL_PATH)
       if file_exists(MODEL_FULL_PATH) then
-         model = torch.load(MODEL_FULL_PATH)  --Log_Folder..'20e.t7'
+         model = torch.load(MODEL_FULL_PATH)  --LOG_FOLDER..'20e.t7'
       else
          print("Model file does not exist!")
          os.exit()
@@ -480,18 +474,17 @@ end
 -- These will be our score baseline to compare with
 reconstructingTask = true
 local dataAugmentation=true
---local list_folders_images, list_txt=Get_HeadCamera_HeadMvt() local _, list_txt=Get_HeadCamera_HeadMvt(PATH_RAW_DATA)
+--local list_folders_images, list_txt=Get_HeadCamera_HeadMvt() local _, list_txt=Get_HeadCamera_HeadMvt(DATA_FOLDER)
 
-if not file_exists(PATH_PRELOAD_DATA) then
-   lfs.mkdir(PATH_PRELOAD_DATA)
+if not file_exists(PRELOAD_FOLDER) then
+   lfs.mkdir(PRELOAD_FOLDER)
 end
-if not file_exists(Log_Folder) then
-   lfs.mkdir(Log_Folder)
+if not file_exists(LOG_FOLDER) then
+   lfs.mkdir(LOG_FOLDER)
 end
-
 ---
 indice_test = 1--nbList --4 --nbList
-list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(PATH_RAW_DATA)
+list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 print("Got list_folders_images: ")
 print(#list_folders_images)
 if #list_folders_images >0 then
@@ -503,13 +496,12 @@ if #list_folders_images >0 then
 	Data_test=load_Part_list(list_image_paths,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
 	local truth=get_Truth_3D(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
 	print("Plotting the truth... ")
-	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
+	--show_figure(truth, LOG_FOLDER..'The_Truth.Log','Truth',Data_test.Infos)
 	print("Computing performance... ")
-	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
+	--Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",LOG_FOLDER,truth)
 	---
 
-	require('./models/convolutional')
-	createPreloadedDataFolder(list_folders_images,list_txt,Log_Folder,use_simulate_images,LR,MODEL_FULL_PATH, PATH_PRELOAD_DATA)
+	createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_simulate_images,LR,MODEL_FULL_PATH)
 	imgs={}
 	------------------------------------
 	local imgs = torch.load(DATA)
@@ -530,6 +522,6 @@ if #list_folders_images >0 then
 
 	train(X,y,reconstructingTask)
 else
-	print("Input image files not found, check your PATH_RAW_DATA global variable")
+	print("Input image files not found, check your DATA_FOLDER global variable (should be named 'simpleData3D')")
 	os.exit()
 end

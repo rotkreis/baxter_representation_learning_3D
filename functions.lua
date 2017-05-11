@@ -8,7 +8,7 @@
 ---------------------------------------------------------------------------------------
 function save_model(model,path)
 	print("Saved at : "..path)
-	if useCUDA then
+	if USE_CUDA then
 		model:cuda()
   end
 	parameters, gradParameters = model:getParameters()
@@ -27,9 +27,8 @@ function preprocess_image(im, lenght, width,coef_DA)
 	local channels = {'y','u','v'}
 	local mean = {}
 	local std = {}
-	print("preprocess_image: im:")
-	print (im)
-	print(im[1])
+	print("preprocess_image im with coef_DA:")
+	print(coef_DA)
 
 	data = torch.Tensor( 3, im:size(2), im:size(3))
 	data:copy(im)
@@ -54,7 +53,6 @@ function preprocess_image(im, lenght, width,coef_DA)
 		end
  	end--]]
 	if coef_DA ~=0 then data=dataAugmentation(data, lenght, width,coef_DA) end
-
 	return data
 end
 
@@ -87,7 +85,6 @@ local function transformation(im, v,e, fact)
  return transfo
 end
 
-
 function loi_normal(x,y,center_x,center_y,std_x,std_y)
  return math.exp(-(x-center_x)^2/(2*std_x^2))*math.exp(-(y-center_y)^2/(2*std_y^2))
 end
@@ -95,7 +92,8 @@ end
 -- Function : dataAugmentation(im, lenght, width)
 -- Input ():
 -- Output ():
--- goal : By using data augmentation we want or network to be more resistant to no task relevant perturbations like luminosity variation or noise
+-- goal : By using data augmentation we want our network to be more resistant
+-- to no task relevant perturbations like luminosity variation or noise
 ---------------------------------------------------------------------------------------
 function dataAugmentation(im, lenght, width,coef_DA)
 	local channels = {'y','u','v'}
@@ -104,7 +102,7 @@ function dataAugmentation(im, lenght, width,coef_DA)
 	e, V = torch.eig(gam,'V')
 	factors=torch.randn(3)*0.1
 	for i=1,3 do e:select(2, 1)[i]=e:select(2, 1)[i]*factors[i] end
-	im=transformation(im, V,e:select(2, 1),coef_DA)
+	im=transformation(im, V, e:select(2, 1), coef_DA)
 	noise=torch.rand(3,lenght,width)
 	local mean = {}
 	local std = {}
@@ -456,13 +454,11 @@ function loadTrainTest(list_folders_images, crossValStep, PRELOAD_FOLDER)
    else
       imgs = torch.load(preload_name)
 			print("loadTrainTest loaded images: "..#imgs.." from "..preload_name)
-			print(imgs)
    end
 
    -- switch value, because all functions consider the last element to be the test element
    imgs[crossValStep], imgs[#imgs] = imgs[#imgs], imgs[crossValStep]
    print("Preprocess_images... "..#imgs)
-	 print(imgs)
    imgs,mean,std = preprocess_images(imgs)--, meanStd) LEARN THAT OPTIONAL PARAMETERS CAN BE OMITED BY JUST NOT BEING PROVIDED
 
    imgs_test = imgs[#imgs]
@@ -630,8 +626,7 @@ function get_Truth_3D(txt_joint, nb_part, part)
 	local x=2
 	local y=3
 	local z=4
-	print ('get_Truth_3D for nb_part: ')
-	print(nb_part)
+	print ('get_Truth_3D for nb_part: '..nb_part)
 	part = 1
 	local tensor, label=tensorFromTxt(txt_joint)
 	local list_lenght = torch.floor((#tensor[{}])[1]/nb_part)

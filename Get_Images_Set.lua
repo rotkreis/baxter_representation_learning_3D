@@ -6,29 +6,18 @@ require 'const'
 ---------------------------------------------------------------------------------------
 function images_Paths(folder_containing_jpgs)
 	local listImage={}
-<<<<<<< HEAD
-	print('images_Paths: ', folder_containing_jpgs)
 	--folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
-
 	for file in paths.files(folder_containing_jpgs) do
-		 print('getting image path:  '..file)
-=======
-	for file in paths.files(Path) do
-		 --print('Loading files:  '..file)
->>>>>>> 17bb289743128bf982685dfe0c1d1984ade5bbec
+		 --print('getting image path:  '..file)
 	   -- We only load files that match the extension
 	   if file:find('jpg' .. '$') then
 	      -- and insert the ones we care about in our table
 	      table.insert(listImage, paths.concat(folder_containing_jpgs,file))
-				print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
+				--print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
 	   end
 	end
 	table.sort(listImage)
-<<<<<<< HEAD
 	print('Loaded images from Path: '..folder_containing_jpgs)
-	print(listImage)
-=======
->>>>>>> 17bb289743128bf982685dfe0c1d1984ade5bbec
 	return listImage
 end
 
@@ -82,6 +71,7 @@ function Get_Folders(Path, including, excluding,list)
 	local list=list or {}
 	local incl=including or ""
 	local excl=excluding or "uyfouhjbhytfoughl" -- random motif
+	print('Get_Folders '..Path)
 	for file in paths.files(Path) do
 	   -- We only load files that match 2016 because we know that there are the folder we are interested in
 	   if file:find(incl) and (not file:find(excl)) then
@@ -104,6 +94,7 @@ end
 function Get_HeadCamera_View_Files(Path)
 	local use_simulate_images=use_simulate_images or false
 	--local Path="./data_baxter"
+	print('Get_HeadCamera_View_Files '..Path)
 	local Paths=Get_Folders(Path,'record')
 	list_folder={}
 	list_txt_button={}
@@ -126,7 +117,6 @@ function Get_HeadCamera_View_Files(Path)
 	-- print(list_folder)
 	return list_folder, list_txt_action,list_txt_button, list_txt_state
 end
-
 
 ---------------------------------------------------------------------------------------
 -- Function : tensorFromTxt(path)
