@@ -100,7 +100,6 @@ local function HeadPosFromTxts(txts, isData)
    --Since i use this function for creating X tensor for debugging
    -- or y tensor, the label tensor, i need a flag just to tell if i need X or y
    --isData = true => X tensor      isData = false => y tensor
-
    T = {}
    for l, txt in ipairs(txts) do
       truth = getTruth(txt)
