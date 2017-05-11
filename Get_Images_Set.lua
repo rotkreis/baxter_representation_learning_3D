@@ -5,31 +5,23 @@ require 'const'
 -- Output : list of the jpg files path
 ---------------------------------------------------------------------------------------
 function images_Paths(folder_containing_jpgs)
-	local listImage={}
-<<<<<<< HEAD
-	print('images_Paths: ', folder_containing_jpgs)
-	--folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
+   local listImage={}
+   print('images_Paths: ', folder_containing_jpgs)
+   --folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
 
-	for file in paths.files(folder_containing_jpgs) do
-		 print('getting image path:  '..file)
-=======
-	for file in paths.files(Path) do
-		 --print('Loading files:  '..file)
->>>>>>> 17bb289743128bf982685dfe0c1d1984ade5bbec
-	   -- We only load files that match the extension
-	   if file:find('jpg' .. '$') then
-	      -- and insert the ones we care about in our table
-	      table.insert(listImage, paths.concat(folder_containing_jpgs,file))
-				print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
-	   end
-	end
-	table.sort(listImage)
-<<<<<<< HEAD
-	print('Loaded images from Path: '..folder_containing_jpgs)
-	print(listImage)
-=======
->>>>>>> 17bb289743128bf982685dfe0c1d1984ade5bbec
-	return listImage
+   for file in paths.files(folder_containing_jpgs) do
+      print('getting image path:  '..file)
+      -- We only load files that match the extension
+      if file:find('jpg' .. '$') then
+         -- and insert the ones we care about in our table
+         table.insert(listImage, paths.concat(folder_containing_jpgs,file))
+         print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
+      end
+   end
+   table.sort(listImage)
+   print('Loaded images from Path: '..folder_containing_jpgs)
+   print(listImage)
+   return listImage
 end
 
 ---------------------------------------------------------------------------------------
@@ -38,23 +30,23 @@ end
 -- Output : list of the jpg files path
 ---------------------------------------------------------------------------------------
 function get_images_paths(folder_containing_jpgs)
-	local listImage={}
-	print('get_images_paths: ', folder_containing_jpgs)
-	--folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
+   local listImage={}
+   print('get_images_paths: ', folder_containing_jpgs)
+   --folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
 
-	for file in paths.files(folder_containing_jpgs) do
-		 print('getting image path:  '..file)
-	   -- We only load files that match the extension
-	   if file:find('jpg' .. '$') then
-	      -- and insert the ones we care about in our table
-	      table.insert(listImage, paths.concat(folder_containing_jpgs,file))
-				print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
-	   end
-	end
-	table.sort(listImage)
-	print('got_images_paths from Path: '..folder_containing_jpgs)
-	print(listImage)
-	return listImage
+   for file in paths.files(folder_containing_jpgs) do
+      print('getting image path:  '..file)
+      -- We only load files that match the extension
+      if file:find('jpg' .. '$') then
+         -- and insert the ones we care about in our table
+         table.insert(listImage, paths.concat(folder_containing_jpgs,file))
+         print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
+      end
+   end
+   table.sort(listImage)
+   print('got_images_paths from Path: '..folder_containing_jpgs)
+   print(listImage)
+   return listImage
 end
 
 ---------------------------------------------------------------------------------------
@@ -63,14 +55,14 @@ end
 -- Output ():
 ---------------------------------------------------------------------------------------
 function txt_path(Path, including)
-	local including=including or ""
-	local txt=nil
-	for file in paths.files(Path) do
-	   if file:find(including..'.txt' .. '$') then
-	      txt=paths.concat(Path,file)
-	   end
-	end
-	return txt
+   local including=including or ""
+   local txt=nil
+   for file in paths.files(Path) do
+      if file:find(including..'.txt' .. '$') then
+         txt=paths.concat(Path,file)
+      end
+   end
+   return txt
 end
 
 ---------------------------------------------------------------------------------------
@@ -79,20 +71,20 @@ end
 -- Output ():
 ---------------------------------------------------------------------------------------
 function Get_Folders(Path, including, excluding,list)
-	local list=list or {}
-	local incl=including or ""
-	local excl=excluding or "uyfouhjbhytfoughl" -- random motif
-	for file in paths.files(Path) do
-	   -- We only load files that match 2016 because we know that there are the folder we are interested in
-	   if file:find(incl) and (not file:find(excl)) then
-	      -- and insert the ones we care about in our table
-				--print('Get_Folders '..Path..' found pattern in filename: '..paths.concat(Path,file))
-	      table.insert(list, paths.concat(Path,file))
-	   else
-			 print('Get_Folders '..Path..' did not find pattern :'..incl..' Check the structure of your data folders')
-		 end
-	end
-	return list
+   local list=list or {}
+   local incl=including or ""
+   local excl=excluding or "uyfouhjbhytfoughl" -- random motif
+   for file in paths.files(Path) do
+      -- We only load files that match 2016 because we know that there are the folder we are interested in
+      if file:find(incl) and (not file:find(excl)) then
+         -- and insert the ones we care about in our table
+         --print('Get_Folders '..Path..' found pattern in filename: '..paths.concat(Path,file))
+         table.insert(list, paths.concat(Path,file))
+      else
+         print('Get_Folders '..Path..' did not find pattern :'..incl..' Check the structure of your data folders')
+      end
+   end
+   return list
 end
 
 ---------------------------------------------------------------------------------------
@@ -102,29 +94,29 @@ end
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
 ---------------------------------------------------------------------------------------
 function Get_HeadCamera_View_Files(Path)
-	local use_simulate_images=use_simulate_images or false
-	--local Path="./data_baxter"
-	local Paths=Get_Folders(Path,'record')
-	list_folder={}
-	list_txt_button={}
-	list_txt_action={}
-	list_txt_state={}
+   local use_simulate_images=use_simulate_images or false
+   --local Path="./data_baxter"
+   local Paths=Get_Folders(Path,'record')
+   list_folder={}
+   list_txt_button={}
+   list_txt_action={}
+   list_txt_state={}
 
-	for i=1, #Paths do
-		list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
-		table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
-		table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
-		table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
-	end
-	table.sort(list_txt_button)
-	table.sort(list_txt_action)
-	table.sort(list_txt_state)
-	table.sort(list_folder)
-	-- print(list_txt_button)
-	-- print(list_txt_action)
-	-- print(list_txt_state)
-	-- print(list_folder)
-	return list_folder, list_txt_action,list_txt_button, list_txt_state
+   for i=1, #Paths do
+      list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
+      table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
+      table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
+      table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
+   end
+   table.sort(list_txt_button)
+   table.sort(list_txt_action)
+   table.sort(list_txt_state)
+   table.sort(list_folder)
+   -- print(list_txt_button)
+   -- print(list_txt_action)
+   -- print(list_txt_state)
+   -- print(list_folder)
+   return list_folder, list_txt_action,list_txt_button, list_txt_state
 end
 
 
@@ -135,34 +127,34 @@ end
 -- Output (labels):  name of the joint
 ---------------------------------------------------------------------------------------
 function tensorFromTxt(path)
-    local data, raw = {}, {}
-    local rawCounter, columnCounter = 0, 0
-    local nbFields, labels, _line = nil, nil, nil
+   local data, raw = {}, {}
+   local rawCounter, columnCounter = 0, 0
+   local nbFields, labels, _line = nil, nil, nil
 
-    for line in io.lines(path)  do
-        local comment = false
-        if line:sub(1,1)=='#' then
-            comment = true
-            line = line:sub(2)
-        end
-        rawCounter = rawCounter +1
-        columnCounter=0
-        raw = {}
-        for value in line:gmatch'%S+' do
-            columnCounter = columnCounter+1
-            raw[columnCounter] = tonumber(value)
-        end
+   for line in io.lines(path)  do
+      local comment = false
+      if line:sub(1,1)=='#' then
+         comment = true
+         line = line:sub(2)
+      end
+      rawCounter = rawCounter +1
+      columnCounter=0
+      raw = {}
+      for value in line:gmatch'%S+' do
+         columnCounter = columnCounter+1
+         raw[columnCounter] = tonumber(value)
+      end
 
-        -- we check that every row contains the same number of data
-        if rawCounter==1 then
-            nbFields = columnCounter
-        elseif columnCounter ~= nbFields then
-            error("data dimension for " .. rawCounter .. "the sample is not consistent with previous samples'")
-        end
+      -- we check that every row contains the same number of data
+      if rawCounter==1 then
+         nbFields = columnCounter
+      elseif columnCounter ~= nbFields then
+         error("data dimension for " .. rawCounter .. "the sample is not consistent with previous samples'")
+      end
 
-        if comment then labels = raw else table.insert(data,raw) end
-    end
-    return torch.Tensor(data), labels
+      if comment then labels = raw else table.insert(data,raw) end
+   end
+   return torch.Tensor(data), labels
 end
 
 --============== Tools to get action from get state ===========
@@ -304,9 +296,9 @@ end
 -- Output (tensor):
 ---------------------------------------------------------------------------------------
 function arrondit(value) --0.05 precision
-	floor=math.floor(value*20)/20
-	ceil=math.ceil(value*20)/20
-	if math.abs(value-ceil)>math.abs(value-floor) then result=floor
-	else result=ceil end
-	return result
+   floor=math.floor(value*20)/20
+   ceil=math.ceil(value*20)/20
+   if math.abs(value-ceil)>math.abs(value-floor) then result=floor
+   else result=ceil end
+   return result
 end
