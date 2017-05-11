@@ -1,4 +1,4 @@
-
+require 'const'
 ---------------------------------------------------------------------------------------
 -- Function : images_Paths(path)
 -- Input (Path): path of a Folder which contained jpg images
@@ -6,9 +6,7 @@
 ---------------------------------------------------------------------------------------
 function images_Paths(Path)
 	local listImage={}
-	--print('images_Paths: ', Path)
-	Path="./data_baxter" -- TODO: make it work by passing it as a parameter
-
+	print('images_Paths: ', Path)
 	for file in paths.files(Path) do
 		 --print('Loading files:  '..file)
 	   -- We only load files that match the extension
@@ -134,44 +132,39 @@ function tensorFromTxt(path)
     return torch.Tensor(data), labels
 end
 
+--============== Tools to get action from get state ===========
+--=============================================================
+function action_amplitude(infos,id1, id2)
+   local action = {}
+   action.x = infos.dx[id1] - infos.dx[id2]
+   action.y = infos.dy[id1] - infos.dy[id2]
+   action.z = infos.dz[id1] - infos.dz[id2]
+   return action
+end
+
+function is_same_action(action1,action2)
+
+   if arrondit(action1.x - action2.x)==0 and
+      arrondit(action1.y - action2.y)==0 and
+   arrondit(action1.z - action2.z)==0 then
+      return true
+   else
+      return false
+   end
+end
 
 ---------------------------------------------------------------------------------------
 -- Function : get_one_random_Temp_Set(list_im)
 -- Input (list_lenght) : lenght of the list of images
--- Output : 2 indices of images which are neightboor in the list (and in time)
+-- Output : 2 indices of images which are neightboor in the list (and in time) 
 ---------------------------------------------------------------------------------------
 function get_one_random_Temp_Set(list_lenght)
-	indice=torch.random(1,list_lenght-1)
-	return {im1=indice,im2=indice+1}
+   indice=torch.random(1,list_lenght-1)
+   return {im1=indice,im2=indice+1}
 end
 
-
 function get_one_random_Prop_Set(Infos1)
-	local WatchDog=0
-	local size1=#Infos1.dx
-	local vector=torch.randperm(size1-1)
-
-	while WatchDog<100 do
-		local indice1=torch.random(1,size1-1)
-		local indice2=indice1+1
-
-		for i=1, size1-1 do
-			local id=vector[i]
-			local id2=id+1
-
-			if id~=indice1 and arrondit(Infos1.dx[indice1]-Infos1.dx[id])==0 and
-				arrondit(Infos1.dy[indice1]-Infos1.dy[id])==0 and
-				arrondit(Infos1.dz[indice1]-Infos1.dz[id])==0 then
-				return {im1=indice1,im2=indice2,im3=id,im4=id2}
-			elseif id2~=indice1 and arrondit(Infos1.dx[indice1]+Infos1.dx[id])==0 and
-				arrondit(Infos1.dy[indice1]+Infos1.dy[id])==0 and
-				arrondit(Infos1.dz[indice1]+Infos1.dz[id])==0 then
-				return {im1=indice1,im2=indice2,im3=id2,im4=id}
-			end
-		end
-		WatchDog=WatchDog+1
-	end
-	print("PROP WATCHDOG ATTACK!!!!!!!!!!!!!!!!!!")
+   return get_two_Prop_Pair(Infos1,Infos1)
 end
 ---------------------------------------------------------------------------------------
 -- Function : get_two_Prop_Pair(txt1, txt2,use_simulate_images)
@@ -182,35 +175,44 @@ end
 ---------------------------------------------------------------------------------------
 function get_two_Prop_Pair(Infos1, Infos2)
 
-	local WatchDog=0
-	local ecart=1
+   local watchDog=0
+   local size1=#Infos1.dx
+   local size2=#Infos2.dx
 
-	local size1=#Infos1.dx
-	local size2=#Infos2.dx
+   local vector=torch.randperm(size2-1)
 
-	local vector=torch.randperm(size2-1)
+   while watchDog<100 do
+      local id_ref_action_begin=torch.random(1,size1-1)
 
-	while WatchDog<100 do
-		local indice1=torch.random(1,size1-1)
-		local indice2=indice1+1
+      if EXTRAPOLATE_ACTION then --Look at const.lua for more details about extrapolate
+         repeat id_ref_action_end=torch.random(1,size1) until (id_ref_action_begin ~= id_ref_action_end)
+      else
+         id_ref_action_end=id_ref_action_begin+1
+      end
 
-		for i=1, size2-1 do
-			id=vector[i]
-			id2=id+1
+      action1 = action_amplitude(Infos1,id_ref_action_begin, id_ref_action_end)
 
-			if arrondit(Infos1.dx[indice1]-Infos2.dx[id])==0 and
-				arrondit(Infos1.dy[indice1]-Infos2.dy[id])==0 and
-				arrondit(Infos1.dz[indice1]-Infos2.dz[id])==0 then
-				return {im1=indice1,im2=indice2,im3=id,im4=id2}
-			elseif  arrondit(Infos1.dx[indice1]+Infos2.dx[id])==0 and
-				arrondit(Infos1.dy[indice1]+Infos2.dy[id])==0 and
-				arrondit(Infos1.dz[indice1]+Infos2.dz[id])==0 then
-				return {im1=indice1,im2=indice2,im3=id2,im4=id}
-			end
-		end
-		WatchDog=WatchDog+1
-	end
-	print("PROP WATCHDOG ATTACK!!!!!!!!!!!!!!!!!!")
+      for i=1, size2-1 do
+         local id_second_action_begin=vector[i]
+
+         if EXTRAPOLATE_ACTION then --Look at const.lua for more details about extrapolate
+            for id_second_action_end in ipairs(torch.totable(torch.randperm(size2))) do
+               action2 = action_amplitude(Infos2, id_second_action_begin, id_second_action_end)
+               if is_same_action(action1, action2) then
+                  return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end}
+               end
+            end
+         else --USE THE NEXT IMAGE IN THE SEQUENCE
+            id_second_action_end=id_second_action_begin+1
+            action2 = action_amplitude(Infos2, id_second_action_begin, id_second_action_end)
+            if is_same_action(action1, action2) then
+               return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end}
+            end
+         end
+      end
+      watchDog=watchDog+1
+   end
+   error("PROP WATCHDOG ATTACK!!!!!!!!!!!!!!!!!!")
 end
 
 -- I need to search images representing a starting state.
@@ -218,78 +220,49 @@ end
 -- for instance we choose for reward the fact to have a joint = 0
 
 -- NB : the two states will be took in different list but the two list can be the same
-
-local function causality_applicable(Infos1,Infos2,indice1,indice2,id, delta)
-	id2=id+delta
-	if delta==1 and arrondit(Infos1.dx[indice1]-Infos2.dx[id])==0 and
-		arrondit(Infos1.dy[indice1]-Infos2.dy[id])==0 and
-		arrondit(Infos1.dz[indice1]-Infos2.dz[id])==0 and
-		Infos2.reward[id2]==1 and
-		Infos2.reward[id]==0 then
-		return true
-	elseif delta==2 and arrondit(Infos1.dx[indice1]-Infos2.dx[id]+Infos1.dx[indice1+1]-Infos2.dx[id+1])==0 and
-		arrondit(Infos1.dy[indice1]-Infos2.dy[id]+Infos1.dy[indice1+1]-Infos2.dy[id+1])==0 and
-		arrondit(Infos1.dz[indice1]-Infos2.dz[id]+Infos1.dz[indice1+1]-Infos2.dz[id+1])==0 and
-		Infos2.reward[id2]==1 and
-		Infos2.reward[id]==0 then
-		return true
-	else
-		return false
-	end
-end
-local function causality_applicable2(Infos1,Infos2,indice1,indice2,id, delta)
-	id2=id+delta
-	if delta==1 and arrondit(Infos1.dx[indice1]+Infos2.dx[id])==0 and
-		arrondit(Infos1.dy[indice1]+Infos2.dy[id])==0 and
-		arrondit(Infos1.dz[indice1]+Infos2.dz[id])==0 and
-		Infos2.reward[id]==1 and
-		Infos2.reward[id2]==0 then
-		return true
-	elseif delta==2 and arrondit(Infos1.dx[indice1]+Infos2.dx[id]+Infos1.dx[indice1+1]+Infos2.dx[id+1])==0 and
-		arrondit(Infos1.dy[indice1]+Infos2.dy[id]+Infos1.dy[indice1+1]+Infos2.dy[id+1])==0 and
-		arrondit(Infos1.dz[indice1]+Infos2.dz[id]+Infos1.dz[indice1+1]+Infos2.dz[id+1])==0 and
-		Infos2.reward[id]==1 and
-		Infos2.reward[id2]==0 then
-		return true
-	else
-		return false
-	end
-end
-
 function get_one_random_Caus_Set(Infos1,Infos2)
-	local WatchDog=0
-	local dx=2
-	local dy=3
-	local dz=4
+   local watchDog=0
+   local dx=2
+   local dy=3
+   local dz=4
 
-	local size1=#Infos1.dx
-	local size2=#Infos2.dx
-	vector=torch.randperm(size2-1)
+   local size1=#Infos1.dx
+   local size2=#Infos2.dx
+   vector=torch.randperm(size2-1)
 
-	while WatchDog<1000 do
-		repeat
-			indice1=torch.random(1,size1-1)
-			indice2=indice1+1
-		until(Infos1.reward[indice1]==0 and Infos1.reward[indice2]==0)
+   while watchDog<100 do
+      repeat
+         id_ref_action_begin= torch.random(1,size2-1)
 
-		for i=1, size2-1 do
-			id=vector[i]
-			id2=id+1
-			if causality_applicable(Infos1,Infos2,indice1,indice2,id, 1) then
-				return {im1=indice1,im2=id}
-			elseif causality_applicable(Infos1,Infos2,indice1,indice2,id, 2) then
-				return {im1=indice1,im2=id}
-			elseif causality_applicable2(Infos1,Infos2,indice1,indice2,id, 1) then
-				return {im1=indice1,im2=id+1}
-			elseif causality_applicable2(Infos1,Infos2,indice1,indice2,id, 2) then
-				return {im1=indice1,im2=id+2}
-			end
-		end
-		WatchDog=WatchDog+1
-	end
-	print("CAUS WATCHDOG ATTACK!!!!!!!!!!!!!!!!!!")
+         if EXTRAPOLATE_ACTION then --Look at const.lua for more details about extrapolate
+            id_ref_action_end  = torch.random(1,size2)
+         else
+            id_ref_action_end  = id_ref_action_begin+1
+         end
+      until(Infos2.reward[id_ref_action_begin]==0 and Infos2.reward[id_ref_action_end]==1)
+
+      action1 = action_amplitude(Infos2, id_ref_action_begin, id_ref_action_end)
+
+      for i=1, size1-1 do
+         id_second_action_begin=torch.random(1,size1-1)
+
+         if EXTRAPOLATE_ACTION then --Look at const.lua for more details about extrapolate
+            id_second_action_end=torch.random(1,size1)
+         else
+            id_second_action_end=id_second_action_begin+1
+         end
+
+         if Infos1.reward[id_second_action_begin]==0 and Infos1.reward[id_second_action_end]==0 then
+            action2 = action_amplitude(Infos1, id_second_action_begin, id_second_action_end)
+            if is_same_action(action1, action2) then
+               return {im1=id_second_action_begin,im2=id_ref_action_begin}
+            end
+         end
+      end
+      watchDog=watchDog+1
+   end
+   error("CAUS WATCHDOG ATTACK!!!!!!!!!!!!!!!!!!")
 end
-
 
 ---------------------------------------------------------------------------------------
 -- Function : arrondit(value)
