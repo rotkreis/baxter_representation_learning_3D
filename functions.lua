@@ -20,7 +20,7 @@ end
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function preprocess_image(im, lenght, width,coef_DA)
+function preprocess_image(im, lenght, width, coef_DA)
 	-- Name channels for convenience
 	local channels = {'y','u','v'}
 	local mean = {}
@@ -438,13 +438,15 @@ function file_exists(name)
    if f~=nil then io.close(f) return true else return false end
 end
 
---from Get_Baxter_Files:
+--from Get_Baxter_Files:  loads or createds preload_folder
 function loadTrainTest(list_folders_images, crossValStep, PRELOAD_FOLDER)
    imgs = {}
+	 print("loadTrainTest: n_data_sequences",PRELOAD_FOLDER)
    preload_name = PRELOAD_FOLDER..'saveImgsRaw.t7'
    if not file_exists(preload_name) then
-      print("nbList",nbList)
-      for i=1,nbList do
+		  n_data_sequences = #list_folders_images
+      print("loadTrainTest: n_data_sequences",n_data_sequences)
+      for i=1,n_data_sequences do
          list=images_Paths(list_folders_images[i])
          table.insert(imgs,load_list(list,image_width,image_height,false))
       end
@@ -462,7 +464,7 @@ function loadTrainTest(list_folders_images, crossValStep, PRELOAD_FOLDER)
    -- switch value, because all functions consider the last element to be the test element
    imgs[crossValStep], imgs[#imgs] = imgs[#imgs], imgs[crossValStep]
    print("Preprocess_images... "..#imgs)
-   imgs,mean,std = preprocess_images(imgs)--, meanStd) LEARN THAT OPTIONAL PARAMETERS CAN BE OMITED BY JUST NOT BEING PROVIDED
+   imgs,mean,std = preprocess_images(imgs)--, meanStd) LEARN THAT OPTIONAL PARAMETERS CAN BE OMITTED BY JUST NOT BEING PROVIDED
 
    imgs_test = imgs[#imgs]
    return imgs, imgs_test
@@ -485,6 +487,7 @@ function load_list(list,length,height, train)
 end
 ---------------------------------------------------------------------------------------
 -- Function : load_list(list,length,height)
+-- This method is used by load_data and shouldn't be called on its own
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------

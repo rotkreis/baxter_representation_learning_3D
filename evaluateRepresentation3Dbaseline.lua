@@ -24,8 +24,6 @@ require 'math'
 require 'string'
 require 'MSDC'
 
-
-
 -----------------SETTINGS
 USE_CUDA = false
 nb_part = 50
@@ -252,14 +250,14 @@ function createModelReconstruction()
    end
 end
 
-function train(X,y, reconstruct)
+function train(X,y, reconstruct, n_data_sequences)
    reconstruct = reconstruct or true
 
-   local nbList = 10
+   --local nbList = 10  --TODO nbList= #list_folders_images?
    local numEx = X:size(1)
    local splitTrainTest = 0.75
 
-   local sizeTest = math.floor(numEx/nbList)
+   local sizeTest = math.floor(numEx/n_data_sequences)
 
    id_test = {{math.floor(numEx*splitTrainTest), numEx}}
    X_test = X[id_test]
@@ -316,10 +314,10 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
 
 	--  print('list_folders_images')
 	--  print(list_folders_images)
-   nbList= #list_folders_images
+   n_data_sequences = #list_folders_images
    local part = 1 --
    local next_part_start_index = part
-   for crossValStep=1,nbList do
+   for crossValStep=1, n_data_sequences do
       models = createModels(model_full_path)
       currentLogFolder=LOG_FOLDER..'CrossVal'..crossValStep..'/' --*
       current_preload_file = PRELOAD_FOLDER..'imgsCv'..crossValStep..'.t7'
@@ -360,8 +358,8 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
          local causAdded = 0
 
          for numBatch=1,totalBatch do
-            indice1=torch.random(1,nbList-1)
-            repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
+            indice1=torch.random(1,n_data_sequences-1)
+            repeat indice2=torch.random(1, n_data_sequences-1) until (indice1 ~= indice2)
 
             txt1=list_txt[indice1]
             txt2=list_txt[indice2]
@@ -483,8 +481,11 @@ if not file_exists(LOG_FOLDER) then
    lfs.mkdir(LOG_FOLDER)
 end
 ---
-indice_test = 1--nbList --4 --nbList
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
+n_data_sequences = #list_folders_images
+print(n_data_sequences..' data sequences')
+indice_test = 1--  local indice_test = torch.random(1,n_data_sequences-1)
+
 -- print("Got list_folders_images: ")
 -- print(list_folders_images)
 if #list_folders_images >0 then
@@ -493,12 +494,16 @@ if #list_folders_images >0 then
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
 	part_test=1
-	Data_test=load_Part_list(list_image_paths,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
+	--Data_test=load_Part_list(list_image_paths,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
+	--Data_test=load_Part_list(list,txt,txt_reward,IM_LENGTH,IM_HEIGHT,DATA_AUGMENTATION,txt_state)
+	data_test=load_data(indice_test)
+	print (#data_test)
+	assert(data_test, "Something went wrong while loading data1")
 	local truth=get_Truth_3D(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
 	print("Plotting the truth... ")
-	--show_figure(truth, LOG_FOLDER..'The_Truth.Log','Truth',Data_test.Infos)
+	--show_figure(truth, LOG_FOLDER..'The_Truth.Log','Truth',data_test.Infos)
 	print("Computing performance... ")
-	--Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",LOG_FOLDER,truth)
+	--Print_performance(Models, data_test,txt_test,txt_reward_test,"First_Test",LOG_FOLDER,truth)
 	---
 
 	createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_simulate_images,LR,MODEL_FULL_PATH)
@@ -506,7 +511,6 @@ if #list_folders_images >0 then
 	------------------------------------
 	local imgs = torch.load(DATA)
 	imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values
-
 
 	if reconstructingTask then
 	   y = getHandPosFromTxts(list_txt, nb_part, 1)

@@ -91,11 +91,9 @@ end
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
 ---------------------------------------------------------------------------------------
 function Get_HeadCamera_View_Files(Path)
---<<<<<<< HEAD
 	local use_simulate_images=use_simulate_images or false
-	--local Path="./data_baxter"
-	print('Get_HeadCamera_View_Files '..Path)
-	local Paths=Get_Folders(Path,'record')
+	print('Get_HeadCamera_View_Files from: '..Path)
+	local Paths=Get_Folders(Path,'record')  --TODO? formerly, for 1D, 'record' param was not needed
 	list_folder={}
 	list_txt_button={}
 	list_txt_action={}
@@ -116,31 +114,6 @@ function Get_HeadCamera_View_Files(Path)
 	-- print(list_txt_state)
 	-- print(list_folder)
 	return list_folder, list_txt_action,list_txt_button, list_txt_state
--- =======
---    local use_simulate_images=use_simulate_images or false
---    --local Path="./data_baxter"
---    local Paths=Get_Folders(Path)
---    list_folder={}
---    list_txt_button={}
---    list_txt_action={}
---    list_txt_state={}
---
---    for i=1, #Paths do
---       list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
---       table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
---       table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
---       table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
---    end
---    table.sort(list_txt_button)
---    table.sort(list_txt_action)
---    table.sort(list_txt_state)
---    table.sort(list_folder)
---    -- print(list_txt_button)
---    -- print(list_txt_action)
---    -- print(list_txt_state)
---    -- print(list_folder)
---    return list_folder, list_txt_action,list_txt_button, list_txt_state
--- >>>>>>> bc4392bd6377977b27d929404d7b135fac8d4e17
 end
 
 ---------------------------------------------------------------------------------------
