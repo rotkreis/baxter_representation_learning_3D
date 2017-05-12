@@ -339,3 +339,11 @@ function arrondit(value, prec)
    else result=ceil end
    return result
 end
+
+function clamp_causality_prior_value(value, prec)
+   prec = 0.01
+   
+   if math.abs(value) < prec then
+      value = 0
+   else
+         
