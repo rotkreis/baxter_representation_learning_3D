@@ -93,11 +93,6 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
    print(nbList..' : sequences')
    printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BATCH_SIZE, NB_EPOCHS, nb_batch, model_file)
 
-   if VISUALIZE_IMAGES_TAKEN then
-      --Creepy, but need a placeholder, to prevent many window to pop
-      w = image.display(image.lena())
-   end
-   
    for epoch=1, NB_EPOCHS do
       print('--------------Epoch : '..epoch..' ---------------')
       local Temp_loss,Prop_loss,Rep_loss,Caus_loss=0,0,0,0
@@ -106,8 +101,11 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
       for numBatch=1, nb_batch do
 
          --Get data, create if doesn't exist
-         local indice1=torch.random(1,nbList-1)
-         local indice2=torch.random(1,nbList-1)
+         --local indice1=torch.random(1,nbList-1)
+         -- local indice2=torch.random(1,nbList-1)
+
+         indice1=torch.random(1,nbList-1)
+         indice2=torch.random(1,nbList-1)
          ------------- only one list used----------
          --       print([[====================================================
          -- WARNING TESTING PRIOR, THIS IS NOT RANDOM AT ALL
@@ -115,8 +113,8 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
          --       local indice1=1
          --       local indice2=3
 
-         data1 = load_data(indice1)
-         data2 = load_data(indice2)
+         local data1 = load_data(indice1)
+         local data2 = load_data(indice2)
 
          assert(data1, "Something went wrong while loading data1")
          assert(data2, "Something went wrong while loading data2")

@@ -120,7 +120,7 @@ end
 
 
 ---------------------------------------------------------------------------------------
--- Function : dataAugmentation(im, length, width)
+-- Function : dataAugmentation(im, length, width) -- TODO
 -- Input ():
 -- Output ():
 -- goal : By using data augmentation we want our network to be more resistant
@@ -708,6 +708,7 @@ function file_exists(name)
    local f=io.open(name,"r")
    if f~=nil then io.close(f) return true else return false end
 end
+
 
 function visualize_image_from_seq_id(seq_id,image_id)
    data = load_data(seq_id)
