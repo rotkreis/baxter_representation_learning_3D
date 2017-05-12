@@ -123,8 +123,7 @@ function tensorFromTxt(path)
    local rawCounter, columnCounter = 0, 0
    local nbFields, labels, _line = nil, nil, nil
    print('tensorFromTxt path:',path)
-   for line in io.lines(path)  do
-		 print(line)
+   for line in io.lines(path)  do   ---reads each line in the .txt data file
       local comment = false
       if line:sub(1,1)=='#' then
          comment = true
