@@ -485,11 +485,11 @@ end
 ---
 indice_test = 1--nbList --4 --nbList
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
-print("Got list_folders_images: ")
-print(#list_folders_images)
+-- print("Got list_folders_images: ")
+-- print(list_folders_images)
 if #list_folders_images >0 then
-	--print('get_images_paths'..list_folders_images[indice_test])
-	local list_image_paths= get_images_paths(list_folders_images[indice_test])
+	local list_image_paths= images_Paths(list_folders_images[indice_test])
+	print('images_paths (First test:)'..list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
 	part_test=1
