@@ -5,21 +5,21 @@ require 'const'
 -- Output : list of the jpg files path
 ---------------------------------------------------------------------------------------
 function images_Paths(folder_containing_jpgs)
-	local listImage={}
-	print('images_Paths: ', folder_containing_jpgs)
-	--folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
-	for file in paths.files(folder_containing_jpgs) do
-		 --print('getting image path:  '..file)
-	   -- We only load files that match the extension
-	   if file:find('jpg' .. '$') then
-	      -- and insert the ones we care about in our table
-	      table.insert(listImage, paths.concat(folder_containing_jpgs,file))
-				--print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
-	   end
-	end
-	table.sort(listImage)
-	print('Loaded images from Path: '..folder_containing_jpgs)
-	return listImage
+   local listImage={}
+   print('images_Paths: ', folder_containing_jpgs)
+   --folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
+   for file in paths.files(folder_containing_jpgs) do
+      --print('getting image path:  '..file)
+      -- We only load files that match the extension
+      if file:find('jpg' .. '$') then
+         -- and insert the ones we care about in our table
+         table.insert(listImage, paths.concat(folder_containing_jpgs,file))
+         --print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
+      end
+   end
+   table.sort(listImage)
+   print('Loaded images from Path: '..folder_containing_jpgs)
+   return listImage
 end
 
 ---------------------------------------------------------------------------------------
@@ -68,20 +68,20 @@ end
 -- Output ():
 ---------------------------------------------------------------------------------------
 function Get_Folders(Path, including, excluding,list)
-	local list=list or {}
-	local incl=including or ""
-	local excl=excluding or "uyfouhjbhytfoughl" -- random motif
-	for file in paths.files(Path) do
-	   -- We only load files that match 2016 because we know that there are the folder we are interested in
-	   if file:find(incl) and (not file:find(excl)) then
-	      -- and insert the ones we care about in our table
-				--print('Get_Folders '..Path..' found search pattern: '..incl..' in filename: '..paths.concat(Path,file))
-	      table.insert(list, paths.concat(Path,file))
-	  --  else
-		-- 	 print('Get_Folders '..Path..' did not find pattern: '..incl..' Check the structure of your data folders')
-		 end
-	end
-	return list
+   local list=list or {}
+   local incl=including or ""
+   local excl=excluding or "uyfouhjbhytfoughl" -- random motif
+   for file in paths.files(Path) do
+      -- We only load files that match 2016 because we know that there are the folder we are interested in
+      if file:find(incl) and (not file:find(excl)) then
+         -- and insert the ones we care about in our table
+         --print('Get_Folders '..Path..' found search pattern: '..incl..' in filename: '..paths.concat(Path,file))
+         table.insert(list, paths.concat(Path,file))
+         --  else
+         -- 	 print('Get_Folders '..Path..' did not find pattern: '..incl..' Check the structure of your data folders')
+      end
+   end
+   return list
 end
 
 ---------------------------------------------------------------------------------------
@@ -91,56 +91,55 @@ end
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
 ---------------------------------------------------------------------------------------
 function Get_HeadCamera_View_Files(Path)
---<<<<<<< HEAD
-	local use_simulate_images=use_simulate_images or false
-	--local Path="./data_baxter"
-	print('Get_HeadCamera_View_Files '..Path)
-	local Paths=Get_Folders(Path,'record')
-	list_folder={}
-	list_txt_button={}
-	list_txt_action={}
-	list_txt_state={}
+   local use_simulate_images=use_simulate_images or false
+   --local Path="./data_baxter"
+   --print('Get_HeadCamera_View_Files '..Path)
+   local Paths=Get_Folders(Path,'record')
+   list_folder={}
+   list_txt_button={}
+   list_txt_action={}
+   list_txt_state={}
 
-	for i=1, #Paths do
-		list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
-		table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
-		table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
-		table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
-	end
-	table.sort(list_txt_button)
-	table.sort(list_txt_action)
-	table.sort(list_txt_state)
-	table.sort(list_folder)
-	-- print(list_txt_button)
-	-- print(list_txt_action)
-	-- print(list_txt_state)
-	-- print(list_folder)
-	return list_folder, list_txt_action,list_txt_button, list_txt_state
--- =======
---    local use_simulate_images=use_simulate_images or false
---    --local Path="./data_baxter"
---    local Paths=Get_Folders(Path)
---    list_folder={}
---    list_txt_button={}
---    list_txt_action={}
---    list_txt_state={}
---
---    for i=1, #Paths do
---       list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
---       table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
---       table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
---       table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
---    end
---    table.sort(list_txt_button)
---    table.sort(list_txt_action)
---    table.sort(list_txt_state)
---    table.sort(list_folder)
---    -- print(list_txt_button)
---    -- print(list_txt_action)
---    -- print(list_txt_state)
---    -- print(list_folder)
---    return list_folder, list_txt_action,list_txt_button, list_txt_state
--- >>>>>>> bc4392bd6377977b27d929404d7b135fac8d4e17
+   for i=1, #Paths do
+      list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
+      table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
+      table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
+      table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
+   end
+   table.sort(list_txt_button)
+   table.sort(list_txt_action)
+   table.sort(list_txt_state)
+   table.sort(list_folder)
+   -- print(list_txt_button)
+   -- print(list_txt_action)
+   -- print(list_txt_state)
+   -- print(list_folder)
+   return list_folder, list_txt_action,list_txt_button, list_txt_state
+   -- =======
+   --    local use_simulate_images=use_simulate_images or false
+   --    --local Path="./data_baxter"
+   --    local Paths=Get_Folders(Path)
+   --    list_folder={}
+   --    list_txt_button={}
+   --    list_txt_action={}
+   --    list_txt_state={}
+   --
+   --    for i=1, #Paths do
+   --       list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
+   --       table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
+   --       table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
+   --       table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
+   --    end
+   --    table.sort(list_txt_button)
+   --    table.sort(list_txt_action)
+   --    table.sort(list_txt_state)
+   --    table.sort(list_folder)
+   --    -- print(list_txt_button)
+   --    -- print(list_txt_action)
+   --    -- print(list_txt_state)
+   --    -- print(list_folder)
+   --    return list_folder, list_txt_action,list_txt_button, list_txt_state
+   -- >>>>>>> bc4392bd6377977b27d929404d7b135fac8d4e17
 end
 
 ---------------------------------------------------------------------------------------
@@ -153,7 +152,7 @@ function tensorFromTxt(path)
    local data, raw = {}, {}
    local rawCounter, columnCounter = 0, 0
    local nbFields, labels, _line = nil, nil, nil
-	 print('tensorFromTxt path:',path)
+   print('tensorFromTxt path:',path)
    for line in io.lines(path)  do
       local comment = false
       if line:sub(1,1)=='#' then
@@ -268,6 +267,9 @@ end
 
 -- NB : the two states will be took in different list but the two list can be the same
 function get_one_random_Caus_Set(Infos1,Infos2)
+
+   print("CALLING YOUR NAME"
+   
    local watchDog=0
    local dx=2
    local dy=3
@@ -288,7 +290,15 @@ function get_one_random_Caus_Set(Infos1,Infos2)
          end
       until(Infos2.reward[id_ref_action_begin]==0 and Infos2.reward[id_ref_action_end]==1)
 
+      visualize_image_from_seq_id(indice2,id_ref_action_begin,id_ref_action_end)
+      
       action1 = action_amplitude(Infos2, id_ref_action_begin, id_ref_action_end)
+
+      print("id1",id_ref_action_begin)
+      print("id2",id_ref_action_end)
+
+      print("action1",action1.x,action1.y,action1.z)
+      io.read()
 
       for i=1, size1-1 do
          id_second_action_begin=torch.random(1,size1-1)
@@ -301,6 +311,8 @@ function get_one_random_Caus_Set(Infos1,Infos2)
 
          if Infos1.reward[id_second_action_begin]==0 and Infos1.reward[id_second_action_end]==0 then
             action2 = action_amplitude(Infos1, id_second_action_begin, id_second_action_end)
+            print("action2",action2.x,action2.y,action2.z)
+
             if is_same_action(action1, action2) then
                return {im1=id_second_action_begin,im2=id_ref_action_begin}
             end
@@ -317,9 +329,12 @@ end
 -- Input (head_pan_indice) :
 -- Output (tensor):
 ---------------------------------------------------------------------------------------
-function arrondit(value) --0.05 precision
-   floor=math.floor(value*20)/20
-   ceil=math.ceil(value*20)/20
+function arrondit(value, prec) 
+   local prec = prec or 0.05--0.05 precision
+   divFactor = 1/prec
+   
+   floor=math.floor(value*divFactor)/divFactor
+   ceil=math.ceil(value*divFactor)/divFactor
    if math.abs(value-ceil)>math.abs(value-floor) then result=floor
    else result=ceil end
    return result

@@ -206,13 +206,12 @@ function getRandomBatchFromSeparateList(Data1,Data2, length, Mode)
 end
 
 function visualize_set(im1,im2,im3,im4)
-
    if im3 then --Caus or temp
       imgMerge = image.toDisplayTensor({im1,im2,im3,im4})
-      image.display{image=imgMerge, win=w}
+      image.display{image=imgMerge, win=WINDOW}
    else --Rep or prop
       imgMerge = image.toDisplayTensor({im1,im2})
-      image.display{image=imgMerge, win=w}
+      image.display{image=imgMerge, win=WINDOW}
    end
    io.read()
 end
@@ -571,7 +570,17 @@ function get_Truth_3D(txt_joint, nb_part, part)
    return list_truth, part_last_index
 end
 
-function visualize_image_from_seq_id(seq_id,image_id)
-   data = load_data(seq_id)
+function visualize_image_from_seq_id(seq_id,image_id1,image_id2)
+   local data = load_data(seq_id).images
+   local image1
    
+   if image_id2 then
+      image1 = data[image_id1]
+      local image2 = data[image_id2]
+      local imgMerge = image.toDisplayTensor({image1,image2})
+      image.display{image=imgMerge,win=WINDOW}
+   else
+      image1 = data[image_id1]
+      image.display{image=image1,win=WINDOW}
+   end
 end

@@ -17,8 +17,6 @@ MODEL_FILE  = './Autoencoder/noiseModule' --MODEL_PATH..'13_09_adagrad4_coef1/Ev
 MODEL_ARCHITECTURE_FILE = './models/topTripleFM_Split'
 lfs.mkdir(PRELOAD_FOLDER)
 
-
-
 -- Create actions that weren't done by the robot
 -- by sampling randomly states (begin point and end point)
 -- Cannot be applied in every scenario !!!!
@@ -26,6 +24,13 @@ EXTRAPOLATE_ACTION = false
 
 -- if you want to visualize images, use 'qlua' instead of 'th'
 VISUALIZE_IMAGES_TAKEN = false
+VISUALIZE_CAUS_IMAGE = true
+
+if VISUALIZE_CAUS_IMAGE or VISUALIZE_CAUS_IMAGE then
+   --Creepy, but need a placeholder, to prevent many window to pop
+   WINDOW = image.display(image.lena())
+end
+
 
 LR=0.001
 DIMENSION=3
