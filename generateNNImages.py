@@ -5,12 +5,16 @@ from sklearn.neighbors import NearestNeighbors
 import os
 import shutil
 import random
+import sys
 
 
 # Some parameters
 nbr_neighbors=2
 data_file="saveImagesAndRepr.txt"
-nbr_images = 5
+nbr_images = -1
+if len(sys.argv) ==2:
+	nbr_images=int(sys.argv[1])
+
 
 #reading data
 file  = open(data_file, "r")
