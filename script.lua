@@ -110,7 +110,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
          --       print([[====================================================
          -- WARNING TESTING PRIOR, THIS IS NOT RANDOM AT ALL
          -- ====================================================]])
-         --       local indice1=1
+         --       local indice1=8
          --       local indice2=3
 
          local data1 = load_data(indice1)

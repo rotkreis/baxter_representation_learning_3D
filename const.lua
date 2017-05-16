@@ -24,7 +24,7 @@ EXTRAPOLATE_ACTION = false
 
 -- if you want to visualize images, use 'qlua' instead of 'th'
 VISUALIZE_IMAGES_TAKEN = false
-VISUALIZE_CAUS_IMAGE = true
+VISUALIZE_CAUS_IMAGE = false
 
 if VISUALIZE_CAUS_IMAGE or VISUALIZE_CAUS_IMAGE then
    --Creepy, but need a placeholder, to prevent many window to pop

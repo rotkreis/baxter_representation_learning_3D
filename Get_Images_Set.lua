@@ -268,8 +268,7 @@ end
 -- NB : the two states will be took in different list but the two list can be the same
 function get_one_random_Caus_Set(Infos1,Infos2)
 
-   print("CALLING YOUR NAME"
-   
+   print("CALLING YOUR NAME")
    local watchDog=0
    local dx=2
    local dy=3
@@ -330,7 +329,7 @@ end
 -- Output (tensor):
 ---------------------------------------------------------------------------------------
 function arrondit(value, prec) 
-   local prec = prec or 0.05--0.05 precision
+   local prec = prec or 0.05 --0.05 precision by default
    divFactor = 1/prec
    
    floor=math.floor(value*divFactor)/divFactor
@@ -340,10 +339,27 @@ function arrondit(value, prec)
    return result
 end
 
-function clamp_causality_prior_value(value, prec)
-   prec = 0.01
+function clamp_causality_prior_value(value, prec, action_amplitude)
+   -- ======================================================
+   -- WARNING THIS VERY DIRTY, WE SHOULD DO CONTINOUS PRIOR
+   -- INSTEAD OF THIS
+   -- ======================================================
+   prec = prec or 0.01
+   action_amplitude = action_amplitude or 0.05 --An action has an amplitude either of
+   --- 0 or 0.05 in the 'simple3D' database (on each axis)
    
    if math.abs(value) < prec then
       value = 0
    else
-         
+      return sign(value)*action_amplitude
+   end
+end
+
+
+function sign(value)
+   if value < 0 then
+      return -1
+   else
+      return 1   
+   end
+end
