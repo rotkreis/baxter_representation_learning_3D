@@ -10,7 +10,7 @@ require 'const'
 local imagesFolder = 'simpleData3D'
 local modelString = 'Log/model2017_136__18_51_47.t7'
 
-local model = torch.load(modelString)
+local model = torch.load(modelString):cuda()
 outStr = ''
 
 for seqStr in lfs.dir(imagesFolder) do
@@ -22,7 +22,7 @@ for seqStr in lfs.dir(imagesFolder) do
             local reprStr = ''
             local img=image.load(fullImagesPath,3,'float')
 
-            img=image.scale(img,'200x200'):float():reshape(1,3,200,200)
+            img=image.scale(img,'200x200'):float():reshape(1,3,200,200):cuda()
             
             repr = model:forward(img)
 
