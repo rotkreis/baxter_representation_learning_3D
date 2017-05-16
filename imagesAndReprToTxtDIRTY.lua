@@ -5,8 +5,10 @@ require 'nn'
 require 'nngraph'
 require 'cunn'
 
+require 'const'
+
 local imagesFolder = 'simpleData3D'
-local modelString = 'dummyModelForDavid.t7'
+local modelString = 'Log/model2017_136__18_51_47.t7'
 
 local model = torch.load(modelString)
 outStr = ''
@@ -20,7 +22,8 @@ for seqStr in lfs.dir(imagesFolder) do
             local reprStr = ''
             local img=image.load(fullImagesPath,3,'float')
 
-            img=image.scale(img,'200x200'):double()
+            img=image.scale(img,'200x200'):float():reshape(1,3,200,200)
+            
             repr = model:forward(img)
 
             for i=1,repr:size(1) do

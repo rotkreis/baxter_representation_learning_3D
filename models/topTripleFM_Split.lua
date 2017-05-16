@@ -49,7 +49,7 @@ function getModel()
 	W3_3=nn.Linear(100, 1)(W2_3)
 
 
-	out=nn.JoinTable(2)({W3_1,W3_2,W3_3})
+	out=nn.JoinTable(1,1)({W3_1,W3_2,W3_3})
 
 	gmod = nn.gModule({input}, {out})
 

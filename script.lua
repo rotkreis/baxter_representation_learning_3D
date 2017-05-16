@@ -58,12 +58,9 @@ function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
 end
 
 
-function train_Epoch(Models,Prior_Used,Log_Folder,LR)
+function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
    local nb_batch=10
    
-   local name='Save'..day
-   local name_save=Log_Folder..name..'.t7'
-
    local REP_criterion=get_Rep_criterion()
    local PROP_criterion=get_Prop_criterion()
    local CAUS_criterion=get_Caus_criterion()
@@ -90,8 +87,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
    local coef_Caus=1
    local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
-   print(nbList..' : sequences')
-   printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BATCH_SIZE, NB_EPOCHS, nb_batch, MODEL_ARCHITECTURE_FILE)
+   print(NB_SEQUENCES..' : sequences')
 
    for epoch=1, NB_EPOCHS do
       print('--------------Epoch : '..epoch..' ---------------')
@@ -102,11 +98,11 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
       for numBatch=1, nb_batch do
 
          --Get data, create if doesn't exist
-         --local indice1=torch.random(1,nbList-1)
-         -- local indice2=torch.random(1,nbList-1)
+         --local indice1=torch.random(1,NB_SEQUENCES-1)
+         -- local indice2=torch.random(1,NB_SEQUENCES-1)
 
-         indice1=torch.random(1,nbList-1)
-         indice2=torch.random(1,nbList-1)
+         indice1=torch.random(1,NB_SEQUENCES-1)
+         indice2=torch.random(1,NB_SEQUENCES-1)
          ------------- only one list used----------
          --       print([[====================================================
          -- WARNING TESTING PRIOR, THIS IS NOT RANDOM AT ALL
@@ -150,11 +146,9 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
       print("Loss Caus", Caus_loss/nb_batch/BATCH_SIZE)
       print("Loss Rep", Rep_loss/nb_batch/BATCH_SIZE)
 
-      save_model(Models.Model1,name_save)
+      save_model(Models.Model1,NAME_SAVE)
    end
 end
-
-day="19-10"
 
 Tests_Todo={
    {"Prop","Temp","Caus","Rep"}
@@ -175,21 +169,15 @@ Tests_Todo={
       {"Prop"}
    --]]
 }
-local Log_Folder='./Log/'..day..'/'
-
-name_load='./Log/Save/'..day..'.t7'
 
 local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
-local reload=false
-local TakeWeightFromAE=false
 
-nbList= #list_folders_images
-
+NB_SEQUENCES= #list_folders_images
 torch.manualSeed(100)
 
 for nb_test=1, #Tests_Todo do
 
-   if reload then
+   if RELOAD_MODEL then
       Model = torch.load(MODEL_FILE_STRING):double()
    else
       require(MODEL_ARCHITECTURE_FILE)
@@ -209,8 +197,8 @@ for nb_test=1, #Tests_Todo do
    Models={Model1=Model,Model2=Model2,Model3=Model3,Model4=Model4}
 
    local Priors=Tests_Todo[nb_test]
-   local Log_Folder=Get_Folder_Name(Log_Folder,Priors)
-   print("Test actuel : "..Log_Folder)
+   local Log_Folder=Get_Folder_Name(LOG_FOLDER,Priors)
+   print("Test actuel : "..LOG_FOLDER)
    train_Epoch(Models,Priors,Log_Folder,LR)
 end
 

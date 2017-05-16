@@ -8,8 +8,7 @@ import shutil
 
 # Some parameters
 nbr_neighbors=2
-data_file="images_and_repr_file.txt"
-
+data_file="saveImagesAndRepr.txt"
 
 #reading data
 file  = open(data_file, "r")
