@@ -237,7 +237,6 @@ end
 -- NB : the two states will be took in different list but the two list can be the same
 function get_one_random_Caus_Set(Infos1,Infos2)
 
-   print("CALLING YOUR NAME")
    local watchDog=0
    local dx=2
    local dy=3
@@ -258,15 +257,22 @@ function get_one_random_Caus_Set(Infos1,Infos2)
          end
       until(Infos2.reward[id_ref_action_begin]==0 and Infos2.reward[id_ref_action_end]==1)
 
-      visualize_image_from_seq_id(indice2,id_ref_action_begin,id_ref_action_end)
+      if VISUALIZE_CAUS_IMAGE then
+         visualize_image_from_seq_id(indice2,id_ref_action_begin,id_ref_action_end)
+      end
 
       action1 = action_amplitude(Infos2, id_ref_action_begin, id_ref_action_end)
 
-      print("id1",id_ref_action_begin)
-      print("id2",id_ref_action_end)
+      -- WARNING, THIS IS DIRTY, need to do continous prior
+      action1.x = clamp_causality_prior_value(action1.x)
+      action1.y = clamp_causality_prior_value(action1.y)
+      action1.z = clamp_causality_prior_value(action1.z)
 
-      print("action1",action1.x,action1.y,action1.z)
-      io.read()
+      -- print("id1",id_ref_action_begin)
+      -- print("id2",id_ref_action_end)
+
+      --print("action1",action1.x,action1.y,action1.z)
+      -- io.read()
 
       for i=1, size1-1 do
          id_second_action_begin=torch.random(1,size1-1)
@@ -279,10 +285,10 @@ function get_one_random_Caus_Set(Infos1,Infos2)
 
          if Infos1.reward[id_second_action_begin]==0 and Infos1.reward[id_second_action_end]==0 then
             action2 = action_amplitude(Infos1, id_second_action_begin, id_second_action_end)
-            print("action2",action2.x,action2.y,action2.z)
+            --print("action2",action2.x,action2.y,action2.z)
 
             if is_same_action(action1, action2) then
-               return {im1=id_second_action_begin,im2=id_ref_action_begin}
+               return {im1=id_second_action_begin,im2=id_ref_action_begin, im3=id_second_action_end, im4=id_ref_action_end}
             end
          end
       end
@@ -320,8 +326,10 @@ function clamp_causality_prior_value(value, prec, action_amplitude)
    if math.abs(value) < prec then
       value = 0
    else
-      return sign(value)*action_amplitude
+      value = sign(value)*action_amplitude
    end
+
+   return value
 end
 
 
