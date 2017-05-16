@@ -91,13 +91,14 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
    local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
    print(nbList..' : sequences')
-   printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BATCH_SIZE, NB_EPOCHS, nb_batch, model_file)
+   printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BATCH_SIZE, NB_EPOCHS, nb_batch, MODEL_ARCHITECTURE_FILE)
 
    for epoch=1, NB_EPOCHS do
       print('--------------Epoch : '..epoch..' ---------------')
       local Temp_loss,Prop_loss,Rep_loss,Caus_loss=0,0,0,0
       local Grad_Temp,Grad_Prop,Grad_Rep,Grad_Caus=0,0,0,0
 
+      xlua.progress(0, nb_batch)
       for numBatch=1, nb_batch do
 
          --Get data, create if doesn't exist
@@ -181,7 +182,6 @@ name_load='./Log/Save/'..day..'.t7'
 local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 local reload=false
 local TakeWeightFromAE=false
-model_file='./models/topTripleFM_Split'
 
 nbList= #list_folders_images
 
@@ -190,19 +190,11 @@ torch.manualSeed(100)
 for nb_test=1, #Tests_Todo do
 
    if reload then
-      Model = torch.load('./Log/13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'):double()
-   elseif TakeWeightFromAE then
-      require './Autoencoder/noiseModule'
-      require(model_file)
-      Model=getModel(image_width,image_height)
-      AE= torch.load('./Log/13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'):double()
-      print('AE\n' .. AE:__tostring());
-      Model=copy_weight(Model, AE)
+      Model = torch.load(MODEL_FILE_STRING):double()
    else
-      require(model_file)
-      --Model=getModel(DIMENSION)	-- actual model in topTripleFM_Split.lua don't need dimension as input 
+      require(MODEL_ARCHITECTURE_FILE)
       Model=getModel()
-      --graph.dot(Model.fg, 'Big MLP')
+      --graph.dot(Model.fg, 'Our Model')
    end
 
    if USE_CUDA then

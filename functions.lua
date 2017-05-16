@@ -220,7 +220,10 @@ function getRandomBatchFromSeparateList(Data1,Data2, length, Mode)
          Batch[2][i]=im2
       elseif Mode=="Caus" then
          Set=get_one_random_Caus_Set(Data1.Infos, Data2.Infos)
-         im1,im2 = Data1.images[Set.im1], Data2.images[Set.im2]
+
+         im1,im2,im3,im4 = Data1.images[Set.im1], Data2.images[Set.im2], Data1.images[Set.im3], Data2.images[Set.im4]
+         --The last two are for viz purpose only
+         
          Batch[1][i]=im1
          Batch[2][i]=im2
       else
@@ -242,10 +245,10 @@ function visualize_set(im1,im2,im3,im4)
 
    if im3 then --Caus or temp
       imgMerge = image.toDisplayTensor({im1,im2,im3,im4})
-      image.display{image=imgMerge, win=w}
+      image.display{image=imgMerge, win=WINDOW}
    else --Rep or prop
       imgMerge = image.toDisplayTensor({im1,im2})
-      image.display{image=imgMerge, win=w}
+      image.display{image=imgMerge, win=WINDOW}
    end
    io.read()
 end
@@ -680,20 +683,7 @@ function preprocessingTest(imgs,mean,std)
    end
    return imgs
 end
----------------------------------------------------------------------------------------
--- Function : getImage(im,length,height,SpacialNormalization)   3D old mode
--- Input ():
--- Output ():
----------------------------------------------------------------------------------------
--- function getImage(im,length,height, coef_DA)
--- 	print(coef_DA)
--- 	if im=='' or im==nil then return nil end
--- 	local image1=image.load(im,3,'float')
--- 	local format=length.."x"..height
--- 	local img1_rsz=image.scale(image1,format)
---
--- 	return preprocess_image(img1_rsz,length,height, coef_DA)
--- end
+
 function getImage(im)
    if im=='' or im==nil then return nil end
    local image1=image.load(im,3,'byte')
@@ -710,6 +700,17 @@ function file_exists(name)
 end
 
 
-function visualize_image_from_seq_id(seq_id,image_id)
-   data = load_data(seq_id)
+function visualize_image_from_seq_id(seq_id,image_id1,image_id2)
+   local data = load_data(seq_id).images
+   local image1
+
+   if image_id2 then
+      image1 = data[image_id1]
+      local image2 = data[image_id2]
+      local imgMerge = image.toDisplayTensor({image1,image2})
+      image.display{image=imgMerge,win=WINDOW}
+   else
+      image1 = data[image_id1]
+      image.display{image=image1,win=WINDOW}
+   end
 end

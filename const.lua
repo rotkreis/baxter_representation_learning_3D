@@ -13,7 +13,7 @@ DATA_FOLDER = 'simpleData3D'
 PRELOAD_FOLDER = 'preload_folder/'
 LOG_FOLDER = 'Log/'
 MODEL_PATH = LOG_FOLDER
-MODEL_FILE  = './Autoencoder/noiseModule' --MODEL_PATH..'13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'
+MODEL_FILE_STRING  = MODEL_PATH..'13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'
 MODEL_ARCHITECTURE_FILE = './models/topTripleFM_Split'
 lfs.mkdir(PRELOAD_FOLDER)
 
@@ -23,14 +23,13 @@ lfs.mkdir(PRELOAD_FOLDER)
 EXTRAPOLATE_ACTION = false
 
 -- if you want to visualize images, use 'qlua' instead of 'th'
-VISUALIZE_IMAGES_TAKEN = false
+VISUALIZE_IMAGES_TAKEN = true
 VISUALIZE_CAUS_IMAGE = false
 
 if VISUALIZE_CAUS_IMAGE or VISUALIZE_CAUS_IMAGE then
    --Creepy, but need a placeholder, to prevent many window to pop
    WINDOW = image.display(image.lena())
 end
-
 
 LR=0.001
 DIMENSION=3
@@ -43,7 +42,7 @@ IM_LENGTH = 200
 IM_HEIGHT = 200
 
 DATA_AUGMENTATION = 0.01
-USE_CUDA = false
+USE_CUDA = true
 
 USE_SECOND_GPU = true
 
