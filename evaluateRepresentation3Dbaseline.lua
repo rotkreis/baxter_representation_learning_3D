@@ -24,8 +24,6 @@ require 'math'
 require 'string'
 require 'MSDC'
 
-
-
 -----------------SETTINGS
 USE_CUDA = false
 nb_part = 50
@@ -252,14 +250,14 @@ function createModelReconstruction()
    end
 end
 
-function train(X,y, reconstruct)
+function train(X,y, reconstruct, n_data_sequences)
    reconstruct = reconstruct or true
 
-   local nbList = 10
+   --local nbList = 10  --TODO nbList= #list_folders_images?
    local numEx = X:size(1)
    local splitTrainTest = 0.75
 
-   local sizeTest = math.floor(numEx/nbList)
+   local sizeTest = math.floor(numEx/n_data_sequences)
 
    id_test = {{math.floor(numEx*splitTrainTest), numEx}}
    X_test = X[id_test]
@@ -311,15 +309,13 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
    local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
    local list_corr={}
 
-   local plot = true
+  --  local plot = false  --TODO add 3D visualization of real and learned representation of the 3D position of the hand?
    local loading = true
 
-	--  print('list_folders_images')
-	--  print(list_folders_images)
-   nbList= #list_folders_images
+   n_data_sequences = #list_folders_images
    local part = 1 --
    local next_part_start_index = part
-   for crossValStep=1,nbList do
+   for crossValStep=1, n_data_sequences do
       models = createModels(model_full_path)
       currentLogFolder=LOG_FOLDER..'CrossVal'..crossValStep..'/' --*
       current_preload_file = PRELOAD_FOLDER..'imgsCv'..crossValStep..'.t7'
@@ -337,9 +333,9 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
       -- we use last list as test
       list_txt[crossValStep],list_txt[#list_txt] = list_txt[#list_txt], list_txt[crossValStep]
       local txt_test=list_txt[#list_txt]
-      local truth, next_part_start_index = get_Truth_3D(txt_test,nb_part, next_part_start_index)-- getTruth(txt_test,use_simulate_images)
-      print (txt_test)
-      print(list_txt)
+      local truth, next_part_start_index = get_true_hand_position_3D(txt_test)--,nb_part, next_part_start_index)-- getTruth(txt_test,use_simulate_images) --for the 1D case
+      -- print (txt_test)
+      -- print(list_txt)
 
       assert(#imgs_test==#truth,"Different number of images and corresponding ground truth, something is wrong \nNumber of Images : "..#imgs_test.." and Number of truth values : "..#truth)
 
@@ -356,12 +352,11 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
          local lossRep=0
          local lossProp=0
          local lossCaus=0
-
          local causAdded = 0
 
          for numBatch=1,totalBatch do
-            indice1=torch.random(1,nbList-1)
-            repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
+            indice1=torch.random(1,n_data_sequences-1)
+            repeat indice2=torch.random(1, n_data_sequences-1) until (indice1 ~= indice2)
 
             txt1=list_txt[indice1]
             txt2=list_txt[indice2]
@@ -417,7 +412,9 @@ function createModels(MODEL_FULL_PATH)
       print(model)
    end
 
-   model=model:cuda()
+   if USE_CUDA then
+		 model=model:cuda()
+	 end
    parameters,gradParameters = model:getParameters()
    model2=model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
    model3=model:clone('weight','bias','gradWeight','gradBias','running_mean','running_std')
@@ -426,6 +423,57 @@ function createModels(MODEL_FULL_PATH)
    return models
 end
 
+-- function getTruth(txt)
+--    local truth={}
+--    local head_pan_indice=2
+--    local tensor, label=tensorFromTxt(txt)
+--
+--    for i=1, (#tensor[{}])[1] do
+--       table.insert(truth, tensor[i][head_pan_indice])
+--    end
+--    return truth
+-- end
+---------------------------------------------------------------------------------------
+-- Function : getTruth(txt,use_simulate_images)   3D function
+-- Input (txt) :
+-- Input (use_simulate_images) :
+-- Input (arrondit) :
+-- Output (truth):
+---------------------------------------------------------------------------------------
+function get_true_hand_position_3D(data_file_with_hand_pos)
+	--DO NOT USE SHOULD BE DONE ALREADY IN getInfos
+	print ('get_true_hand_position_3D tensor and label: ')
+	local truth={}
+	local tensor, label=tensorFromTxt(data_file_with_hand_pos)
+	--print (tensor) -- tensor and truth are a DoubleTensor of size 100*4
+	print ((#tensor[{}])[1])
+	for i=1, (#tensor[{}])[1] do
+	   table.insert(truth, tensor[i]) --[2,3,4]?
+	end
+	print("truth")
+	print (truth)
+	return truth
+end
+-- function get_Truth_3D(txt_joint, nb_part, part)
+-- 	local x=2
+-- 	local y=3
+-- 	local z=4
+-- 	print ('get_Truth_3D for nb_part: '..nb_part..' txt_joint'..txt_joint)
+-- 	part = 1
+-- 	local tensor, label=tensorFromTxt(txt_joint)
+-- 	local list_lenght = torch.floor((#tensor[{}])[1]/nb_part)
+-- 	local start=list_lenght*part +1
+--   local part_last_index = start+list_lenght
+-- 	local list_truth={}
+-- 	for i=start,part_last_index do--(#tensor[{}])[1] do
+-- 		local truth=torch.Tensor(3)
+-- 		truth[1]=tensor[i][x]
+-- 		truth[2]=tensor[i][y]
+-- 		truth[3]=tensor[i][z]
+-- 		table.insert(list_truth,truth)
+-- 	end
+-- 	return list_truth, part_last_index
+-- end
 
 local function getHandPosFromTxts(txts, nb_part, part)
    --Since i use this function for creating X tensor for debugging
@@ -438,9 +486,7 @@ local function getHandPosFromTxts(txts, nb_part, part)
          T[#T+1] = hand_pos
       end
    end
-
    T = torch.Tensor(T)
-
    if isData then --is it X or y that you need ?
       Ttemp = torch.zeros(T:size(1),1)
       Ttemp[{{},1}] = T
@@ -483,8 +529,11 @@ if not file_exists(LOG_FOLDER) then
    lfs.mkdir(LOG_FOLDER)
 end
 ---
-indice_test = 1--nbList --4 --nbList
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
+n_data_sequences = #list_folders_images
+print(n_data_sequences..' data sequences')
+indice_test = 1--  local indice_test = torch.random(1,n_data_sequences-1)
+
 -- print("Got list_folders_images: ")
 -- print(list_folders_images)
 if #list_folders_images >0 then
@@ -493,20 +542,26 @@ if #list_folders_images >0 then
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
 	part_test=1
-	Data_test=load_Part_list(list_image_paths,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
-	local truth=get_Truth_3D(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
+	--Data_test=load_Part_list(list_image_paths,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
+	--Data_test=load_Part_list(list,txt,txt_reward,IM_LENGTH,IM_HEIGHT,DATA_AUGMENTATION,txt_state)
+	data_test=load_data(indice_test)
+	print (#data_test)
+	assert(data_test, "Something went wrong while loading data1")
+	local truth = get_true_hand_position_3D(txt_test)
+	 --get_Truth_3D(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
+	print (truth)
 	print("Plotting the truth... ")
-	--show_figure(truth, LOG_FOLDER..'The_Truth.Log','Truth',Data_test.Infos)
+	--show_figure(truth, LOG_FOLDER..'The_Truth.Log','Truth',data_test.Infos)
 	print("Computing performance... ")
-	--Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",LOG_FOLDER,truth)
+	--Print_performance(Models, data_test,txt_test,txt_reward_test,"First_Test",LOG_FOLDER,truth)
 	---
+	print(list_txt_state)
 
-	createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_simulate_images,LR,MODEL_FULL_PATH)
+	createPreloadedDataFolder(list_folders_images,list_txt_state,LOG_FOLDER,use_simulate_images,LR,MODEL_FULL_PATH)
 	imgs={}
 	------------------------------------
 	local imgs = torch.load(DATA)
 	imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values
-
 
 	if reconstructingTask then
 	   y = getHandPosFromTxts(list_txt, nb_part, 1)

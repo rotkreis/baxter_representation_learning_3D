@@ -91,61 +91,30 @@ end
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
 ---------------------------------------------------------------------------------------
 function Get_HeadCamera_View_Files(Path)
-   local use_simulate_images=use_simulate_images or false
-   --local Path="./data_baxter"
-   --print('Get_HeadCamera_View_Files '..Path)
-   local Paths=Get_Folders(Path,'record')
-   list_folder={}
-   list_txt_button={}
-   list_txt_action={}
-   list_txt_state={}
+	local use_simulate_images=use_simulate_images or false
+	local Paths=Get_Folders(Path,'record')  --TODO? formerly, for 1D, 'record' param was not needed
+	list_folder={}
+	list_txt_button={}
+	list_txt_action={}
+	list_txt_state={}
 
-   for i=1, #Paths do
-      list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
-      table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
-      table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
-      table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
-   end
-   table.sort(list_txt_button)
-   table.sort(list_txt_action)
-   table.sort(list_txt_state)
-   table.sort(list_folder)
-   -- print(list_txt_button)
-   -- print(list_txt_action)
-   -- print(list_txt_state)
-   -- print(list_folder)
-   return list_folder, list_txt_action,list_txt_button, list_txt_state
-   -- =======
-   --    local use_simulate_images=use_simulate_images or false
-   --    --local Path="./data_baxter"
-   --    local Paths=Get_Folders(Path)
-   --    list_folder={}
-   --    list_txt_button={}
-   --    list_txt_action={}
-   --    list_txt_state={}
-   --
-   --    for i=1, #Paths do
-   --       list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
-   --       table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
-   --       table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
-   --       table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
-   --    end
-   --    table.sort(list_txt_button)
-   --    table.sort(list_txt_action)
-   --    table.sort(list_txt_state)
-   --    table.sort(list_folder)
-   --    -- print(list_txt_button)
-   --    -- print(list_txt_action)
-   --    -- print(list_txt_state)
-   --    -- print(list_folder)
-   --    return list_folder, list_txt_action,list_txt_button, list_txt_state
-   -- >>>>>>> bc4392bd6377977b27d929404d7b135fac8d4e17
+	for i=1, #Paths do
+		list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
+		table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
+		table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
+		table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
+	end
+	table.sort(list_txt_button) -- file recorded_button_is_pressed.txt
+	table.sort(list_txt_action) --file recorded_robot_limb_left_endpoint_action.txt
+	table.sort(list_txt_state)--recroded_robot_libm_left_endpoint_state  -- for the hand position
+	table.sort(list_folder) --recorded_cameras_head_camera_2_image_compressed
+	return list_folder, list_txt_action,list_txt_button, list_txt_state
 end
 
 ---------------------------------------------------------------------------------------
 -- Function : tensorFromTxt(path)
 -- Input (path) : path of a txt file which contain position of the robot
--- Output (torch.Tensor(data)): tensor with all the joint values (col: joint, lign : indice)
+-- Output (torch.Tensor(data)): tensor with all the joint values (col: joint, line : indice)
 -- Output (labels):  name of the joint
 ---------------------------------------------------------------------------------------
 function tensorFromTxt(path)
@@ -153,7 +122,7 @@ function tensorFromTxt(path)
    local rawCounter, columnCounter = 0, 0
    local nbFields, labels, _line = nil, nil, nil
    print('tensorFromTxt path:',path)
-   for line in io.lines(path)  do
+   for line in io.lines(path)  do   ---reads each line in the .txt data file
       local comment = false
       if line:sub(1,1)=='#' then
          comment = true
@@ -290,7 +259,7 @@ function get_one_random_Caus_Set(Infos1,Infos2)
       until(Infos2.reward[id_ref_action_begin]==0 and Infos2.reward[id_ref_action_end]==1)
 
       visualize_image_from_seq_id(indice2,id_ref_action_begin,id_ref_action_end)
-      
+
       action1 = action_amplitude(Infos2, id_ref_action_begin, id_ref_action_end)
 
       print("id1",id_ref_action_begin)
@@ -329,9 +298,9 @@ end
 -- Output (tensor):
 ---------------------------------------------------------------------------------------
 function arrondit(value, prec) 
-   local prec = prec or 0.05 --0.05 precision by default
+   local prec = prec or 0.05--0.05 precision
    divFactor = 1/prec
-   
+
    floor=math.floor(value*divFactor)/divFactor
    ceil=math.ceil(value*divFactor)/divFactor
    if math.abs(value-ceil)>math.abs(value-floor) then result=floor
