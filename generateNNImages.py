@@ -4,11 +4,16 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 import os
 import shutil
+import random
+import sys
 
 
 # Some parameters
 nbr_neighbors=2
 data_file="saveImagesAndRepr.txt"
+nbr_images = -1
+if len(sys.argv) ==2:
+	nbr_images=int(sys.argv[1])
 
 #reading data
 file  = open(data_file, "r")
@@ -30,9 +35,16 @@ distances, indices = nbrs.kneighbors(states)
 shutil.rmtree('NearestNeighbors', 1)
 os.mkdir('NearestNeighbors')
 
-for img_name,id,dist,state in zip(images,indices,distances,states):
+if nbr_images == -1:
+	data= zip(images,indices,distances,states)
+else:
+	data= random.sample(zip(images,indices,distances,states),nbr_images)
+
+
+for img_name,id,dist,state in data:
 	base_name= os.path.splitext(os.path.basename(img_name))[0]
-	print('Processing ' + base_name + '...')
+	seq_name= img_name.split("/")[1]
+	print('Processing ' + seq_name + "/" + base_name + '...')
 	fig = plt.figure()
 	fig.set_size_inches(6*(nbr_neighbors+1), 6)
 	a=fig.add_subplot(1,nbr_neighbors+1,1)
@@ -50,4 +62,4 @@ for img_name,id,dist,state in zip(images,indices,distances,states):
 		a.axis('off')
 		
 	plt.tight_layout()
-	plt.savefig('NearestNeighbors/' + base_name + 'Neigbors.png',bbox_inches='tight')
+	plt.savefig('NearestNeighbors/' + seq_name + "_" + base_name + "_" + 'Neigbors.png',bbox_inches='tight')
