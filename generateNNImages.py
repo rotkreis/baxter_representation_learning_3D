@@ -51,14 +51,22 @@ for img_name,id,dist,state in data:
 	a.axis('off')
 	img = mpimg.imread(img_name)
 	imgplot = plt.imshow(img)
-	state_str='State: [' + ",".join(['{:.3f}'.format(float(x)) for x in state]) + "]"
-	a.set_title(state_str)
+	state_str='[' + ",".join(['{:.3f}'.format(float(x)) for x in state]) + "]"
+	a.set_title(seq_name + "/" + base_name + ": " + state_str)
+
 	for i in range(0,nbr_neighbors):
 		a=fig.add_subplot(1,nbr_neighbors+1,i+2)
-		img = mpimg.imread(images[id[i+1]])
+		img_name=images[id[i+1]]
+		img = mpimg.imread(img_name)
 		imgplot = plt.imshow(img)
-		dist_str = 'Dist: ' + '{:.5f}'.format(dist[i+1])
-		a.set_title(dist_str)
+		
+		base_name_n= os.path.splitext(os.path.basename(img_name))[0]
+		seq_name_n= img_name.split("/")[1]
+
+		dist_str = ' d=' + '{:.4f}'.format(dist[i+1])
+		
+		state_str='[' + ",".join(['{:.3f}'.format(float(x)) for x in states[id[i+1]]]) + "]"
+		a.set_title(seq_name_n + "/" + base_name_n + ": " + state_str +dist_str)
 		a.axis('off')
 		
 	plt.tight_layout()
