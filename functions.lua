@@ -1,4 +1,5 @@
 require 'const'
+require 'image'
 ---------------------------------------------------------------------------------------
 -- Function :save_model(model,path)
 -- Input ():
@@ -7,29 +8,6 @@ require 'const'
 function save_model(model,path)
    print("Saved at : "..path)
    torch.save(path,model)
-end
-
-function dataAugmentation(im, mean, std)
-   local channels = {'r','g','b'}
-   local noiseReductionFactor = 4 -- the bigger, less noise
-   local length = im:size(2)
-   local width = im:size(3)
-   local maxShift = 1
-
-   im = normalize(im, mean, std)
-   return im
-
-   -- for i=1,3 do
-   --    colorShift = torch.uniform(-maxShift,maxShift)
-   --    im[{i,{},{}}] = im[{i,{},{}}] + colorShift
-   -- end
-
-   -- -- Adding Gaussian noise to the data
-   -- noise=torch.rand(3,length,width)/noiseReductionFactor
-   -- noise = noise - 0.5/noiseReductionFactor --center noise
-
-   -- im = normalize(im, mean, std):add(noise:float())
-   -- return im
 end
 
 ---------------------------------------------------------------------------------------
@@ -112,18 +90,6 @@ function getRandomBatchFromSeparateList(Data1,Data2, length, Mode)
 
    return Batch
 
-end
-
-function visualize_set(im1,im2,im3,im4)
-
-   if im3 then --Caus or temp
-      imgMerge = image.toDisplayTensor({im1,im2,im3,im4})
-      image.display{image=imgMerge, win=WINDOW}
-   else --Rep or prop
-      imgMerge = image.toDisplayTensor({im1,im2})
-      image.display{image=imgMerge, win=WINDOW}
-   end
-   io.read()
 end
 
 ---------------------------------------------------------------------------------------
@@ -255,17 +221,12 @@ function real_loss(txt,use_simulate_images)
    return temp_loss/nb_sample, prop_loss/nb_sample, rep_loss/nb_sample, caus_loss/nb_sample
 end
 
-function load_data(id)
-
-   string_preloaded_and_normalized_data = PRELOAD_FOLDER..'preloaded_'..DATA_FOLDER..'_Seq'..id..'_normalized.t7'
-   string_preloaded_data = PRELOAD_FOLDER..'preloaded_'..DATA_FOLDER..'_Seq'..id..'.t7'
-
-   if file_exists(string_preloaded_and_normalized_data) then    -- DATA + NORMALIZATION EXISTS
-      return torch.load(string_preloaded_and_normalized_data)
-   elseif file_exists(string_preloaded_data) then               -- DATA WITHOUT NORM
-      data = torch.load(string_preloaded_data)
-      return data
-      --return preprocess_seq(data)
+function load_seq_by_id(id)
+   local string_preloaded_and_normalized_data = PRELOAD_FOLDER..'preloaded_'..DATA_FOLDER..'_Seq'..id..'_normalized.t7'
+   
+   -- DATA + NORMALIZATION EXISTS
+   if file_exists(string_preloaded_and_normalized_data) then
+      data = torch.load(string_preloaded_and_normalized_data)
    else   -- DATA DOESN'T EXIST AT ALL
       list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
       local list=images_Paths(list_folders_images[id])
@@ -273,31 +234,44 @@ function load_data(id)
       local txt_reward=list_txt_button[id]
       local txt_state=list_txt_state[id]
 
-      data = load_Part_list(list,txt,txt_reward,IM_LENGTH,IM_HEIGHT,DATA_AUGMENTATION,txt_state)
-      torch.save(string_preloaded_data,data)
+      data = load_Part_list(list,txt,txt_reward,txt_state)
+      torch.save(string_preloaded_and_normalized_data,data)
    end
    return data
 end
 
-function scaleAndCrop(imgs, length, height)
+function scaleAndCrop(img)
    -- Why do i scale and crop after ? Because this is the way it's done under python,
    -- so we need to do the same conversion
 
-   local lengthBeforeCrop = 320
-   local lengthAfterCrop = length or 200
-   local height = height or 200
+   local lengthBeforeCrop = 320 --Tuned by hand, that way, when you scale then crop, the image is 200x200
+   
+   local lengthAfterCrop = IM_LENGTH
+   local height = IM_HEIGHT
    local formatBefore=lengthBeforeCrop.."x"..height
 
-   for s=1,#imgs do
-      for i=1,#imgs[s] do
-         local img=image.scale(imgs[s][i],formatBefore)
-         local img= image.crop(img, 'c', lengthAfterCrop, height)
-         imgs[s][i] = img:float()
-         -- image.display(img)
-         -- io.read()
-      end
+   local imgAfter=image.scale(img,formatBefore)
+   local imgAfter=image.crop(imgAfter, 'c', lengthAfterCrop, height)
+
+   if VISUALIZE_IMAGE_CROP then
+      dim1_before = img:size(1)
+      dim2_before = img:size(2)
+      dim3_before = img:size(3)
+
+      dim1_after = imgAfter:size(1)
+      dim2_after = imgAfter:size(2)
+      dim3_after = imgAfter:size(3)
+      
+      imgAfterPadded =torch.zeros(dim1_before,dim2_before, dim3_before)
+      imgAfterPadded[{{1,dim1_after},{1,dim2_after},{1,dim3_after}}] =
+         imgAfter
+      
+      local imgMerge = image.toDisplayTensor({img,imgAfterPadded})
+      image.display{image=imgMerge,win=WINDOW}
+      io.read()
    end
-   return imgs
+
+   return imgAfter
 end
 
 ---------------------------------------------------------------------------------------
@@ -306,7 +280,7 @@ end
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function load_Part_list(list,txt,txt_reward,im_length,im_height,data_augmentation,txt_state)
+function load_Part_list(list,txt,txt_reward,txt_state)
 
    assert(list, "list not found")
    assert(txt, "Txt not found")
@@ -317,7 +291,7 @@ function load_Part_list(list,txt,txt_reward,im_length,im_height,data_augmentatio
    local Infos=getInfos(txt,txt_reward,txt_state)
 
    for i=1, #(Infos.dx) do
-      table.insert(im,getImage(list[i]))
+      table.insert(im,getImageFormated(list[i]))
    end
    
    return {images=im,Infos=Infos}
@@ -349,56 +323,98 @@ function getInfos(txt,txt_reward,txt_state)
    return Infos
 end
 
-function meanAndStd(imgs)
-   local length,height = imgs[1][1][1]:size(1), imgs[1][1][1]:size(2)
 
-   local mean = {torch.zeros(length,height),torch.zeros(length,height),torch.zeros(length,height)}
-   local std = {torch.zeros(length,height),torch.zeros(length,height),torch.zeros(length,height)}
+function calculate_mean_and_std()
+   -- This function can work on its own
+   -- Just need the global variable DATA_FOLDER to be set
+
+   print("Calculating Mean and Std for all images in ", DATA_FOLDER)
+   
+   local imagesFolder = DATA_FOLDER
+
+   local mean = {torch.zeros(IM_LENGTH,IM_HEIGHT),torch.zeros(IM_LENGTH,IM_HEIGHT),torch.zeros(IM_LENGTH,IM_HEIGHT)}
+   local std = {torch.zeros(IM_LENGTH,IM_HEIGHT),torch.zeros(IM_LENGTH,IM_HEIGHT),torch.zeros(IM_LENGTH,IM_HEIGHT)}
+   local totImg = 0
 
    for i=1,3 do
       mean[i] = mean[i]:float()
       std[i] = std[i]:float()
    end
 
-   local numSeq = #imgs-1
-   local totImg = 0
+   for seqStr in lfs.dir(imagesFolder) do
+      if string.find(seqStr,'record') then
+         local imagesPath = imagesFolder..'/'..seqStr..'/recorded_cameras_head_camera_2_image_compressed'
+         for imageStr in lfs.dir(imagesPath) do
+            if string.find(imageStr,'jpg') then
+               totImg = totImg + 1 
+               local fullImagesPath = imagesPath..'/'..imageStr
+               local img=image.load(fullImagesPath,3,'float')
+               img = scaleAndCrop(img)
 
-   for i=1,numSeq do
-      for j=1,#(imgs[i]) do
-         mean[1] = mean[1]:add(imgs[i][j][{1,{},{}}]:float())
-         mean[2] = mean[2]:add(imgs[i][j][{2,{},{}}]:float())
-         mean[3] = mean[3]:add(imgs[i][j][{3,{},{}}]:float())
-         totImg = totImg+1
+               mean[1] = mean[1]:add(img[{1,{},{}}])
+               mean[2] = mean[2]:add(img[{2,{},{}}])
+               mean[3] = mean[3]:add(img[{3,{},{}}])
+            end
+         end
       end
-   end
+   end        
 
    mean[1] = mean[1] / totImg
    mean[2] = mean[2] / totImg
    mean[3] = mean[3] / totImg
 
-   for i=1,numSeq do
-      for j=1,#(imgs[i]) do
-         std[1] = std[1]:add(torch.pow(imgs[i][j][{1,{},{}}]:float() - mean[1],2))
-         std[2] = std[2]:add(torch.pow(imgs[i][j][{2,{},{}}]:float() - mean[2],2))
-         std[3] = std[3]:add(torch.pow(imgs[i][j][{3,{},{}}]:float() - mean[3],2))
+   for seqStr in lfs.dir(imagesFolder) do
+      if string.find(seqStr,'record') then
+         local imagesPath = imagesFolder..'/'..seqStr..'/recorded_cameras_head_camera_2_image_compressed'
+         for imageStr in lfs.dir(imagesPath) do
+            if string.find(imageStr,'jpg') then
+               local fullImagesPath = imagesPath..'/'..imageStr
+               local img=image.load(fullImagesPath,3,'float')
+               img = scaleAndCrop(img)
+
+               std[1] = std[1]:add(torch.pow(img[{1,{},{}}]-mean[1],2))
+               std[2] = std[2]:add(torch.pow(img[{2,{},{}}]-mean[2],2))
+               std[3] = std[3]:add(torch.pow(img[{3,{},{}}]-mean[3],2))
+            end
+         end
       end
    end
-
+   
    std[1] = torch.sqrt(std[1] / totImg)
    std[2] = torch.sqrt(std[2] / totImg)
    std[3] = torch.sqrt(std[3] / totImg)
-
-   torch.save('Log/meanStdImages_'..DATA_FOLDER..'.t7',{mean,std})
+   
+   torch.save(STRING_MEAN_AND_STD_FILE,{mean=mean,std=std})
    return mean,std
 end
 
-function getImage(im)
-   if im=='' or im==nil then return nil end
-   local image1=image.load(im,3,'byte')
-   local format=IM_LENGTH.."x"..IM_HEIGHT
-   local img1_rsz=image.scale(image1,format)
-   return img1_rsz:float()
+
+function normalize(im)
+
+   if file_exists(STRING_MEAN_AND_STD_FILE) then
+      meanStd = torch.load(STRING_MEAN_AND_STD_FILE)
+      mean = meanStd.mean
+      std = meanStd.std
+      print("mean",mean)
+      print("std",std)
+   else
+      mean, std = calculate_mean_and_std()
+   end
+
+   for i=1,3 do
+      im[{i,{},{}}] = (im[{i,{},{}}]:add(-mean[i])):cdiv(std[i])
+   end
+   return im
 end
+
+function getImageFormated(im)
+   if im=='' or im==nil then error("im is nil, this is not an image") end
+   local img=image.load(im,3,'float')
+   img = scaleAndCrop(img)
+   img = normalize(img)
+   return img
+end
+
 
 function file_exists(name)
    --tests whether the file can be opened for reading
@@ -421,3 +437,16 @@ function visualize_image_from_seq_id(seq_id,image_id1,image_id2)
       image.display{image=image1,win=WINDOW}
    end
 end
+
+function visualize_set(im1,im2,im3,im4)
+
+   if im3 then --Caus or temp
+      imgMerge = image.toDisplayTensor({im1,im2,im3,im4})
+      image.display{image=imgMerge, win=WINDOW}
+   else --Rep or prop
+      imgMerge = image.toDisplayTensor({im1,im2})
+      image.display{image=imgMerge, win=WINDOW}
+   end
+   io.read()
+end
+

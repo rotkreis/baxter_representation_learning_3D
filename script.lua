@@ -115,8 +115,8 @@ function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
          --       local indice1=8
          --       local indice2=3
 
-         local data1 = load_data(indice1)
-         local data2 = load_data(indice2)
+         local data1 = load_seq_by_id(indice1)
+         local data2 = load_seq_by_id(indice2)
 
          assert(data1, "Something went wrong while loading data1")
          assert(data2, "Something went wrong while loading data2")

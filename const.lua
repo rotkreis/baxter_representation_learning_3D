@@ -9,10 +9,12 @@
 -- and put it here.
 --=============================================================
 require 'lfs'
+require 'cutorch'
 --torch.manualSeed(100)
 
 DATA_FOLDER = 'simpleData3D'
 PRELOAD_FOLDER = 'preload_folder/'
+lfs.mkdir(PRELOAD_FOLDER)
 
 LOG_FOLDER = 'Log/'
 MODEL_PATH = LOG_FOLDER
@@ -20,7 +22,9 @@ MODEL_PATH = LOG_FOLDER
 MODEL_FILE_STRING  = MODEL_PATH..'13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'
 
 MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'
-lfs.mkdir(PRELOAD_FOLDER)
+
+STRING_MEAN_AND_STD_FILE = PRELOAD_FOLDER..'meanStdImages_'..DATA_FOLDER..'.t7'
+
 
 -- Create actions that weren't done by the robot
 -- by sampling randomly states (begin point and end point)
@@ -31,8 +35,10 @@ CLAMP_CAUSALITY = true
 -- if you want to visualize images, use 'qlua' instead of 'th'
 VISUALIZE_IMAGES_TAKEN = false
 VISUALIZE_CAUS_IMAGE = false
+VISUALIZE_IMAGE_CROP = false
 
-if VISUALIZE_CAUS_IMAGE or VISUALIZE_CAUS_IMAGE then
+
+if VISUALIZE_CAUS_IMAGE or VISUALIZE_CAUS_IMAGE or VISUALIZE_IMAGE_CROP then
    --Creepy, but need a placeholder, to prevent many window to pop
    WINDOW = image.display(image.lena())
 end
