@@ -10,7 +10,7 @@
 --=============================================================
 require 'lfs'
 require 'cutorch'
---torch.manualSeed(100)
+torch.manualSeed(100)
 
 DATA_FOLDER = 'simpleData3D'
 PRELOAD_FOLDER = 'preload_folder/'
@@ -33,15 +33,17 @@ EXTRAPOLATE_ACTION = true
 CLAMP_CAUSALITY = true
 
 -- if you want to visualize images, use 'qlua' instead of 'th'
+--===========================================================
 VISUALIZE_IMAGES_TAKEN = false
 VISUALIZE_CAUS_IMAGE = false
 VISUALIZE_IMAGE_CROP = false
+VISUALIZE_MEAN_STD = false
 
-
-if VISUALIZE_CAUS_IMAGE or VISUALIZE_CAUS_IMAGE or VISUALIZE_IMAGE_CROP then
+if VISUALIZE_CAUS_IMAGE or VISUALIZE_CAUS_IMAGE or VISUALIZE_IMAGE_CROP or VISUALIZE_MEAN_STD then
    --Creepy, but need a placeholder, to prevent many window to pop
    WINDOW = image.display(image.lena())
 end
+--===========================================================
 
 RELOAD_MODEL = false
 

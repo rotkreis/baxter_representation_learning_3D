@@ -20,7 +20,6 @@ require 'const'
 -- try to avoid global variable as much as possible
 
 function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
-   local LR=LR or 0.001
    local mom=0.9
    local coefL2=0,0
 
@@ -61,7 +60,6 @@ function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
    -- grad[1] we use just the first gradient to print the figure (there are 2 or 4 gradient normally)
    return loss[1], grad
 end
-
 
 function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
    local nb_batch=10
@@ -178,8 +176,6 @@ Tests_Todo={
 local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 
 NB_SEQUENCES= #list_folders_images
-
---torch.manualSeed(100)
 
 for nb_test=1, #Tests_Todo do
 

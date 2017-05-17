@@ -348,7 +348,7 @@ function calculate_mean_and_std()
             if string.find(imageStr,'jpg') then
                totImg = totImg + 1 
                local fullImagesPath = imagesPath..'/'..imageStr
-               local img=image.load(fullImagesPath,3,'float')
+               local img=image.load(fullImagesPath,3,'byte'):float()
                img = scaleAndCrop(img)
 
                mean[1] = mean[1]:add(img[{1,{},{}}])
@@ -369,8 +369,9 @@ function calculate_mean_and_std()
          for imageStr in lfs.dir(imagesPath) do
             if string.find(imageStr,'jpg') then
                local fullImagesPath = imagesPath..'/'..imageStr
-               local img=image.load(fullImagesPath,3,'float')
+               local img=image.load(fullImagesPath,3,'byte'):float()
                img = scaleAndCrop(img)
+               
 
                std[1] = std[1]:add(torch.pow(img[{1,{},{}}]-mean[1],2))
                std[2] = std[2]:add(torch.pow(img[{2,{},{}}]-mean[2],2))
@@ -383,9 +384,19 @@ function calculate_mean_and_std()
    std[1] = torch.sqrt(std[1] / totImg)
    std[2] = torch.sqrt(std[2] / totImg)
    std[3] = torch.sqrt(std[3] / totImg)
-   
-   torch.save(STRING_MEAN_AND_STD_FILE,{mean=mean,std=std})
-   return mean,std
+
+   im_mean = torch.zeros(3,200,200)
+   im_std = torch.zeros(3,200,200)
+
+   for i=1,3 do
+      im_mean[i] = mean[i]
+      im_std[i] = std[i]
+   end
+
+   im_mean = im_mean:float()
+   im_std = im_std:float()
+   torch.save(STRING_MEAN_AND_STD_FILE,{mean=im_mean,std=im_std})
+   return im_mean,im_std
 end
 
 
@@ -395,21 +406,25 @@ function normalize(im)
       meanStd = torch.load(STRING_MEAN_AND_STD_FILE)
       mean = meanStd.mean
       std = meanStd.std
-      print("mean",mean)
-      print("std",std)
    else
       mean, std = calculate_mean_and_std()
    end
 
-   for i=1,3 do
-      im[{i,{},{}}] = (im[{i,{},{}}]:add(-mean[i])):cdiv(std[i])
+   im_norm = torch.add(im,-mean)
+   im_norm = torch.cdiv(im_norm, std)
+
+   if VISUALIZE_MEAN_STD then
+      imgMerge = image.toDisplayTensor({mean,std,im,im_norm})
+      image.display{image=imgMerge, win=WINDOW}
+      io.read()
    end
-   return im
+
+   return im_norm
 end
 
 function getImageFormated(im)
    if im=='' or im==nil then error("im is nil, this is not an image") end
-   local img=image.load(im,3,'float')
+   local img=image.load(im,3,'byte'):float()
    img = scaleAndCrop(img)
    img = normalize(img)
    return img
@@ -424,7 +439,7 @@ end
 
 
 function visualize_image_from_seq_id(seq_id,image_id1,image_id2)
-   local data = load_data(seq_id).images
+   local data = load_seq_by_id(seq_id).images
    local image1
 
    if image_id2 then

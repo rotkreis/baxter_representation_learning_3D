@@ -58,9 +58,9 @@ function doStuff_Caus(Models,criterion,Batch,coef)
    if USE_CUDA then
       criterion=criterion:cuda()
    end
-   output=criterion:updateOutput({State1, State2})
+   output=criterion:forward({State1, State2})
    --we backward with a starting gradient initialized at 1
-   GradOutputs=criterion:updateGradInput({State1, State2}, torch.ones(1))
+   GradOutputs=criterion:backward({State1, State2}, torch.ones(1))
 
    -- calculer les gradients pour les deux images
    Model:backward(im1,coef*GradOutputs[1]/Batch[1]:size(1))
@@ -97,10 +97,10 @@ function doStuff_Prop(Models,criterion,Batch, coef)
    if USE_CUDA then
       criterion=criterion:cuda()
    end
-   output=criterion:updateOutput({State1, State2, State3, State4})
+   output=criterion:forward({State1, State2, State3, State4})
 
    --we backward with a starting gradient initialized at 1
-   GradOutputs=criterion:updateGradInput({State1, State2, State3, State4},torch.ones(1))
+   GradOutputs=criterion:backward({State1, State2, State3, State4},torch.ones(1))
 
    Model:backward(im1,coef*GradOutputs[1]/Batch[1]:size(1))
    Model2:backward(im2,coef*GradOutputs[2]/Batch[1]:size(1))
@@ -139,10 +139,10 @@ function doStuff_Rep(Models,criterion,Batch, coef)
    if USE_CUDA then
       criterion=criterion:cuda()
    end
-   output=criterion:updateOutput({State1, State2, State3, State4})
+   output=criterion:forward({State1, State2, State3, State4})
 
    --we backward with a starting gradient initialized at 1
-   GradOutputs=criterion:updateGradInput({State1, State2, State3, State4}, torch.ones(1))
+   GradOutputs=criterion:backward({State1, State2, State3, State4}, torch.ones(1))
 
    Model:backward(im1,coef*GradOutputs[1]/Batch[1]:size(1))
    Model2:backward(im2,coef*GradOutputs[2]/Batch[1]:size(1))
