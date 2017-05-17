@@ -1,7 +1,10 @@
 function doStuff_temp(Models,criterion,Batch,coef)
 
    local coef= coef or 1
+   local im1, im2, Model, Model2, State1, State2
 
+   local batchSize = Batch:size(2)
+   
    if USE_CUDA then
       im1=Batch[1]:cuda()
       im2=Batch[2]:cuda()
@@ -20,6 +23,8 @@ function doStuff_temp(Models,criterion,Batch,coef)
    State1=Model:forward(im1)
    State2=Model2:forward(im2)
 
+   assert(batchSize==State1:size(1), "Batch Size changed during 'forward method, maybe a nn.view is done badly ...")
+
    if USE_CUDA then
       criterion=criterion:cuda()
    end
@@ -34,6 +39,8 @@ end
 
 function doStuff_Caus(Models,criterion,Batch,coef)
    local coef= coef or 1
+   local im1, im2, Model, Model2, State1, State2
+
    if USE_CUDA then
       im1=Batch[1]:cuda()
       im2=Batch[2]:cuda()
@@ -63,7 +70,8 @@ end
 
 function doStuff_Prop(Models,criterion,Batch, coef)
    local coef= coef or 1
-
+   local im1, im2, im3, im4, Model, Model2, Model3, Model4, State1, State2, State3, State4
+   
    if USE_CUDA then
       im1=Batch[1]:cuda()
       im2=Batch[2]:cuda()
@@ -104,6 +112,8 @@ end
 
 function doStuff_Rep(Models,criterion,Batch, coef)
    local coef= coef or 1
+   local im1, im2, im3, im4, Model, Model2, Model3, Model4, State1, State2, State3, State4
+
    if USE_CUDA then
       im1=Batch[1]:cuda()
       im2=Batch[2]:cuda()

@@ -8,7 +8,6 @@
 -- find global variable, that's normal. You can change it
 -- and put it here.
 --=============================================================
-
 require 'lfs'
 
 DATA_FOLDER = 'simpleData3D'
@@ -18,7 +17,8 @@ LOG_FOLDER = 'Log/'
 MODEL_PATH = LOG_FOLDER
 
 MODEL_FILE_STRING  = MODEL_PATH..'13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'
-MODEL_ARCHITECTURE_FILE = './models/topTripleFM_Split'
+
+MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'
 lfs.mkdir(PRELOAD_FOLDER)
 
 -- Create actions that weren't done by the robot
@@ -35,15 +35,14 @@ if VISUALIZE_CAUS_IMAGE or VISUALIZE_CAUS_IMAGE then
    WINDOW = image.display(image.lena())
 end
 
-
 RELOAD_MODEL = false
 
-LR=0.001
+LR=0.0001
 DIMENSION=3
 
-BATCH_SIZE = 3
-NB_EPOCHS=100
-LR = 0.01
+SGD_METHOD = 'adam' -- Can be adam or adagrad
+BATCH_SIZE = 10 -- TRYING TO HAVE BIGGER BATCH
+NB_EPOCHS=20
 
 IM_LENGTH = 200
 IM_HEIGHT = 200

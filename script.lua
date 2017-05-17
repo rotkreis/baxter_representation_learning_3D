@@ -50,8 +50,13 @@ function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
    --sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
    --parameters, loss=optim.sgd(feval, parameters, sgdState)
    optimState={learningRate=LR}
-   parameters, loss=optim.adagrad(feval, parameters, optimState)
 
+   if SGD_METHOD == 'adagrad' then   
+      parameters,loss=optim.adagrad(feval,parameters,optimState)
+   else
+      parameters,loss=optim.adam(feval,parameters,optimState)
+   end
+   
    -- loss[1] table of one value transformed in just a value
    -- grad[1] we use just the first gradient to print the figure (there are 2 or 4 gradient normally)
    return loss[1], grad
@@ -181,7 +186,7 @@ for nb_test=1, #Tests_Todo do
       Model = torch.load(MODEL_FILE_STRING):double()
    else
       require(MODEL_ARCHITECTURE_FILE)
-      Model=getModel()
+      Model=getModel(DIMENSION)
       --graph.dot(Model.fg, 'Our Model')
    end
 

@@ -8,13 +8,14 @@ require 'cunn'
 require 'const'
 
 local imagesFolder = 'simpleData3D'
-local modelString = 'Log/model2017_136__18_51_47.t7'
+local modelString = 'Log/model2017_137__9_55_55.t7'
 
 local model = torch.load(modelString):cuda()
 outStr = ''
 
 for seqStr in lfs.dir(imagesFolder) do
    if string.find(seqStr,'record') then
+      print("Sequence : ",seqStr)
       local imagesPath = imagesFolder..'/'..seqStr..'/recorded_cameras_head_camera_2_image_compressed'
       for imageStr in lfs.dir(imagesPath) do
          if string.find(imageStr,'jpg') then

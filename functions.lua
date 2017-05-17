@@ -6,13 +6,7 @@ require 'const'
 ---------------------------------------------------------------------------------------
 function save_model(model,path)
 	print("Saved at : "..path)
-	if USE_CUDA then
-		model:cuda()
-  end
-	parameters, gradParameters = model:getParameters()
-	local lightModel = model:clone():float()
-	lightModel:clearState()
-	torch.save(path,lightModel)
+	torch.save(path,model)
 end
 
 ---------------------------------------------------------------------------------------
