@@ -8,7 +8,7 @@ require 'cunn'
 require 'const'
 
 local imagesFolder = 'simpleData3D'
-local modelString = 'Log/model2017_137__9_55_55.t7'
+local modelString = 'Log/model2017_137__11_41_48.t7'
 
 local model = torch.load(modelString):cuda()
 outStr = ''
@@ -26,11 +26,9 @@ for seqStr in lfs.dir(imagesFolder) do
             img=image.scale(img,'200x200'):float():reshape(1,3,200,200):cuda()
             
             repr = model:forward(img)
-
-            for i=1,repr:size(1) do
-               reprStr = reprStr..repr[i]..' '
+            for i=1,repr:size(2) do
+               reprStr = reprStr..repr[{1,i}]..' '
             end
-
             outStr = outStr..fullImagesPath..' '..reprStr..'\n'
             
          end

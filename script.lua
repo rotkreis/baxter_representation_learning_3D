@@ -178,7 +178,8 @@ Tests_Todo={
 local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 
 NB_SEQUENCES= #list_folders_images
-torch.manualSeed(100)
+
+--torch.manualSeed(100)
 
 for nb_test=1, #Tests_Todo do
 

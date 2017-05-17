@@ -9,6 +9,7 @@
 -- and put it here.
 --=============================================================
 require 'lfs'
+--torch.manualSeed(100)
 
 DATA_FOLDER = 'simpleData3D'
 PRELOAD_FOLDER = 'preload_folder/'
@@ -24,7 +25,8 @@ lfs.mkdir(PRELOAD_FOLDER)
 -- Create actions that weren't done by the robot
 -- by sampling randomly states (begin point and end point)
 -- Cannot be applied in every scenario !!!!
-EXTRAPOLATE_ACTION = false
+EXTRAPOLATE_ACTION = true
+CLAMP_CAUSALITY = true
 
 -- if you want to visualize images, use 'qlua' instead of 'th'
 VISUALIZE_IMAGES_TAKEN = false

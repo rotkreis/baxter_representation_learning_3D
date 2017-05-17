@@ -5,88 +5,8 @@ require 'const'
 -- Output ():
 ---------------------------------------------------------------------------------------
 function save_model(model,path)
-	print("Saved at : "..path)
-	torch.save(path,model)
-end
-
----------------------------------------------------------------------------------------
--- Function : preprocess_image(im, length, width, SpacialNormalization) former preprocess
--- Input ():
--- Output ():
----------------------------------------------------------------------------------------
-function preprocess_image(im, length, width)
-	-- Name channels for convenience
-	local channels = {'y','u','v'}
-	local mean = {}
-	local std = {}
-	print("preprocess_image im with dataAugmentation...")
-
-	data = torch.Tensor( 3, im:size(2), im:size(3))
-	data:copy(im)
-	for i,channel in ipairs(channels) do
-	   -- normalize each channel globally:
-	   mean[i] = data[i]:mean()
-	   std[i] = data[{i,{},{}}]:std()
-	   data[{i,{},{}}]:add(-mean[i])
-	   data[{i,{},{}}]:div(std[i])
-	end
---[[	local neighborhood = image.gaussian1D(5) -- 5 for face detector training
-	-- Define our local normalization operator
-	local normalization = nn.SpatialContrastiveNormalization(1, neighborhood, 1e-4)
-
-
-	-- Normalize all channels locally:
-		-- Normalize all channels locally:
-	for c in ipairs(channels) do
-		for c in ipairs(channels) do
-	      	      data[{{c},{},{} }] = normalization:forward(data[{{c},{},{} }])
-		      data[{{c},{},{} }] = normalization:forward(data[{{c},{},{} }])
-		end
- 	end--]]
-	--TODO
-	--if dataAugmentation then data=dataAugmentationWithNoiseFactor(data, length, width,dataAugmentation) end
-	--else
-	data=dataAugmentation(data, length, width)
-	return data
-end
-
-local function gamma(im)
-   local Gamma= torch.Tensor(3,3)
-   local channels = {'y','u','v'}
-   local mean = {}
-   local std = {}
-   for i,channel in ipairs(channels) do
-      for j,channel in ipairs(channels) do
-         if i==j then Gamma[i][i] = im[{i,{},{}}]:var()
-         else
-            chan_i=im[{i,{},{}}]-im[{i,{},{}}]:mean()
-            chan_j=im[{j,{},{}}]-im[{j,{},{}}]:mean()
-            Gamma[i][j]=(chan_i:t()*chan_j):mean()
-         end
-      end
-   end
-   return Gamma
-end
-
-local function transformation(im, v,e, fact)
-   local transfo=torch.Tensor(3,200,200)
-   local Gamma=torch.mv(v,e)
-	 if fact~=nil then
-		 print("transformation using factor*gamma addition with factor= ")
-		 print(fact)
-		 for i=1, 3 do
-	      transfo[i]=im[i]+Gamma[i]*fact
-	   end
-	 else
-		 for i=1, 3 do
-	      transfo[i]=im[i]+Gamma[i]
-	   end
-	 end
-   return transfo
-end
-
-function loi_normal(x,y,center_x,center_y,std_x,std_y)
-   return math.exp(-(x-center_x)^2/(2*std_x^2))*math.exp(-(y-center_y)^2/(2*std_y^2))
+   print("Saved at : "..path)
+   torch.save(path,model)
 end
 
 function dataAugmentation(im, mean, std)
@@ -110,47 +30,6 @@ function dataAugmentation(im, mean, std)
 
    -- im = normalize(im, mean, std):add(noise:float())
    -- return im
-end
-
-
----------------------------------------------------------------------------------------
--- Function : dataAugmentation(im, length, width) -- TODO
--- Input ():
--- Output ():
--- goal : By using data augmentation we want our network to be more resistant
--- to no task relevant perturbations like luminosity variation or noise
----------------------------------------------------------------------------------------
-function dataAugmentationWithNoiseFactor(im, lenght, width,coef_DA)
-	local channels = {'y','u','v'}
-
-	gam=gamma(im)
-	e, V = torch.eig(gam,'V')
-	factors=torch.randn(3)*0.1
-	for i=1,3 do e:select(2, 1)[i]=e:select(2, 1)[i]*factors[i] end
-	im=transformation(im, V, e:select(2, 1), coef_DA)
-	noise=torch.rand(3,lenght,width)
-	local mean = {}
-	local std = {}
-	for i,channel in ipairs(channels) do
-	   -- normalize each channel globally:
-	   mean[i] = noise[i]:mean()
-	   std[i] = noise[{i,{},{}}]:std()
-	   noise[{i,{},{}}]:add(-mean[i])
-	   noise[{i,{},{}}]:div(std[i])
-	end
-	--[[
-	Gaus=torch.zeros(200,200)
-	foyer_x=torch.random(1,200)
-	foyer_y=torch.random(1,200)
-	std_x=torch.random(1,5)
-	std_y=torch.random(1,5)
-	for x=1,200 do
-		for y=1,200 do
-			Gaus[x][y]=loi_normal(x/20,y/20,foyer_x/20,foyer_y/20,std_x,std_y)
-		end
-	end
-	return im+noise--]]
-	return im+noise*coef_DA
 end
 
 ---------------------------------------------------------------------------------------
@@ -326,18 +205,6 @@ function Get_Folder_Name(Log_Folder,list_prior)
 end
 
 
-
----------------------------------------------------------------------------------------
--- Function :copy_weight(model, AE)
--- Input ():
--- Output ():
----------------------------------------------------------------------------------------
-function copy_weight(model, AE)
-   model:get(1).weight:copy(AE:get(1).weight)
-   model:get(4).weight:copy(AE:get(5).weight)
-   return model
-end
-
 ---------------------------------------------------------------------------------------
 -- Function :
 -- Input ():
@@ -390,13 +257,17 @@ end
 
 function load_data(id)
 
-   list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
+   string_preloaded_and_normalized_data = PRELOAD_FOLDER..'preloaded_'..DATA_FOLDER..'_Seq'..id..'_normalized.t7'
+   string_preloaded_data = PRELOAD_FOLDER..'preloaded_'..DATA_FOLDER..'_Seq'..id..'.t7'
 
-   string_preloaded_data = PRELOAD_FOLDER..'preloadedSeq'..id..'.t7'
-
-   if file_exists(string_preloaded_data) then
+   if file_exists(string_preloaded_and_normalized_data) then    -- DATA + NORMALIZATION EXISTS
+      return torch.load(string_preloaded_and_normalized_data)
+   elseif file_exists(string_preloaded_data) then               -- DATA WITHOUT NORM
       data = torch.load(string_preloaded_data)
-   else
+      return data
+      --return preprocess_seq(data)
+   else   -- DATA DOESN'T EXIST AT ALL
+      list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
       local list=images_Paths(list_folders_images[id])
       local txt=list_txt_action[id]
       local txt_reward=list_txt_button[id]
@@ -406,155 +277,6 @@ function load_data(id)
       torch.save(string_preloaded_data,data)
    end
    return data
-end
-
--- pb si pas de reward....
-function getInfos(txt,txt_reward,start,lenght,txt_state)
-	local Infos={dx={},dy={},dz={},reward={}}
-	local dx=2
-	local dy=3
-	local dz=4
-	local reward_indice=2
-
-local reward=0--!!!new
-local tensor_state, label=tensorFromTxt(txt_state)
-
-	local tensor, label=tensorFromTxt(txt)
-	local tensor_reward, label=tensorFromTxt(txt_reward)
-	local ThereIsReward=false
-	for i=start, start+lenght do
-		table.insert(Infos.dx,tensor[i][dx])
-		table.insert(Infos.dy,tensor[i][dy])
-		table.insert(Infos.dz,tensor[i][dz])
-
-if math.floor(tensor_state[i][dx]*100)%20==0 or math.floor(tensor_state[i][dy]*100)%20==0 or math.floor(tensor_state[i][dz]*100)%20==0 then
-	ThereIsReward=true
-	reward=1
-else
-	reward=0
- end
-table.insert(Infos.reward,reward)
---!!!!!!!!!!!!!!table.insert(Infos.reward,tensor_reward[i][reward_indice])
---print(tensor_reward[i][reward_indice])
-
-
---!!!!!!!!!!!!!!if tensor_reward[i][reward_indice]==1 then ThereIsReward=true end
-       end
-
-	return Infos,ThereIsReward
-
-end
-
-----
-function file_exists(name)
-	--tests whether the file can be opened for reading
-   local f=io.open(name,"r")
-   if f~=nil then io.close(f) return true else return false end
-end
-
---from Get_Baxter_Files:  loads or createds preload_folder
-function loadTrainTest(list_folders_images, crossValStep, PRELOAD_FOLDER)
-   imgs = {}
-	 print("loadTrainTest: n_data_sequences",PRELOAD_FOLDER)
-   preload_name = PRELOAD_FOLDER..'saveImgsRaw.t7'
-   if not file_exists(preload_name) then
-		  n_data_sequences = #list_folders_images
-      print("loadTrainTest: n_data_sequences",n_data_sequences)
-      for i=1,n_data_sequences do
-         list=images_Paths(list_folders_images[i])
-         table.insert(imgs,load_list(list,image_width,image_height,false))
-      end
-			-- print ('list_folders_images')
-			-- print (list_folders_images)
-			-- print ('list')
-			-- print (list)
-      torch.save(preload_name,imgs)
-			print("loadTrainTest folder does not exist. Loaded and saved images to "..preload_name)
-   else
-      imgs = torch.load(preload_name)
-			print("loadTrainTest loaded images: "..#imgs.." from "..preload_name)
-   end
-
-   -- switch value, because all functions consider the last element to be the test element
-   imgs[crossValStep], imgs[#imgs] = imgs[#imgs], imgs[crossValStep]
-   print("Preprocess_images_3D... "..#imgs)
-   imgs,mean,std = preprocessing(imgs) --preprocess_images_3D(imgs)
-	 -- LEARN THAT OPTIONAL PARAMETERS CAN BE OMITTED BY JUST NOT BEING PROVIDED IN LUA
-   imgs_test = imgs[#imgs]
-   return imgs, imgs_test
-end
-
--- function preprocess_images_3D(imgs)
---    -- Calculate reformat imgs, mean and std for images in train set
---    -- normalize train set and apply to test
---    print('preprocess_images_3D(imgs)')
---    print(#imgs)
---    imgs = scaleAndCrop(imgs)
---    --if not meanStd then
---    mean, std = meanAndStd(imgs)
---   --  else
---   --     mean, std = meanStd[1], meanStd[2]
---   --  end
---
---    numSeq = #imgs-1
---    for i=1,numSeq do
---       for j=1,#(imgs[i]) do
---          im = imgs[i][j]
---          imgs[i][j] =  dataAugmentation(im, mean,std)
---       end
---    end
---    imgs[#imgs] = preprocessingTest(imgs[#imgs], mean,std)
---    return imgs, mean, std
--- end
-
-function preprocessing(imgs,meanStd)
-   -- Calculate reformat imgs, mean and std for images in train set
-   -- normalize train set and apply to test
-   print('preprocessing(imgs,meanStd)')
-   print(imgs)
-   print(meanStd)
-   imgs = scaleAndCrop(imgs)
-   if not meanStd then
-      mean, std = meanAndStd(imgs)
-   else
-      mean, std = meanStd[1], meanStd[2]
-   end
-
-   numSeq = #imgs-1
-   for i=1,numSeq do
-      for j=1,#(imgs[i]) do
-         im = imgs[i][j]
-         imgs[i][j] =  dataAugmentation(im, mean,std)
-      end
-   end
-   imgs[#imgs] = preprocessingTest(imgs[#imgs], mean,std)
-
-   return imgs, mean, std
-end
-
-function normalize(im,mean,std)
-   for i=1,3 do
-      im[{i,{},{}}] = (im[{i,{},{}}]:add(-mean[i])):cdiv(std[i])
-   end
-   return im
-end
-
--- function load_list(list,length,height, train)
---    local im={}
---    local length=length or 200
---    local height=height or 200
---    for i=1, #list do
---       table.insert(im,getImage(list[i],length,height,train))
--- 	 end
--- end
-function load_list(list)
-   local im={}
-   local lenght=image_width or 200
-   local height=image_height or 200
-   for i=1, #list do
-      table.insert(im,getImage(list[i]))
-   end
-   return im
 end
 
 function scaleAndCrop(imgs, length, height)
@@ -595,8 +317,9 @@ function load_Part_list(list,txt,txt_reward,im_length,im_height,data_augmentatio
    local Infos=getInfos(txt,txt_reward,txt_state)
 
    for i=1, #(Infos.dx) do
-      table.insert(im,getImageAndAugment(list[i],im_length,im_height,data_augmentation))
+      table.insert(im,getImage(list[i]))
    end
+   
    return {images=im,Infos=Infos}
 end
 
@@ -665,26 +388,16 @@ function meanAndStd(imgs)
    std[2] = torch.sqrt(std[2] / totImg)
    std[3] = torch.sqrt(std[3] / totImg)
 
-   torch.save('Log/meanStdImages.t7',{mean,std})
+   torch.save('Log/meanStdImages_'..DATA_FOLDER..'.t7',{mean,std})
    return mean,std
-end
-
-function preprocessingTest(imgs,mean,std)
-   --Normalizing all images
-   for i=1,#imgs do
-      im = imgs[i]
-      imgs[i] = normalize(im,mean,std)
-   end
-   return imgs
 end
 
 function getImage(im)
    if im=='' or im==nil then return nil end
    local image1=image.load(im,3,'byte')
-   return image1
-   -- local format=length.."x"..height
-   -- local img1_rsz=image.scale(image1,format)
-   -- return img1_rsz:float()
+   local format=IM_LENGTH.."x"..IM_HEIGHT
+   local img1_rsz=image.scale(image1,format)
+   return img1_rsz:float()
 end
 
 function file_exists(name)

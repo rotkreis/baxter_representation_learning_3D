@@ -6,7 +6,7 @@ require 'const'
 ---------------------------------------------------------------------------------------
 function images_Paths(folder_containing_jpgs)
    local listImage={}
-   print('images_Paths: ', folder_containing_jpgs)
+   --print('images_Paths: ', folder_containing_jpgs)
    --folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
    for file in paths.files(folder_containing_jpgs) do
       --print('getting image path:  '..file)
@@ -18,7 +18,7 @@ function images_Paths(folder_containing_jpgs)
       end
    end
    table.sort(listImage)
-   print('Loaded images from Path: '..folder_containing_jpgs)
+   --print('Loaded images from Path: '..folder_containing_jpgs)
    return listImage
 end
 
@@ -121,7 +121,7 @@ function tensorFromTxt(path)
    local data, raw = {}, {}
    local rawCounter, columnCounter = 0, 0
    local nbFields, labels, _line = nil, nil, nil
-   print('tensorFromTxt path:',path)
+   --print('tensorFromTxt path:',path)
    for line in io.lines(path)  do   ---reads each line in the .txt data file
       local comment = false
       if line:sub(1,1)=='#' then
@@ -263,10 +263,13 @@ function get_one_random_Caus_Set(Infos1,Infos2)
 
       action1 = action_amplitude(Infos2, id_ref_action_begin, id_ref_action_end)
 
-      -- WARNING, THIS IS DIRTY, need to do continous prior
-      action1.x = clamp_causality_prior_value(action1.x)
-      action1.y = clamp_causality_prior_value(action1.y)
-      action1.z = clamp_causality_prior_value(action1.z)
+
+      if CLAMP_CAUSALITY and not EXTRAPOLATE_ACTION then
+         -- WARNING, THIS IS DIRTY, need to do continous prior
+         action1.x = clamp_causality_prior_value(action1.x)
+         action1.y = clamp_causality_prior_value(action1.y)
+         action1.z = clamp_causality_prior_value(action1.z)
+      end
 
       -- print("id1",id_ref_action_begin)
       -- print("id2",id_ref_action_end)
