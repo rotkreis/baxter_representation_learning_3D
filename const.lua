@@ -29,7 +29,7 @@ STRING_MEAN_AND_STD_FILE = PRELOAD_FOLDER..'meanStdImages_'..DATA_FOLDER..'.t7'
 -- Create actions that weren't done by the robot
 -- by sampling randomly states (begin point and end point)
 -- Cannot be applied in every scenario !!!!
-EXTRAPOLATE_ACTION = true
+EXTRAPOLATE_ACTION = false
 CLAMP_CAUSALITY = true
 
 -- if you want to visualize images, use 'qlua' instead of 'th'
@@ -70,4 +70,15 @@ now = os.date("*t")
 
 DAY = now.year..'_'..now.yday..'__'..now.hour..'_'..now.min..'_'..now.sec
 
-NAME_SAVE=LOG_FOLDER..'model'..DAY..'.t7'
+NAME_SAVE= 'model'..DAY
+
+if DATA_FOLDER == 'simpleData3D' then
+   MIN_X = 0.42
+   MAX_X = 0.8
+
+   MIN_Y = -0.2
+   MAX_Y = 0.7
+
+   MIN_Z = -10
+   MAX_Z = 10
+end

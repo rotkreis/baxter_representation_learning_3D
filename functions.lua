@@ -5,9 +5,21 @@ require 'image'
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function save_model(model,path)
+function save_model(model)
+
+   path = LOG_FOLDER..NAME_SAVE
+   lfs.mkdir(path)
+   file_string = path..'/'..NAME_SAVE..'.t7'
+
+   os.execute("cp const.lua "..path)
+   
    print("Saved at : "..path)
-   torch.save(path,model)
+   torch.save(file_string,model)
+
+   f = io.open('lastModel.txt','w')
+   f:write(path..'\n'..NAME_SAVE..'.t7')
+   f:close()
+   
 end
 
 ---------------------------------------------------------------------------------------
@@ -240,18 +252,10 @@ function load_seq_by_id(id)
    return data
 end
 
-function scaleAndCrop(img)
-   -- Why do i scale and crop after ? Because this is the way it's done under python,
-   -- so we need to do the same conversion
+function scale(img)
 
-   local lengthBeforeCrop = 320 --Tuned by hand, that way, when you scale then crop, the image is 200x200
-   
-   local lengthAfterCrop = IM_LENGTH
-   local height = IM_HEIGHT
-   local formatBefore=lengthBeforeCrop.."x"..height
-
-   local imgAfter=image.scale(img,formatBefore)
-   local imgAfter=image.crop(imgAfter, 'c', lengthAfterCrop, height)
+   local format=IM_LENGTH.."x"..IM_HEIGHT
+   local imgAfter=image.scale(img,format)
 
    if VISUALIZE_IMAGE_CROP then
       dim1_before = img:size(1)
@@ -297,6 +301,18 @@ function load_Part_list(list,txt,txt_reward,txt_state)
    return {images=im,Infos=Infos}
 end
 
+function is_out_of_bound(x,y,z)
+   if x < MIN_X or x > MAX_X then
+      return true
+   elseif y < MIN_Y or y > MAX_Y then
+      return true
+   elseif z < MIN_Z or z > MAX_Z then
+      return true
+   else
+      return false
+   end
+end
+
 function getInfos(txt,txt_reward,txt_state)
    local Infos={dx={},dy={},dz={},reward={}}
    local dx=2
@@ -311,12 +327,24 @@ function getInfos(txt,txt_reward,txt_state)
    local there_is_reward=false
 
    for i=1,tensor_reward:size(1) do
-      table.insert(Infos.dx,tensor_state[i][dx])
-      table.insert(Infos.dy,tensor_state[i][dy])
-      table.insert(Infos.dz,tensor_state[i][dz])
+      local x = tensor_state[i][dx]
+      local y = tensor_state[i][dy]
+      local z = tensor_state[i][dz]
+      local reward = tensor_reward[i][reward_indice]
+      
+      table.insert(Infos.dx,x)
+      table.insert(Infos.dy,y)
+      table.insert(Infos.dz,z)
 
-      table.insert(Infos.reward,tensor_reward[i][reward_indice])
-      if tensor_reward[i][reward_indice]==1 then there_is_reward=true end
+      if reward~=0 then
+         there_is_reward=true
+         table.insert(Infos.reward,reward)
+      elseif is_out_of_bound(x,y,z) then
+         there_is_reward=true
+         table.insert(Infos.reward,-1)
+      else
+         table.insert(Infos.reward,0)
+      end
       --print(tensor_reward[i][reward_indice])
    end
    assert(there_is_reward,"Reward is needed in a sequence...")
@@ -349,7 +377,7 @@ function calculate_mean_and_std()
                totImg = totImg + 1 
                local fullImagesPath = imagesPath..'/'..imageStr
                local img=image.load(fullImagesPath,3,'byte'):float()
-               img = scaleAndCrop(img)
+               img = scale(img)
 
                mean[1] = mean[1]:add(img[{1,{},{}}])
                mean[2] = mean[2]:add(img[{2,{},{}}])
@@ -370,9 +398,8 @@ function calculate_mean_and_std()
             if string.find(imageStr,'jpg') then
                local fullImagesPath = imagesPath..'/'..imageStr
                local img=image.load(fullImagesPath,3,'byte'):float()
-               img = scaleAndCrop(img)
+               img = scale(img)
                
-
                std[1] = std[1]:add(torch.pow(img[{1,{},{}}]-mean[1],2))
                std[2] = std[2]:add(torch.pow(img[{2,{},{}}]-mean[2],2))
                std[3] = std[3]:add(torch.pow(img[{3,{},{}}]-mean[3],2))
@@ -425,7 +452,7 @@ end
 function getImageFormated(im)
    if im=='' or im==nil then error("im is nil, this is not an image") end
    local img=image.load(im,3,'byte'):float()
-   img = scaleAndCrop(img)
+   img = scale(img)
    img = normalize(img)
    return img
 end
