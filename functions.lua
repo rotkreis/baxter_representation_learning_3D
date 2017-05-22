@@ -104,9 +104,7 @@ function getRandomBatchFromSeparateList(Data1,Data2, length, Mode)
 
 end
 
-
 function getRandomBatchFromSeparateListContinuous(Data1,Data2, batchSize, Mode)
-   local action_deltas = {}
    local Dim=Data1.images[1]:size()
    if Mode=="Prop" or Mode=="Rep" then
       Batch=torch.Tensor(4, batchSize,Dim[1], Dim[2], Dim[3])
@@ -118,7 +116,8 @@ function getRandomBatchFromSeparateListContinuous(Data1,Data2, batchSize, Mode)
 
    for i=1, batchSize do
       if Mode=="Prop" or Mode=="Rep" then
-         Set, action1, action2 =get_two_Prop_Pair_and_actions(Data1.Infos, Data2.Infos)
+         Set =get_two_Prop_Pair_and_actions(Data1.Infos, Data2.Infos)
+         print ('getRandomBatchFromSeparateListContinuous')
          im1,im2 = Data1.images[Set.im1], Data1.images[Set.im2]
          im3,im4 = Data2.images[Set.im3], Data2.images[Set.im4]
          Batch[1][i]= im1
@@ -131,7 +130,7 @@ function getRandomBatchFromSeparateListContinuous(Data1,Data2, batchSize, Mode)
          Batch[1][i]=im1
          Batch[2][i]=im2
       elseif Mode=="Caus" then
-         Set, action1, action2 =get_one_random_Caus_Set_and_actions(Data1.Infos, Data2.Infos)
+         Set =get_one_random_Caus_Set_and_actions(Data1.Infos, Data2.Infos)
 
          im1,im2,im3,im4 = Data1.images[Set.im1], Data2.images[Set.im2], Data1.images[Set.im3], Data2.images[Set.im4]
          --The last two are for viz purpose only
@@ -148,7 +147,7 @@ function getRandomBatchFromSeparateListContinuous(Data1,Data2, batchSize, Mode)
       print("MODE :",Mode)
       visualize_set(im1,im2,im3,im4)
    end
-   return Batch, action1, action2
+   return Batch, Set.act1, Set.act2
 end
 
 
@@ -343,7 +342,7 @@ function load_seq_by_id(id)
       print("list_txt_button",list_txt_button)
       print("list_txt_state",list_txt_state)
 
-      
+
       local list=images_Paths(list_folders_images[id])
       local txt=list_txt_action[id]
       local txt_reward=list_txt_button[id]
@@ -431,7 +430,7 @@ function getInfos(txt,txt_reward,txt_state)
       Infos[dim] = {}
    end
    Infos.reward = {}
-   
+
    local reward_indice=REWARD_INDICE
 
    local tensor_state, label=tensorFromTxt(txt_state)
@@ -443,14 +442,14 @@ function getInfos(txt,txt_reward,txt_state)
    for i=1,tensor_reward:size(1) do
 
       local last_pos = {}
-      
+
       for dim=1,#INDICE_TABLE do
          id_of_dim_in_tensor = INDICE_TABLE[dim]
          local value = tensor_state[i][id_of_dim_in_tensor]
          table.insert(Infos[dim],value)
          table.insert(last_pos, value) -- For out_of_bound func
       end
-      
+
       local reward = tensor_reward[i][reward_indice]
 
       if reward~=0 then

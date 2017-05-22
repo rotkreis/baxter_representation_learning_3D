@@ -1,4 +1,5 @@
 require 'const'
+
 ---------------------------------------------------------------------------------------
 -- Function : images_Paths(path)  #TODO remove to avoid conflict with 1D
 -- Input (Path): path of a Folder which contains jpg images
@@ -164,7 +165,7 @@ end
 function is_same_action(action1,action2)
    local same_action = true
    --for each dim, you check that the magnitude of the action is close
-   for dim=1,DIMENSION_IN do 
+   for dim=1,DIMENSION_IN do
       same_action = same_action and arrondit(action1[dim] - action2[dim])==0
    end
    return same_action
@@ -309,7 +310,7 @@ end
 -- Input (head_pan_indice) :
 -- Output (tensor):
 ---------------------------------------------------------------------------------------
-function arrondit(value, prec) 
+function arrondit(value, prec)
    local prec = prec or DEFAULT_PRECISION
    divFactor = 1/prec
 
