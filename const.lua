@@ -54,7 +54,7 @@ IM_LENGTH = 200
 IM_HEIGHT = 200
 
 DATA_AUGMENTATION = 0.01
-USE_CUDA = true
+USE_CUDA = false--true
 
 USE_SECOND_GPU = true
 
