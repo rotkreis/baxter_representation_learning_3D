@@ -98,11 +98,12 @@ function Get_HeadCamera_View_Files(Path)
    list_txt_action={}
    list_txt_state={}
 
+
    for i=1, #Paths do
       list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
-      table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
-      table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
-      table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
+      table.insert(list_txt_button, txt_path(Paths[i],FILENAME_FOR_REWARD))
+      table.insert(list_txt_action, txt_path(Paths[i],FILENAME_FOR_ACTION))
+      table.insert(list_txt_state, txt_path(Paths[i],FILENAME_FOR_STATE))
    end
    table.sort(list_txt_button) -- file recorded_button_is_pressed.txt
    table.sort(list_txt_action) --file recorded_robot_limb_left_endpoint_action.txt
@@ -152,20 +153,21 @@ end
 --=============================================================
 function action_amplitude(infos,id1, id2)
    local action = {}
-   action.x = infos.dx[id1] - infos.dx[id2]
-   action.y = infos.dy[id1] - infos.dy[id2]
-   action.z = infos.dz[id1] - infos.dz[id2]
+
+   for dim=1,DIMENSION_IN do
+      action[dim] = infos[dim][id1] - infos[dim][id2]
+   end
    return action
 end
 
+
 function is_same_action(action1,action2)
-   if arrondit(action1.x - action2.x)==0 and
-      arrondit(action1.y - action2.y)==0 and
-   arrondit(action1.z - action2.z)==0 then
-      return true
-   else
-      return false
+   local same_action = true
+   --for each dim, you check that the magnitude of the action is close
+   for dim=1,DIMENSION_IN do 
+      same_action = same_action and arrondit(action1[dim] - action2[dim])==0
    end
+   return same_action
 end
 
 ---------------------------------------------------------------------------------------
@@ -191,8 +193,9 @@ end
 function get_two_Prop_Pair(Infos1, Infos2)
 
    local watchDog=0
-   local size1=#Infos1.dx
-   local size2=#Infos2.dx
+
+   local size1=#Infos1[1]
+   local size2=#Infos2[1]
 
    local vector=torch.randperm(size2-1)
 
@@ -238,12 +241,9 @@ end
 function get_one_random_Caus_Set(Infos1,Infos2)
 
    local watchDog=0
-   local dx=2
-   local dy=3
-   local dz=4
 
-   local size1=#Infos1.dx
-   local size2=#Infos2.dx
+   local size1=#Infos1[1]
+   local size2=#Infos2[1]
    vector=torch.randperm(size2-1)
 
    while watchDog<100 do
@@ -269,9 +269,9 @@ function get_one_random_Caus_Set(Infos1,Infos2)
 
       if CLAMP_CAUSALITY and not EXTRAPOLATE_ACTION then
          -- WARNING, THIS IS DIRTY, need to do continous prior
-         action1.x = clamp_causality_prior_value(action1.x)
-         action1.y = clamp_causality_prior_value(action1.y)
-         action1.z = clamp_causality_prior_value(action1.z)
+         for dim=1,DIMENSION_IN do
+            action1[dim]=clamp_causality_prior_value(action1[dim])
+         end
       end
 
       -- print("id1",id_ref_action_begin)
@@ -309,8 +309,8 @@ end
 -- Input (head_pan_indice) :
 -- Output (tensor):
 ---------------------------------------------------------------------------------------
-function arrondit(value, prec)
-   local prec = prec or 0.05--0.05 precision
+function arrondit(value, prec) 
+   local prec = prec or DEFAULT_PRECISION
    divFactor = 1/prec
 
    floor=math.floor(value*divFactor)/divFactor
