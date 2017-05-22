@@ -81,6 +81,7 @@ end
 
 function get_gaussian_sigma()
   return 0.5
+end
 
 function get_Prop_criterion_continuous(action_deltas)
    h1 = nn.Identity()()

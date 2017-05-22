@@ -480,7 +480,7 @@ function calculate_mean_and_std()
                totImg = totImg + 1
                local fullImagesPath = imagesPath..'/'..imageStr
                local img=image.load(fullImagesPath,3,'byte'):float()
-               img = scale(img)
+               img = scaleAndCrop(img)
 
                mean[1] = mean[1]:add(img[{1,{},{}}])
                mean[2] = mean[2]:add(img[{2,{},{}}])
@@ -553,7 +553,7 @@ end
 function getImageFormated(im)
    if im=='' or im==nil then error("im is nil, this is not an image") end
    local img=image.load(im,3,'byte'):float()
-   img = scale(img)
+   img = scaleAndCrop(img)
    img = normalize(img)
    return img
 end

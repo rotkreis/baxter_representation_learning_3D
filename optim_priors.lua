@@ -1,6 +1,6 @@
 
 function doStuff_temp(Models,criterion,Batch,coef)
-   """ Returns the loss and the gradient """
+   -- Returns the loss and the gradient
    local coef= coef or 1
    local im1, im2, Model, Model2, State1, State2
 
@@ -34,7 +34,7 @@ function doStuff_temp(Models,criterion,Batch,coef)
 end
 
 function doStuff_Caus(Models,criterion,Batch,coef)
-   """ Returns the loss and the gradient """
+   -- Returns the loss and the gradient
    local coef= coef or 1
    local im1, im2, Model, Model2, State1, State2
 
@@ -66,7 +66,7 @@ function doStuff_Caus(Models,criterion,Batch,coef)
 end
 
 function doStuff_Prop(Models,criterion,Batch, coef)
-   """ Returns the loss and the gradient """
+   -- Returns the loss and the gradient
    local coef= coef or 1
    local im1, im2, im3, im4, Model, Model2, Model3, Model4, State1, State2, State3, State4
 
@@ -109,7 +109,7 @@ function doStuff_Prop(Models,criterion,Batch, coef)
 end
 
 function doStuff_Rep(Models,criterion,Batch, coef)
-   """ Returns the loss and the gradient """
+   -- Returns the loss and the gradient
    local coef= coef or 1
    local im1, im2, im3, im4, Model, Model2, Model3, Model4, State1, State2, State3, State4
 
@@ -152,7 +152,7 @@ function doStuff_Rep(Models,criterion,Batch, coef)
 end
 
 function doStuff_Caus_continuous(Models,criterion,Batch,coef, action1, action2)
-   """ Returns the loss and the gradient """
+   -- Returns the loss and the gradient
    local coef= coef or 1
    local im1, im2, Model, Model2, State1, State2
 
@@ -185,7 +185,7 @@ function doStuff_Caus_continuous(Models,criterion,Batch,coef, action1, action2)
 end
 
 function doStuff_Prop_continuous(Models,criterion,Batch, coef, action1, action2)
-   """ Returns the loss and the gradient """
+  -- Returns the loss and the gradient
    local coef= coef or 1
    local im1, im2, im3, im4, Model, Model2, Model3, Model4, State1, State2, State3, State4
 
@@ -229,7 +229,7 @@ function doStuff_Prop_continuous(Models,criterion,Batch, coef, action1, action2)
 end
 
 function doStuff_Rep_continuous(Models,criterion,Batch, coef, action1, action2)
-   """ Returns the loss and the gradient """
+  -- Returns the loss and the gradient 
    local coef= coef or 1
    local im1, im2, im3, im4, Model, Model2, Model3, Model4, State1, State2, State3, State4
 
