@@ -91,24 +91,24 @@ end
 -- Output (list_txt):  txt list associated to each directories (this txt file contains the grundtruth of the robot position)
 ---------------------------------------------------------------------------------------
 function Get_HeadCamera_View_Files(Path)
-	local use_simulate_images=use_simulate_images or false
-	local Paths=Get_Folders(Path,'record')  --TODO? formerly, for 1D, 'record' param was not needed
-	list_folder={}
-	list_txt_button={}
-	list_txt_action={}
-	list_txt_state={}
+   local use_simulate_images=use_simulate_images or false
+   local Paths=Get_Folders(Path,'record')  --TODO? formerly, for 1D, 'record' param was not needed
+   list_folder={}
+   list_txt_button={}
+   list_txt_action={}
+   list_txt_state={}
 
-	for i=1, #Paths do
-		list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
-		table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
-		table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
-		table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
-	end
-	table.sort(list_txt_button) -- file recorded_button_is_pressed.txt
-	table.sort(list_txt_action) --file recorded_robot_limb_left_endpoint_action.txt
-	table.sort(list_txt_state)--recroded_robot_libm_left_endpoint_state  -- for the hand position
-	table.sort(list_folder) --recorded_cameras_head_camera_2_image_compressed
-	return list_folder, list_txt_action,list_txt_button, list_txt_state
+   for i=1, #Paths do
+      list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
+      table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
+      table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
+      table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
+   end
+   table.sort(list_txt_button) -- file recorded_button_is_pressed.txt
+   table.sort(list_txt_action) --file recorded_robot_limb_left_endpoint_action.txt
+   table.sort(list_txt_state)--recroded_robot_libm_left_endpoint_state  -- for the hand position
+   table.sort(list_folder) --recorded_cameras_head_camera_2_image_compressed
+   return list_folder, list_txt_action,list_txt_button, list_txt_state
 end
 
 ---------------------------------------------------------------------------------------
@@ -255,7 +255,10 @@ function get_one_random_Caus_Set(Infos1,Infos2)
          else
             id_ref_action_end  = id_ref_action_begin+1
          end
-      until(Infos2.reward[id_ref_action_begin]==0 and Infos2.reward[id_ref_action_end]==1)
+
+      until(Infos2.reward[id_ref_action_begin]==0 and Infos2.reward[id_ref_action_end]~=0)
+
+      reward1 = Infos2.reward[id_ref_action_end]
 
       if VISUALIZE_CAUS_IMAGE then
          visualize_image_from_seq_id(indice2,id_ref_action_begin,id_ref_action_end)
@@ -286,7 +289,7 @@ function get_one_random_Caus_Set(Infos1,Infos2)
             id_second_action_end=id_second_action_begin+1
          end
 
-         if Infos1.reward[id_second_action_begin]==0 and Infos1.reward[id_second_action_end]==0 then
+         if Infos1.reward[id_second_action_begin]==0 and Infos1.reward[id_second_action_end]~=reward1 then
             action2 = action_amplitude(Infos1, id_second_action_begin, id_second_action_end)
             --print("action2",action2.x,action2.y,action2.z)
 

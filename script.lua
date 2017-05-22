@@ -14,7 +14,6 @@ require 'printing'
 require "Get_Images_Set"
 require 'optim_priors'
 require 'definition_priors'
-
 -- THIS IS WHERE ALL THE CONSTANTS SHOULD COME FROM
 -- See const.lua file for more details
 require 'const'
@@ -197,8 +196,8 @@ function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
          --local indice1=torch.random(1,NB_SEQUENCES-1)
          -- local indice2=torch.random(1,NB_SEQUENCES-1)
 
-         indice1=torch.random(1,NB_SEQUENCES-1)
-         indice2=torch.random(1,NB_SEQUENCES-1)
+         indice1=torch.random(1,NB_SEQUENCES)
+         indice2=torch.random(1,NB_SEQUENCES)
          ------------- only one list used----------
          --       print([[====================================================
          -- WARNING TESTING PRIOR, THIS IS NOT RANDOM AT ALL
@@ -242,7 +241,7 @@ function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
       print("Loss Caus", Caus_loss/nb_batch/BATCH_SIZE)
       print("Loss Rep", Rep_loss/nb_batch/BATCH_SIZE)
 
-      save_model(Models.Model1,NAME_SAVE)
+      save_model(Models.Model1)
    end
 end
 

@@ -10,7 +10,13 @@ import sys
 
 # Some parameters
 nbr_neighbors=2
-data_file="saveImagesAndRepr.txt"
+
+lastModelFile = open('lastModel.txt')
+
+path_to_model = lastModelFile.readline()[:-1]
+
+data_file=path_to_model+"/saveImagesAndRepr.txt"
+
 nbr_images = -1
 if len(sys.argv) ==2:
 	nbr_images=int(sys.argv[1])
@@ -32,8 +38,10 @@ nbrs = NearestNeighbors(n_neighbors=(nbr_neighbors+1), algorithm='ball_tree').fi
 distances, indices = nbrs.kneighbors(states)
 
 #Generate mosaics
-shutil.rmtree('NearestNeighbors', 1)
-os.mkdir('NearestNeighbors')
+path_to_neighbour = path_to_model + '/NearestNeighbors/'
+print "path_to_neighbour",path_to_neighbour 
+#shutil.rmtree('NearestNeighbors', 1)
+os.mkdir(path_to_neighbour)
 
 if nbr_images == -1:
 	data= zip(images,indices,distances,states)
@@ -70,4 +78,4 @@ for img_name,id,dist,state in data:
 		a.axis('off')
 		
 	plt.tight_layout()
-	plt.savefig('NearestNeighbors/' + seq_name + "_" + base_name + "_" + 'Neigbors.png',bbox_inches='tight')
+	plt.savefig(path_to_neighbour + seq_name + "_" + base_name + "_" + 'Neigbors.png',bbox_inches='tight')
