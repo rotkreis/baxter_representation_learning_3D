@@ -19,7 +19,6 @@ function save_model(model)
    f = io.open('lastModel.txt','w')
    f:write(path..'\n'..NAME_SAVE..'.t7')
    f:close()
-   
 end
 
 ---------------------------------------------------------------------------------------
@@ -241,6 +240,13 @@ function load_seq_by_id(id)
       data = torch.load(string_preloaded_and_normalized_data)
    else   -- DATA DOESN'T EXIST AT ALL
       list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
+
+      print("list_folders_images",list_folders_images)
+      print("list_folders_images",list_txt_action)
+      print("list_txt_button",list_txt_button)
+      print("list_txt_state",list_txt_state)
+
+      
       local list=images_Paths(list_folders_images[id])
       local txt=list_txt_action[id]
       local txt_reward=list_txt_button[id]
@@ -294,31 +300,34 @@ function load_Part_list(list,txt,txt_reward,txt_state)
    local im={}
    local Infos=getInfos(txt,txt_reward,txt_state)
 
-   for i=1, #(Infos.dx) do
+   for i=1, #(Infos[1]) do
       table.insert(im,getImageFormated(list[i]))
    end
    
    return {images=im,Infos=Infos}
 end
 
-function is_out_of_bound(x,y,z)
-   if x < MIN_X or x > MAX_X then
-      return true
-   elseif y < MIN_Y or y > MAX_Y then
-      return true
-   elseif z < MIN_Z or z > MAX_Z then
-      return true
-   else
-      return false
+function is_out_of_bound(list_pos)
+
+   -- For each dimension you check if the value is inside
+   -- barrier fix by MIN_TABLE and MAX_TABLE
+   for dim=1,#list_pos do
+      if list_pos[dim] < MIN_TABLE[dim] or list_pos[dim] > MAX_TABLE[dim] then
+         return true
+      end
    end
+   return false
 end
 
 function getInfos(txt,txt_reward,txt_state)
-   local Infos={dx={},dy={},dz={},reward={}}
-   local dx=2
-   local dy=3
-   local dz=4
-   local reward_indice=2
+
+   local Infos={}
+   for dim=1,DIMENSION_IN do
+      Infos[dim] = {}
+   end
+   Infos.reward = {}
+   
+   local reward_indice=REWARD_INDICE
 
    local tensor_state, label=tensorFromTxt(txt_state)
 
@@ -327,19 +336,22 @@ function getInfos(txt,txt_reward,txt_state)
    local there_is_reward=false
 
    for i=1,tensor_reward:size(1) do
-      local x = tensor_state[i][dx]
-      local y = tensor_state[i][dy]
-      local z = tensor_state[i][dz]
+
+      local last_pos = {}
+      
+      for dim=1,#INDICE_TABLE do
+         id_of_dim_in_tensor = INDICE_TABLE[dim]
+         local value = tensor_state[i][id_of_dim_in_tensor]
+         table.insert(Infos[dim],value)
+         table.insert(last_pos, value) -- For out_of_bound func
+      end
+      
       local reward = tensor_reward[i][reward_indice]
       
-      table.insert(Infos.dx,x)
-      table.insert(Infos.dy,y)
-      table.insert(Infos.dz,z)
-
       if reward~=0 then
          there_is_reward=true
          table.insert(Infos.reward,reward)
-      elseif is_out_of_bound(x,y,z) then
+      elseif is_out_of_bound(last_pos) then
          there_is_reward=true
          table.insert(Infos.reward,-1)
       else

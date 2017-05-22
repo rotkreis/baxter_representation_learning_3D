@@ -13,6 +13,8 @@ require 'cutorch'
 torch.manualSeed(100)
 
 DATA_FOLDER = 'simpleData3D'
+--DATA_FOLDER = 'mobileRobot'
+
 PRELOAD_FOLDER = 'preload_folder/'
 lfs.mkdir(PRELOAD_FOLDER)
 
@@ -25,12 +27,7 @@ MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'
 
 STRING_MEAN_AND_STD_FILE = PRELOAD_FOLDER..'meanStdImages_'..DATA_FOLDER..'.t7'
 
-
--- Create actions that weren't done by the robot
--- by sampling randomly states (begin point and end point)
--- Cannot be applied in every scenario !!!!
 EXTRAPOLATE_ACTION = false
-CLAMP_CAUSALITY = true
 
 -- if you want to visualize images, use 'qlua' instead of 'th'
 --===========================================================
@@ -48,7 +45,6 @@ end
 RELOAD_MODEL = false
 
 LR=0.0001
-DIMENSION=3
 
 SGD_METHOD = 'adam' -- Can be adam or adagrad
 BATCH_SIZE = 2 -- TRYING TO HAVE BIGGER BATCH
@@ -73,12 +69,42 @@ DAY = now.year..'_'..now.yday..'__'..now.hour..'_'..now.min..'_'..now.sec
 NAME_SAVE= 'model'..DAY
 
 if DATA_FOLDER == 'simpleData3D' then
-   MIN_X = 0.42
-   MAX_X = 0.8
+   -- Create actions that weren't done by the robot
+   -- by sampling randomly states (begin point and end point)
+   -- Cannot be applied in every scenario !!!!
 
-   MIN_Y = -0.2
-   MAX_Y = 0.7
+   CLAMP_CAUSALITY = true
 
-   MIN_Z = -10
-   MAX_Z = 10
+   MIN_TABLE = {0.42,-0.2,-10} -- for x,y,z
+   MAX_TABLE = {0.8,0.7,10} -- for x,y,z
+
+   DIMENSION_IN = 3
+   DIMENSION=3
+
+   REWARD_INDICE = 2
+
+   INDICE_TABLE = {2,3,4} --column indice for coordinate in state file (respectively x,y,z)
+
+   DEFAULT_PRECISION = 0.05
+   FILENAME_FOR_REWARD = "is_pressed"
+   FILENAME_FOR_ACTION = "endpoint_action"
+   FILENAME_FOR_STATE = "endpoint_state"
+else -- mobileRobot
+
+   CLAMP_CAUSALITY = false
+
+   MIN_TABLE = {10000,10000} -- for x,y
+   MAX_TABLE = {-10000,-10000} -- for x,y
+
+   DIMENSION_IN = 2
+   DIMENSION=3
+
+   REWARD_INDICE = 1
+   INDICE_TABLE = {2,3} --column indice for coordinate in state file (respectively x,y,z)
+
+   FILENAME_FOR_ACTION = "action"
+   FILENAME_FOR_STATE = "state"
+   FILENAME_FOR_REWARD = "reward"
+
+
 end
