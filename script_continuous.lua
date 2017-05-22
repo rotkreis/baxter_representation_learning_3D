@@ -7,7 +7,6 @@ require 'math'
 require 'string'
 require 'cunn'
 require 'nngraph'
-
 require 'MSDC'
 require 'functions'
 require 'printing'
@@ -24,7 +23,7 @@ function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
    local mom=0.9
    local coefL2=0,0
 
-   local batch=getRandomBatchFromSeparateList(data1,data2,BATCH_SIZE,Mode)
+   local batch, action_deltas =getRandomBatchFromSeparateListContinuous(data1,data2,BATCH_SIZE,Mode)
 
    -- create closure to evaluate f(X) and df/dX
    local feval = function(x)
@@ -154,98 +153,6 @@ function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
   end
 end
 
-function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
-   local nb_batch=10
-
-   local REP_criterion=get_Rep_criterion()
-   local PROP_criterion=get_Prop_criterion()
-   local CAUS_criterion=get_Caus_criterion()
-   local TEMP_criterion=nn.MSDCriterion()
-
-   local Temp_loss_list, Prop_loss_list, Rep_loss_list, Caus_loss_list = {},{},{},{}
-   local Temp_loss_list_test,Prop_loss_list_test,Rep_loss_list_test,Caus_loss_list_test = {},{},{},{}
-   local Sum_loss_train, Sum_loss_test = {},{}
-   local Temp_grad_list,Prop_grad_list,Rep_grad_list,Caus_grad_list = {},{},{},{}
-   local list_errors,list_MI, list_corr={},{},{}
-
-   local Prop=Have_Todo(Prior_Used,'Prop')
-   local Temp=Have_Todo(Prior_Used,'Temp')
-   local Rep=Have_Todo(Prior_Used,'Rep')
-   local Caus=Have_Todo(Prior_Used,'Caus')
-   print(Prop)
-   print(Temp)
-   print(Rep)
-   print(Caus)
-
-   local coef_Temp=1
-   local coef_Prop=1
-   local coef_Rep=1
-   local coef_Caus=1
-   local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
-
-   print(NB_SEQUENCES..' : sequences')
-
-   for epoch=1, NB_EPOCHS do
-      print('--------------Epoch : '..epoch..' ---------------')
-      local Temp_loss,Prop_loss,Rep_loss,Caus_loss=0,0,0,0
-      local Grad_Temp,Grad_Prop,Grad_Rep,Grad_Caus=0,0,0,0
-
-      xlua.progress(0, nb_batch)
-      for numBatch=1, nb_batch do
-
-         --Get data, create if doesn't exist
-         --local indice1=torch.random(1,NB_SEQUENCES-1)
-         -- local indice2=torch.random(1,NB_SEQUENCES-1)
-
-         indice1=torch.random(1,NB_SEQUENCES-1)
-         indice2=torch.random(1,NB_SEQUENCES-1)
-         ------------- only one list used----------
-         --       print([[====================================================
-         -- WARNING TESTING PRIOR, THIS IS NOT RANDOM AT ALL
-         -- ====================================================]])
-         --       local indice1=8
-         --       local indice2=3
-
-         local data1 = load_seq_by_id(indice1)
-         local data2 = load_seq_by_id(indice2)
-
-         assert(data1, "Something went wrong while loading data1")
-         assert(data2, "Something went wrong while loading data2")
-
-         if Temp then
-            Loss,Grad=Rico_Training(Models,'Temp',data1,data2,TEMP_criterion, coef_Temp,LR,BATCH_SIZE)
-            Grad_Temp=Grad_Temp+Grad
-            Temp_loss=Temp_loss+Loss
-         end
-         if Prop then
-            Loss,Grad=Rico_Training(Models,'Prop',data1,data2, PROP_criterion, coef_Prop,LR,BATCH_SIZE)
-            Grad_Prop=Grad_Prop+Grad
-            Prop_loss=Prop_loss+Loss
-         end
-         if Rep then
-            Loss,Grad=Rico_Training(Models,'Rep',data1,data2,REP_criterion, coef_Rep,LR,BATCH_SIZE)
-            Grad_Rep=Grad_Rep+Grad
-            Rep_loss=Rep_loss+Loss
-         end
-         if Caus then
-            Loss,Grad=Rico_Training(Models,'Caus',data1,data2,CAUS_criterion,coef_Caus,LR,BATCH_SIZE)
-            Grad_Caus=Grad_Caus+Grad
-            Caus_loss=Caus_loss+Loss
-         end
-         xlua.progress(numBatch, nb_batch)
-      end
-
-      local id=name..epoch -- variable used to not mix several log files
-
-      print("Loss Temp", Temp_loss/nb_batch/BATCH_SIZE)
-      print("Loss Prop", Prop_loss/nb_batch/BATCH_SIZE)
-      print("Loss Caus", Caus_loss/nb_batch/BATCH_SIZE)
-      print("Loss Rep", Rep_loss/nb_batch/BATCH_SIZE)
-
-      save_model(Models.Model1,NAME_SAVE)
-   end
-end
-
 Tests_Todo={
    {"Prop","Temp","Caus","Rep"}
    --[[
@@ -294,7 +201,7 @@ for nb_test=1, #Tests_Todo do
    local Priors=Tests_Todo[nb_test]
    local Log_Folder=Get_Folder_Name(LOG_FOLDER,Priors)
    print("Test actuel : "..LOG_FOLDER)
-   train_Epoch(Models,Priors,Log_Folder,LR)
+   train_Epoch_continuous(Models,Priors,Log_Folder,LR)
 end
 
 imgs={} --memory is free!!!!!

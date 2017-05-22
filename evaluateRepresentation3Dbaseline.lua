@@ -38,8 +38,6 @@ else
 	--BATCH_SIZE = 2 --60
 end
 
---MODEL
---MODEL_FILE = MODEL_PATH..MODEL_FILE
 require(MODEL_ARCHITECTURE_FILE)
 Model = getModel()
 
@@ -110,20 +108,18 @@ local function HeadPosFromTxts(txts, isData)
 end
 
 local function RewardsFromTxts(txts)
-   y = {}
-   if TASK==2 then
-      for l, txt in ipairs(txts) do
-         truth = getTruth(txt)
-         for i, head_pos in ipairs(truth) do
-            if head_pos < 0.1 and head_pos > -0.1 then
-               y[#y+1] = 1
-            else
-               y[#y+1] = 2
-            end
-         end
-      end
-   end
-   return torch.Tensor(y)
+    y = {}
+	  for l, txt in ipairs(txts) do
+	     truth = getTruth(txt)
+	     for i, head_pos in ipairs(truth) do
+	        if head_pos < 0.1 and head_pos > -0.1 then
+	           y[#y+1] = 1
+	        else
+	           y[#y+1] = 2
+	        end
+	     end
+	  end
+    return torch.Tensor(y)
 end
 
 local function RandomBatch(X,y,sizeBatch)

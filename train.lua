@@ -12,10 +12,12 @@ require 'MSDC'
 require 'functions.lua'
 require 'printing.lua'
 require 'Get_Images_Set'
---require 'Get_Baxter_Files'
-require 'priors'
+--require 'priors'
+require 'optim_priors'
+require 'definition_priors'
 require 'lfs'
 inspect = require ('inspect')--allows nicer printing of tensors --requires doing 'luarocks install inspect' in terminal
+require 'const'-- TODO remove double settings
 
 --Different models in the way the FM (feature map) is constructed:
 --Using one feature map for each dimension (x,y,z) learned ("topTripleFM_Split.lua")
