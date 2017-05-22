@@ -148,8 +148,8 @@ function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
      print("Loss Prop", Prop_loss/nb_batch/BATCH_SIZE)
      print("Loss Caus", Caus_loss/nb_batch/BATCH_SIZE)
      print("Loss Rep", Rep_loss/nb_batch/BATCH_SIZE)
-
-     save_model(Models.Model1,NAME_SAVE+'Continuous')
+     model_name = NAME_SAVE..'Continuous'
+     save_model(Models.Model1,model_name)
   end
 end
 
@@ -174,7 +174,6 @@ Tests_Todo={
 }
 
 local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
-
 NB_SEQUENCES= #list_folders_images
 
 for nb_test=1, #Tests_Todo do

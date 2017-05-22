@@ -1,9 +1,5 @@
 require 'const'
 
-CLOSE_ENOUGH_PRECISION_THRESHOLD = 0.6
-ACTION_AMPLITUDE = 0.01
-GAUSSIAN_SIGMA = 0.5
-
 ---------------------------------------------------------------------------------------
 -- Function : images_Paths(path)  #TODO remove to avoid conflict with 1D
 -- Input (Path): path of a Folder which contains jpg images
@@ -187,6 +183,7 @@ end
 
 function actions_distance(action1, action2)
   return math.sqrt(math.abs(arrondit(action1.x - action2.x)) + math.abs(arrondit(action1.y - action2.y))+ math.abs(arrondit(action1.z - action2.z)))
+end
 
 ---------------------------------------------------------------------------------------
 -- Function : get_one_random_Temp_Set(list_im)
@@ -198,8 +195,8 @@ function get_one_random_Temp_Set(list_lenght)
    return {im1=indice,im2=indice+1}
 end
 
-function get_one_random_Prop_Set_and_action_deltas(Infos1)
-   return get_two_Prop_Pair_and_action_deltas(Infos1,Infos1)
+function get_one_random_Prop_Set_and_actions(Infos1)
+   return get_two_Prop_Pair_and_actions(Infos1,Infos1)
 end
 
 ---------------------------------------------------------------------------------------
@@ -210,7 +207,7 @@ end
 -- Output : structure with 4 indices which represente a quadruplet (2 Pair of images from 2 different list) for Traininng with prop prior.
 -- The variation of joint for one pair should be close enough (<CLOSE_ENOUGH_PRECISION_THRESHOLD) in continuous actions, to the variation for the second
 ---------------------------------------------------------------------------------------
-function get_two_Prop_Pair_and_action_deltas(Infos1, Infos2)
+function get_two_Prop_Pair_and_actions(Infos1, Infos2)
 
    local watchDog=0
    local size1=#Infos1.dx
@@ -237,7 +234,7 @@ function get_two_Prop_Pair_and_action_deltas(Infos1, Infos2)
                action2 = action_amplitude(Infos2, id_second_action_begin, id_second_action_end)
                if actions_are_close_enough(action1, action2) then --is_same_action(action1, action2) then
                   action_deltas[1] = actions_distance(action1, action2)
-                  return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end}, action_deltas
+                  return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end}, action1, action2
                end
             end
          else --USE THE NEXT IMAGE IN THE SEQUENCE
@@ -245,7 +242,7 @@ function get_two_Prop_Pair_and_action_deltas(Infos1, Infos2)
             action2 = action_amplitude(Infos2, id_second_action_begin, id_second_action_end)
             if actions_are_close_enough(action1, action2) then
                action_deltas[1] = actions_distance(action1, action2)
-               return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end}, action_deltas
+               return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end}, action1, action2
             end
          end
       end
@@ -263,7 +260,7 @@ end
 --  and an array of the delta in between actions (the distance in between 2 actions as Euclidean distance)
 -- The variation of joint for one pair should be close enough (<CLOSE_ENOUGH_PRECISION_THRESHOLD) in continuous actions, to the variation for the second
 ---------------------------------------------------------------------------------------
-function get_one_random_Caus_Set_and_action_deltas(Infos1, Infos2)
+function get_one_random_Caus_Set_and_actions(Infos1, Infos2)
   local watchDog=0
   local dx=2
   local dy=3
@@ -290,7 +287,6 @@ function get_one_random_Caus_Set_and_action_deltas(Infos1, Infos2)
      end
 
      action1 = action_amplitude(Infos2, id_ref_action_begin, id_ref_action_end)
-
 
      if CLAMP_CAUSALITY and not EXTRAPOLATE_ACTION then
         -- WARNING, THIS IS DIRTY, need to do continous prior
@@ -320,7 +316,7 @@ function get_one_random_Caus_Set_and_action_deltas(Infos1, Infos2)
 
            if actions_are_close_enough(action1, action2) then
               action_deltas[1] = actions_distance(action1, action2)
-              return {im1=id_second_action_begin,im2=id_ref_action_begin, im3=id_second_action_end, im4=id_ref_action_end}, action_deltas
+              return {im1=id_second_action_begin,im2=id_ref_action_begin, im3=id_second_action_end, im4=id_ref_action_end}, action_1, action2
            end
         end
      end

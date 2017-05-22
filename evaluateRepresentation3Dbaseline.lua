@@ -17,7 +17,8 @@ require 'Get_Images_Set' -- for images_Paths(Path) Get_HeadCamera_View_Files
 require 'functions'
 require 'const'
 require 'printing' --for show_figure
-require 'priors'--for get_Rep_criterion
+require 'definition_priors'
+require 'optim_priors'
 require 'lfs'
 
 require 'math'
@@ -246,14 +247,14 @@ function createModelReconstruction()
    end
 end
 
-function train(X,y, reconstruct, n_data_sequences)
+function train(X,y, reconstruct, NB_SEQUENCES)
    reconstruct = reconstruct or true
 
    --local nbList = 10  --TODO nbList= #list_folders_images?
    local numEx = X:size(1)
    local splitTrainTest = 0.75
 
-   local sizeTest = math.floor(numEx/n_data_sequences)
+   local sizeTest = math.floor(numEx/NB_SEQUENCES)
 
    id_test = {{math.floor(numEx*splitTrainTest), numEx}}
    X_test = X[id_test]
@@ -294,7 +295,7 @@ function train(X,y, reconstruct, n_data_sequences)
 end
 
 function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_simulate_images,LR, model_full_path)
-   local BatchSize=16
+   local BatchSize=16 -- TODO use GLOBALs
    local nbEpoch=2
    local totalBatch=20
    --local name_save=LOG_FOLDER..'reprLearner1d.t7'
@@ -305,13 +306,13 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
    local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
    local list_corr={}
 
-  --  local plot = false  --TODO add 3D visualization of real and learned representation of the 3D position of the hand?
+  --  local plot = false
    local loading = true
 
-   n_data_sequences = #list_folders_images
+   NB_SEQUENCES = #list_folders_images
    local part = 1 --
    local next_part_start_index = part
-   for crossValStep=1, n_data_sequences do
+   for crossValStep=1, NB_SEQUENCES do
       models = createModels(model_full_path)
       currentLogFolder=LOG_FOLDER..'CrossVal'..crossValStep..'/' --*
       current_preload_file = PRELOAD_FOLDER..'imgsCv'..crossValStep..'.t7'
@@ -341,7 +342,7 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
       -- corr=Print_performance(models, imgs_test,txt_test,"First_Test",currentLogFolder,truth,false)
       -- print("Correlation before training : ", corr)
       -- table.insert(list_corr,corr)
-      print("Training")
+      print("Training with NB_SEQUENCES "..NB_SEQUENCES)
       for epoch=1, nbEpoch do
          print('--------------Epoch : '..epoch..' ---------------')
          local lossTemp=0
@@ -351,25 +352,28 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
          local causAdded = 0
 
          for numBatch=1,totalBatch do
-            indice1=torch.random(1,n_data_sequences-1)
-            repeat indice2=torch.random(1, n_data_sequences-1) until (indice1 ~= indice2)
+            indice1= torch.random(1,NB_SEQUENCES)
+            repeat indice2= torch.random(1,NB_SEQUENCES) until (indice1 ~= indice2)
 
             txt1=list_txt[indice1]
             txt2=list_txt[indice2]
 
             imgs1=imgs[indice1]
             imgs2=imgs[indice2]
+						-- local data1 = load_seq_by_id(indice1)
+						-- local data2 = load_seq_by_id(indice2)
 
-            batch=getRandomBatch(imgs1,imgs2,txt1,txt2,BatchSize,"Temp")
+						-- TODO: use getRandomBatchFromSeparateListContinuous
+            batch=getRandomBatchFromSeparateList(imgs1,imgs2,BatchSize,"Temp")--batch(imgs1,imgs2,txt1,txt2,BatchSize,"Temp")
             lossTemp = lossTemp + Rico_Training(models,'Temp',batch, coef_Temp,LR)
 
-            batch=getRandomBatch(imgs1,imgs2,txt1,txt2,BatchSize,"Caus")
+            batch=getRandomBatchFromSeparateList(imgs1,imgs2,BatchSize,"Caus")
             lossCaus = lossCaus + Rico_Training(models, 'Caus',batch, 1,LR)
 
-            batch=getRandomBatch(imgs1,imgs2,txt1,txt2,BatchSize,"Prop")
+            batch=getRandomBatchFromSeparateList(imgs1,imgs2,BatchSize,"Prop")
             lossProp = lossProp + Rico_Training(models, 'Prop',batch, coef_Prop,LR)
 
-            batch=getRandomBatch(imgs1,imgs2,txt1,txt2,BatchSize,"Rep")
+            batch=getRandomBatchFromSeparateList(imgs1,imgs2,BatchSize,"Rep")
             lossRep = lossRep + Rico_Training(models,'Rep',batch, coef_Rep,LR)
 
             xlua.progress(numBatch, totalBatch)
@@ -508,7 +512,6 @@ local function getRewardsFromTxts(txt_joint, nb_parts, part)
    return torch.Tensor(y)
 end
 
-
 ------------------------------------
 -- Our representation learnt should be coordinate independent, as it is not aware of
 -- what is x,y,z and thus, we should be able to reconstruct the state by switching
@@ -526,23 +529,25 @@ if not file_exists(LOG_FOLDER) then
 end
 ---
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
-n_data_sequences = #list_folders_images
-print(n_data_sequences..' data sequences')
-indice_test = 1--  local indice_test = torch.random(1,n_data_sequences-1)
-
+NB_SEQUENCES = #list_folders_images
+print(NB_SEQUENCES..' data sequences')
+indice_test = 1--
 -- print("Got list_folders_images: ")
 -- print(list_folders_images)
+avg_error = 0
+seq_id = 1 --TODO provide for each sequence and give final avg reconstruction error  local indice_test = torch.random(1,NB_SEQUENCES-1)
+
 if #list_folders_images >0 then
 	local list_image_paths= images_Paths(list_folders_images[indice_test])
 	print('images_paths (First test:)'..list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
 	part_test=1
-	--Data_test=load_Part_list(list_image_paths,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
+	--Data_test=load_Part_list(list_image_paths,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test) --avoid, call only  load_seq_by_id(seq_id)
 	--Data_test=load_Part_list(list,txt,txt_reward,IM_LENGTH,IM_HEIGHT,DATA_AUGMENTATION,txt_state)
-	data_test=load_data(indice_test)
-	print (#data_test)
-	assert(data_test, "Something went wrong while loading data1")
+	data_test=load_seq_by_id(seq_id)
+	print ('data_test: '..#data_test)
+	assert(data_test,'Something went wrong while loading data1')
 	local truth = get_true_hand_position_3D(txt_test)
 	 --get_Truth_3D(txt_test,nb_part,part_test) -- 100 DoubleTensor of size 3
 	print (truth)
