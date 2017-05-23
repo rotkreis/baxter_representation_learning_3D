@@ -47,12 +47,13 @@ Model = getModel()
 MODEL_NAME, representationsName = 'reprLearner3d.t7', 'default'  --TODO create
 -- if this doesn't exist, it means you didn't run 'train.lua'
 MODEL_FULL_PATH = MODEL_PATH..MODEL_NAME
-DATA = PRELOAD_FOLDER..'imgsCv1.t7'
+DATA = PRELOAD_FOLDER..'imgsCv1.t7'  --TODO 'preloaded_simpleData3D_Seq1_normalized.t7'
 PLOT = true
 LOADING = false --true
 
+
 print('Running main script with USE_CUDA flag: '..tostring(USE_CUDA))
-print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." BatchSize: "..BATCH_SIZE..". Using data folder: "..DATA_FOLDER.." Model file Torch: "..MODEL_ARCHITECTURE_FILE..'Preloaded DATA: '..DATA)
+print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." BATCH_SIZE: "..BATCH_SIZE..". Using data folder: "..DATA_FOLDER.." Model file Torch: "..MODEL_ARCHITECTURE_FILE..'Preloaded DATA: '..DATA)
 
 local function getReprFromImgs(imgs, PRELOAD_FOLDER, epresentations_name, model_full_path)
   -- we save all metrics that are going to be used in the network for
@@ -67,7 +68,7 @@ local function getReprFromImgs(imgs, PRELOAD_FOLDER, epresentations_name, model_
       os.exit()
    end
    print("Calculating all 3D representations with the model: "..fileName)
-   print("Number of sequences to calculate :"..#imgs..' totalBatch: '..totalBatch)
+   print("Number of sequences to calculate :"..#imgs..' in BATCH_SIZE: '..BATCH_SIZE)
 
    X = {}
    print('getReprFromImgs by loading model: '..MODEL_PATH..MODEL_NAME)
@@ -122,12 +123,12 @@ local function RewardsFromTxts(txts)
     return torch.Tensor(y)
 end
 
-local function RandomBatch(X,y,sizeBatch)
+local function RandomBatch(X,y,BATCH_SIZE)
    local numSeq = X:size(1)
-   batch = torch.zeros(sizeBatch,1)
-   y_temp = torch.zeros(sizeBatch)
+   batch = torch.zeros(BATCH_SIZE,1)
+   y_temp = torch.zeros(BATCH_SIZE)
 
-   for i=1,sizeBatch do
+   for i=1,BATCH_SIZE do
       local id=torch.random(1,numSeq)
       batch[{i,1}] = X[{id,1}]
       y_temp[i] = y[id]
@@ -277,7 +278,7 @@ function train(X,y, reconstruct, NB_SEQUENCES)
    for epoch=1, NB_EPOCH do
       local lossTemp=0
       for numBatch=1, NB_BATCH do
-         batch_temp, y = RandomBatch(X_train,y_train,SIZE_BATCH)
+         batch_temp, y = RandomBatch(X_train,y_train,BATCH_SIZE)
          lossTemp = lossTemp + Rico_Training(model,batch_temp,y, reconstruct, LR)
       end
 
@@ -294,9 +295,9 @@ function train(X,y, reconstruct, NB_SEQUENCES)
 end
 
 function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_simulate_images,LR, model_full_path)
-   local BatchSize=16 -- TODO use GLOBALs
-   local nbEpoch=2
-   local totalBatch=20
+  --  local BATCH_SIZE=16 -- TODO use GLOBALs
+  --  local NB_EPOCHS=2
+   --local totalBatch=20
    --local name_save=LOG_FOLDER..'reprLearner1d.t7'
    local coef_Temp=1
    local coef_Prop=1
@@ -309,6 +310,7 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
    local loading = true
 
    NB_SEQUENCES = #list_folders_images
+	 print('createPreloadedDataFolder for NB_SEQUENCES: '..NB_SEQUENCES)
    local part = 1 --
    local next_part_start_index = part
    for crossValStep=1, NB_SEQUENCES do
@@ -317,13 +319,25 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
       current_preload_file = PRELOAD_FOLDER..'imgsCv'..crossValStep..'.t7'
 
       if file_exists(current_preload_file) and loading then
-         print("Preloaded Data Already Exists, Loading...")
-         imgs = torch.load(current_preload_file)
-         imgs_test = imgs[#imgs]
+         print("Preloaded Data Already Exists, Loading from file: "..current_preload_file.."...")
+         imgs = load_seq_by_id(crossValStep)--imgs = torch.load(current_preload_file)
+         local imgs_test = imgs[#imgs]
+				 print('imgs and imgs_test')
+				 print (#imgs)
+				 print(#imgs_test)
       else
-         print("Preloaded Data Does Not Exists. Loading Training and Test and saving to "..current_preload_file)
+         print("Preloaded Data Does Not Exists. Loading Training and Test from "..DATA.." and saving to "..current_preload_file)
 
 				 local imgs = torch.load(DATA) --local imgs, imgs_test = loadTrainTest(list_folders_images,crossValStep, PRELOAD_FOLDER)
+				 if crossValStep ==NB_SEQUENCES then
+					 test_sequence_index = crossValStep +1
+				 else
+					 test_sequence_index = 1
+				 end
+				 local imgs_test = load_seq_by_id(test_sequence_index)
+				 print ("imgs "..#imgs)
+				 print ("load_seq_by_id #imgs_test"..#imgs_test)
+
 				 imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values
 
 				 torch.save(current_preload_file, imgs)
@@ -344,8 +358,9 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
       -- corr=Print_performance(models, imgs_test,txt_test,"First_Test",currentLogFolder,truth,false)
       -- print("Correlation before training : ", corr)
       -- table.insert(list_corr,corr)
-      print("Training with NB_SEQUENCES "..NB_SEQUENCES)
-      for epoch=1, nbEpoch do
+      print("Training with NB_SEQUENCES "..NB_SEQUENCES..' nb_batches: '..nb_batches)
+			nb_batches = math.floor(#imgs/BATCH_SIZE)
+      for epoch=1, NB_EPOCHS do
          print('--------------Epoch : '..epoch..' ---------------')
          local lossTemp=0
          local lossRep=0
@@ -353,7 +368,7 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
          local lossCaus=0
          local causAdded = 0
 
-         for numBatch=1,totalBatch do
+         for numBatch=1,nb_batches do
             indice1= torch.random(1,NB_SEQUENCES)
             repeat indice2= torch.random(1,NB_SEQUENCES) until (indice1 ~= indice2)
 
@@ -365,19 +380,19 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
 						-- local data1 = load_seq_by_id(indice1)
 						-- local data2 = load_seq_by_id(indice2)
 
-            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BatchSize,"Temp")--batch(imgs1,imgs2,txt1,txt2,BatchSize,"Temp")
+            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BATCH_SIZE,"Temp")--batch(imgs1,imgs2,txt1,txt2,BATCH_SIZE,"Temp")
             lossTemp = lossTemp + Rico_Training(models,'Temp',batch, coef_Temp,LR)
 
-            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BatchSize,"Caus")
+            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BATCH_SIZE,"Caus")
             lossCaus = lossCaus + Rico_Training(models, 'Caus',batch, 1,LR)
 
-            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BatchSize,"Prop")
+            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BATCH_SIZE,"Prop")
             lossProp = lossProp + Rico_Training(models, 'Prop',batch, coef_Prop,LR)
 
-            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BatchSize,"Rep")
+            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BATCH_SIZE,"Rep")
             lossRep = lossRep + Rico_Training(models,'Rep',batch, coef_Rep,LR)
 
-            xlua.progress(numBatch, totalBatch)
+            xlua.progress(numBatch, nb_batches)
 
          end
          --corr=Print_performance(models, imgs_test,txt_test,"Test",currentLogFolder,truth,false)
@@ -451,8 +466,8 @@ function get_true_hand_position_3D(data_file_with_hand_pos)
 	for i=1, (#tensor[{}])[1] do
 	   table.insert(truth, tensor[i]) --[2,3,4]?
 	end
-	print("truth")
-	print (truth)
+	--print("truth")
+	--print (truth)
 	return truth
 end
 -- function get_Truth_3D(txt_joint, nb_part, part)
@@ -562,6 +577,7 @@ if #list_folders_images >0 then
 	createPreloadedDataFolder(list_folders_images,list_txt_state,LOG_FOLDER,use_simulate_images,LR,MODEL_FULL_PATH)
 	imgs={}
 	------------------------------------
+	print('load data from DATA ',DATA)
 	local imgs = torch.load(DATA)
 	imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values
 
@@ -574,8 +590,6 @@ if #list_folders_images >0 then
 	--X = HeadPosFromTxts(list_txt,true)
 	-- predict:
 	X = getReprFromImgs(imgs, PATH_PRELOAD_DATA,representationsName, MODEL_FULL_PATH)
-
-	NB_BATCH=math.floor(X:size(1)/SIZE_BATCH)
 
 	train(X,y,reconstructingTask)
 else

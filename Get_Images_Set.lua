@@ -25,6 +25,30 @@ function images_Paths(folder_containing_jpgs)
 end
 
 ---------------------------------------------------------------------------------------
+-- Function : images_Paths(path)
+-- Input (Path): path of a Folder which contains jpg images
+-- Output : list of the jpg files path
+---------------------------------------------------------------------------------------
+-- function get_images_paths(folder_containing_jpgs)
+--    local listImage={}
+--    print('get_images_paths: ', folder_containing_jpgs)
+--    --folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
+--
+--    for file in paths.files(folder_containing_jpgs) do
+--       --print('getting image path:  '..file)
+--       -- We only load files that match the extension
+--       if file:find('jpg' .. '$') then
+--          -- and insert the ones we care about in our table
+--          table.insert(listImage, paths.concat(folder_containing_jpgs,file))
+--          --print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
+--       end
+--    end
+--    table.sort(listImage) --print('got_images_paths from Path: '..folder_containing_jpgs)
+--    print(listImage)
+--    return listImage
+-- end
+
+---------------------------------------------------------------------------------------
 -- Function :
 -- Input ():
 -- Output ():
@@ -127,7 +151,7 @@ function tensorFromTxt(path)
    return torch.Tensor(data), labels
 end
 
---============== Tools to get action from get state ===========
+--============== Tools to get action from the state ===========
 --=============================================================
 function action_amplitude(infos,id1, id2)
    local action = {}
@@ -137,7 +161,6 @@ function action_amplitude(infos,id1, id2)
    end
    return action
 end
-
 
 function is_same_action(action1,action2)
    local same_action = true
@@ -206,7 +229,6 @@ function get_two_Prop_Pair(Infos1, Infos2)
                -- print("id_ref_action_begin,id_ref_action_end,id_second_action_begin,id_second_action_end",id_ref_action_begin,id_ref_action_end,id_second_action_begin,id_second_action_end)
                -- print("action1",action1[1],action1[2],action1[3])
                -- print("action2",action2[1],action2[2],action2[3])
-
                return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end}
             end
          end
@@ -340,7 +362,7 @@ end
 ------------------ CONTINUOUS actions
 
 -- Making actions not be the same but close enough for the continous handling of priors,
--- however with the use of the SIGMA this method should not be needed
+-- however with the use of the GAUSSIAN_SIGMA this method should not be needed
 -- function actions_are_close_enough(action1,action2)
 --   local close_enough = true
 --   --for each dim, check that the magnitude of the action is close
@@ -486,30 +508,3 @@ function get_one_random_Caus_Set_and_actions(Infos1, Infos2)
    end
    error("CAUS WATCHDOG ATTACK!!!!!!!!!!!!!!!!!!")
 end
-
-
-
-
----------------------------------------------------------------------------------------
--- Function : images_Paths(path)
--- Input (Path): path of a Folder which contains jpg images
--- Output : list of the jpg files path
----------------------------------------------------------------------------------------
--- function get_images_paths(folder_containing_jpgs)
---    local listImage={}
---    print('get_images_paths: ', folder_containing_jpgs)
---    --folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
---
---    for file in paths.files(folder_containing_jpgs) do
---       --print('getting image path:  '..file)
---       -- We only load files that match the extension
---       if file:find('jpg' .. '$') then
---          -- and insert the ones we care about in our table
---          table.insert(listImage, paths.concat(folder_containing_jpgs,file))
---          --print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
---       end
---    end
---    table.sort(listImage) --print('got_images_paths from Path: '..folder_containing_jpgs)
---    print(listImage)
---    return listImage
--- end

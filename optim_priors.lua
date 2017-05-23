@@ -162,7 +162,7 @@ function actions_distance(action1, action2)
   return math.sqrt(distance)
 end
 
-function get_continuous_factor_term(action1, action2)
+function get_continuous_action_factor_term(action1, action2)
   -- This methods avoids having to check for actions that are close enough or
   -- far away enough for the priors constraints by multiplying by a continuous
   -- factor  based on sigma GAUSSIAN_SIGMA
@@ -195,7 +195,7 @@ function doStuff_Caus_continuous(Models,criterion,Batch,coef, action1, action2)
    --we backward with a starting gradient initialized at 1
    GradOutputs=criterion:backward({State1, State2}, torch.ones(1))
 
-   continuous_factor_term = get_continuous_factor_term(action1, action2)
+   continuous_factor_term = get_continuous_action_factor_term(action1, action2)
    -- compute the gradients for the two images
    Model:backward(im1, continuous_factor_term * coef*GradOutputs[1]/Batch[1]:size(1))
    Model2:backward(im2, continuous_factor_term * coef*GradOutputs[2]/Batch[1]:size(1))
@@ -236,7 +236,7 @@ function doStuff_Prop_continuous(Models,criterion,Batch, coef, action1, action2)
    --we backward with a starting gradient initialized at 1
    GradOutputs=criterion:backward({State1, State2, State3, State4},torch.ones(1))
 
-   continuous_factor_term = get_continuous_factor_term(action1, action2)
+   continuous_factor_term = get_continuous_action_factor_term(action1, action2)
    Model:backward(im1, continuous_factor_term * coef *GradOutputs[1]/Batch[1]:size(1))
    Model2:backward(im2, continuous_factor_term * coef *GradOutputs[2]/Batch[1]:size(1))
    Model3:backward(im3,continuous_factor_term * coef *GradOutputs[3]/Batch[1]:size(1))
@@ -280,7 +280,7 @@ function doStuff_Rep_continuous(Models,criterion,Batch, coef, action1, action2)
    --we backward with a starting gradient initialized at 1
    GradOutputs=criterion:backward({State1, State2, State3, State4}, torch.ones(1))
 
-   continuous_factor_term = get_continuous_factor_term(action1, action2)
+   continuous_factor_term = get_continuous_action_factor_term(action1, action2)
    Model:backward(im1,continuous_factor_term * coef*GradOutputs[1]/Batch[1]:size(1))
    Model2:backward(im2,continuous_factor_term * coef*GradOutputs[2]/Batch[1]:size(1))
    Model3:backward(im3,continuous_factor_term * coef*GradOutputs[3]/Batch[1]:size(1))
