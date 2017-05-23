@@ -6,6 +6,7 @@ require 'const'
 -- Output : list of the jpg files path
 ---------------------------------------------------------------------------------------
 function images_Paths(folder_containing_jpgs)
+
    local listImage={}
    --print('images_Paths: ', folder_containing_jpgs)
    --folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
@@ -72,6 +73,7 @@ function Get_Folders(Path, including, excluding,list)
    local list=list or {}
    local incl=including or ""
    local excl=excluding or "uyfouhjbhytfoughl" -- random motif
+
    for file in paths.files(Path) do
       -- We only load files that match 2016 because we know that there are the folder we are interested in
       if file:find(incl) and (not file:find(excl)) then
@@ -99,9 +101,8 @@ function Get_HeadCamera_View_Files(Path)
    list_txt_action={}
    list_txt_state={}
 
-
    for i=1, #Paths do
-      list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
+      list_folder=Get_Folders(Paths[i],SUB_DIR_IMAGE,'txt',list_folder)
       table.insert(list_txt_button, txt_path(Paths[i],FILENAME_FOR_REWARD))
       table.insert(list_txt_action, txt_path(Paths[i],FILENAME_FOR_ACTION))
       table.insert(list_txt_state, txt_path(Paths[i],FILENAME_FOR_STATE))
@@ -225,6 +226,11 @@ function get_two_Prop_Pair(Infos1, Infos2)
             id_second_action_end=id_second_action_begin+1
             action2 = action_amplitude(Infos2, id_second_action_begin, id_second_action_end)
             if is_same_action(action1, action2) then
+               -- print("indices", indice1, indice2)
+               -- print("id_ref_action_begin,id_ref_action_end,id_second_action_begin,id_second_action_end",id_ref_action_begin,id_ref_action_end,id_second_action_begin,id_second_action_end)
+               -- print("action1",action1[1],action1[2],action1[3])
+               -- print("action2",action2[1],action2[2],action2[3])
+
                return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end}
             end
          end
@@ -248,26 +254,20 @@ function get_one_random_Caus_Set(Infos1,Infos2)
    vector=torch.randperm(size2-1)
 
    while watchDog<100 do
-      repeat
-         id_ref_action_begin= torch.random(1,size2-1)
 
-         if EXTRAPOLATE_ACTION then --Look at const.lua for more details about extrapolate
-            id_ref_action_end  = torch.random(1,size2)
-         else
-            id_ref_action_end  = id_ref_action_begin+1
-         end
-
-      until(Infos2.reward[id_ref_action_begin]==0 and Infos2.reward[id_ref_action_end]~=0)
-
-      reward1 = Infos2.reward[id_ref_action_end]
-
-      if VISUALIZE_CAUS_IMAGE then
-         visualize_image_from_seq_id(indice2,id_ref_action_begin,id_ref_action_end)
+      --Sample an action, whatever the reward is 
+      id_ref_action_begin= torch.random(1,size2-1)
+      if EXTRAPOLATE_ACTION then --Look at const.lua for more details about extrapolate
+         id_ref_action_end  = torch.random(1,size2)
+      else
+         id_ref_action_end  = id_ref_action_begin+1
       end
 
+
+      reward1 = Infos2.reward[id_ref_action_end]
       action1 = action_amplitude(Infos2, id_ref_action_begin, id_ref_action_end)
 
-
+      -- Force the action amplitude to be the same, dirty...
       if CLAMP_CAUSALITY and not EXTRAPOLATE_ACTION then
          -- WARNING, THIS IS DIRTY, need to do continous prior
          for dim=1,DIMENSION_IN do
@@ -275,10 +275,13 @@ function get_one_random_Caus_Set(Infos1,Infos2)
          end
       end
 
-      -- print("id1",id_ref_action_begin)
-      -- print("id2",id_ref_action_end)
-      --print("action1",action1.x,action1.y,action1.z)
-      -- io.read()
+      if VISUALIZE_CAUS_IMAGE then
+         print("id1",id_ref_action_begin)
+         print("id2",id_ref_action_end)
+         print("action1",action1[1],action1[2])--,action[3])
+         visualize_image_from_seq_id(indice2,id_ref_action_begin,id_ref_action_end,true)
+         io.read()
+      end
 
       for i=1, size1-1 do
          id_second_action_begin=torch.random(1,size1-1)
@@ -289,9 +292,18 @@ function get_one_random_Caus_Set(Infos1,Infos2)
             id_second_action_end=id_second_action_begin+1
          end
 
-         if Infos1.reward[id_second_action_begin]==0 and Infos1.reward[id_second_action_end]~=reward1 then
+         --if Infos1.reward[id_second_action_begin]==0 and Infos1.reward[id_second_action_end]~=reward1 then
+         if Infos1.reward[id_second_action_end]~=reward1 then -- The constrain is softer
+
             action2 = action_amplitude(Infos1, id_second_action_begin, id_second_action_end)
-            --print("action2",action2.x,action2.y,action2.z)
+
+            --Visualize images taken if you want
+            if VISUALIZE_CAUS_IMAGE then
+               print("action2",action2[1],action2[2])--,action[3])
+               visualize_image_from_seq_id(indice1,id_second_action_begin,id_second_action_end)
+               print(is_same_action(action1, action2))
+               io.read()
+            end
 
             if is_same_action(action1, action2) then
                return {im1=id_second_action_begin,im2=id_ref_action_begin, im3=id_second_action_end, im4=id_ref_action_end}

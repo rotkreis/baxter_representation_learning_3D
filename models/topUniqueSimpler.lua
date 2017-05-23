@@ -33,12 +33,12 @@ function getModel(Dimension)
 
         -- If image are 200x200 => View(3*10*10):setNumInputDims(3) also works
 	Timnet:add(nn.View(-1):setNumInputDims(3))
-	Timnet:add(nn.Linear(300, 500)) -- 300 is for 3*3*10
+	Timnet:add(nn.Linear(Dimension*10*10, 500))
 	Timnet:add(nn.ReLU())
 	Timnet:add(nn.Linear(500, 100))
 	Timnet:add(nn.ReLU())
 	Timnet:add(nn.Linear(100, Dimension))
-	Timnet:add(nn.HardTanh())
+	Timnet:add(nn.Tanh())
 
 	-- Initiallisation : "Understanding the difficulty of training deep feedforward neural networks"
 	local method = 'xavier'

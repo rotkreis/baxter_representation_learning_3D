@@ -1,10 +1,3 @@
-
-
---Continuous actions SETTINGS
-CLOSE_ENOUGH_PRECISION_THRESHOLD = 0.6
-ACTION_AMPLITUDE = 0.01
-GAUSSIAN_SIGMA = 0.5
-
 function doStuff_temp(Models,criterion,Batch,coef)
    -- Returns the loss and the gradient
    local coef= coef or 1
