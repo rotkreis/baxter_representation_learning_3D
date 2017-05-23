@@ -155,7 +155,10 @@ function doStuff_Rep(Models,criterion,Batch, coef)
    return output:mean(), coef*GradOutputs[1]:cmul(GradOutputs[1]):mean()
 end
 
+
+--------------------------------------------------------------
 ----CONTINUOUS ACTION PRIORS VERSION
+
 
 function actions_distance(action1, action2)
   -- Returns a double indicating absolute value sum of the distance in each dimension among actions
@@ -168,14 +171,6 @@ function actions_distance(action1, action2)
 end
 
 function get_continuous_factor_term(action1, action2)
-  -- print('get_continuous_factor_term with sigma='.. GAUSSIAN_SIGMA..' and action1 :')
-  -- print(action1)
-  -- print(DIMENSION_IN)
-  --squared_distance = nn.Square()(actions_distance) --discounted_squared_distance = nn.CMulTable()({squared_distance, 1/GAUSSIAN_SIGMA})
-  --  continuous_loss = nn.CMulTable()({continuous_factor_term, sqr})
-  --  out = nn.Sum(1,1)(continuous_loss)
-  -- print('continuous_factor_term: ')
-  -- print(continuous_factor_term)
   return math.exp((-1 * actions_distance(action1, action2))/GAUSSIAN_SIGMA)
 end
 
@@ -247,16 +242,6 @@ function doStuff_Prop_continuous(Models,criterion,Batch, coef, action1, action2)
    GradOutputs=criterion:backward({State1, State2, State3, State4},torch.ones(1))
 
    continuous_factor_term = get_continuous_factor_term(action1, action2)
-   --print('im1') --[torch.DoubleTensor of size 2x3x200x200]   print(im1)
-   --print('coef')   print(coef) --1
-   --print('continuous_factor_term')
-   --print(continuous_factor_term) --nngraph.Node
-   --print('GradOutputs[2]/Batch[1]:size(1)')
-  --  0.0407 -0.0330 -0.0476
-  --   0.2309 -0.1391 -0.5333
-  --  [torch.DoubleTensor of size 2x3]
-  --outTot=nn.Sum(1,1)(nn.CMulTable()({out1, out2}))
-   --common_factor_times_coef = nn.CMul()({continuous_factor_term, coef})
 
    --common_factor = nn.CMulTable()({common_factor_times_coef, GradOutputs[1]/Batch[1]:size(1)})
    Model:backward(im1, continuous_factor_term * coef *GradOutputs[1]/Batch[1]:size(1))--Model:backward(im1,continuous_factor_term * coef*GradOutputs[1]/Batch[1]:size(1))
@@ -313,3 +298,9 @@ function doStuff_Rep_continuous(Models,criterion,Batch, coef, action1, action2)
 
    return output:mean(), coef*GradOutputs[1]:cmul(GradOutputs[1]):mean()
 end
+
+
+
+-- function get_gaussian_sigma()
+--   return GAUSSIAN_SIGMA
+-- end

@@ -62,9 +62,9 @@ end
 function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
   local nb_batch=10
 
-  local REP_criterion=get_Rep_criterion_continuous()--action_deltas)
-  local PROP_criterion=get_Prop_criterion_continuous()--action_deltas)
-  local CAUS_criterion=get_Caus_criterion_continuous()--action_deltas)
+  local REP_criterion=get_Rep_criterion()
+  local PROP_criterion=get_Prop_criterion()
+  local CAUS_criterion=get_Caus_criterion()
   local TEMP_criterion=nn.MSDCriterion()
 
   local Temp_loss_list, Prop_loss_list, Rep_loss_list, Caus_loss_list = {},{},{},{}
@@ -177,7 +177,7 @@ for nb_test=1, #Tests_Todo do
 
    local Priors=Tests_Todo[nb_test]
    local Log_Folder=Get_Folder_Name(LOG_FOLDER,Priors)
-   print("Test actuel : "..LOG_FOLDER)
+   print("Current test : "..LOG_FOLDER)
    train_Epoch_continuous(Models,Priors,Log_Folder,LR)
 end
 

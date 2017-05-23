@@ -1,6 +1,6 @@
 require 'const'
 require 'image'
-require 'Get_Continuous_Images_Set'
+require 'Get_Images_Set'
 ---------------------------------------------------------------------------------------
 -- Function :save_model(model,path)
 -- Input ():
@@ -117,7 +117,6 @@ function getRandomBatchFromSeparateListContinuous(Data1,Data2, batchSize, Mode)
    for i=1, batchSize do
       if Mode=="Prop" or Mode=="Rep" then
          Set =get_two_Prop_Pair_and_actions(Data1.Infos, Data2.Infos)
-         print ('getRandomBatchFromSeparateListContinuous')
          im1,im2 = Data1.images[Set.im1], Data1.images[Set.im2]
          im3,im4 = Data2.images[Set.im3], Data2.images[Set.im4]
          Batch[1][i]= im1

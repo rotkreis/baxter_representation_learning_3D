@@ -363,17 +363,16 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
 						-- local data1 = load_seq_by_id(indice1)
 						-- local data2 = load_seq_by_id(indice2)
 
-						-- TODO: use getRandomBatchFromSeparateListContinuous
-            batch=getRandomBatchFromSeparateList(imgs1,imgs2,BatchSize,"Temp")--batch(imgs1,imgs2,txt1,txt2,BatchSize,"Temp")
+            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BatchSize,"Temp")--batch(imgs1,imgs2,txt1,txt2,BatchSize,"Temp")
             lossTemp = lossTemp + Rico_Training(models,'Temp',batch, coef_Temp,LR)
 
-            batch=getRandomBatchFromSeparateList(imgs1,imgs2,BatchSize,"Caus")
+            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BatchSize,"Caus")
             lossCaus = lossCaus + Rico_Training(models, 'Caus',batch, 1,LR)
 
-            batch=getRandomBatchFromSeparateList(imgs1,imgs2,BatchSize,"Prop")
+            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BatchSize,"Prop")
             lossProp = lossProp + Rico_Training(models, 'Prop',batch, coef_Prop,LR)
 
-            batch=getRandomBatchFromSeparateList(imgs1,imgs2,BatchSize,"Rep")
+            batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BatchSize,"Rep")
             lossRep = lossRep + Rico_Training(models,'Rep',batch, coef_Rep,LR)
 
             xlua.progress(numBatch, totalBatch)
