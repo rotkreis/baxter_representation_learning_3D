@@ -9,7 +9,7 @@
 -- and put it here.
 --=============================================================
 require 'lfs'
-require 'cutorch'
+--require 'cutorch'
 torch.manualSeed(100)
 
 DATA_FOLDER = 'simpleData3D'
@@ -23,7 +23,7 @@ MODEL_PATH = LOG_FOLDER
 
 MODEL_FILE_STRING  = MODEL_PATH..'13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'
 
-MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'
+MODEL_ARCHITECTURE_FILE = './models/minimalNetModel'
 
 STRING_MEAN_AND_STD_FILE = PRELOAD_FOLDER..'meanStdImages_'..DATA_FOLDER..'.t7'
 
@@ -47,7 +47,7 @@ RELOAD_MODEL = false
 LR=0.0001
 
 SGD_METHOD = 'adam' -- Can be adam or adagrad
-BATCH_SIZE = 2 -- TRYING TO HAVE BIGGER BATCH
+BATCH_SIZE = 50 -- TRYING TO HAVE BIGGER BATCH
 NB_EPOCHS=20
 
 IM_LENGTH = 200
@@ -58,9 +58,9 @@ USE_CUDA = false--true
 
 USE_SECOND_GPU = true
 
-if USE_CUDA and USE_SECOND_GPU then
-   cutorch.setDevice(2)
-end
+-- if USE_CUDA and USE_SECOND_GPU then
+--    cutorch.setDevice(2)
+-- end
 
 now = os.date("*t")
 
