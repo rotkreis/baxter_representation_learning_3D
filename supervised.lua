@@ -13,6 +13,10 @@ require 'printing'
 require "Get_Images_Set"
 require 'optim_priors'
 require 'definition_priors'
+require 'gnuplot'
+require 'os'
+require 'paths'
+
 -- THIS IS WHERE ALL THE CONSTANTS SHOULD COME FROM
 -- See const.lua file for more details
 require 'const'
@@ -21,15 +25,15 @@ require 'const'
 local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 NB_SEQUENCES = #list_folders_images
 
--- model
-criterion = nn.MSECriterion()
-      -- Model = torch.load(MODEL_FILE_STRING):double()
+-- model & criterion
+-- Model = torch.load(MODEL_FILE_STRING):double()
 require(MODEL_ARCHITECTURE_FILE) -- minimalnetmodel
 Model = getModel(DIMENSION) -- 3
 parameters, gradParameters = Model:getParameters()
+criterion = nn.MSECriterion()
 
 
--- simple evaluation, not using correlation for the moment, a sequence
+-- simple evaluation
 function evaluate(data)
   local n = (#data.images)
   local err = 0
@@ -50,8 +54,7 @@ end
 
 -- training
 local LR = 0.001
-local optimState = {LearningRate = LR}
-local nb_epochs = 300
+local nb_epochs = 200
 local nb_batches = 10
 local err = torch.Tensor(nb_epochs)
 
@@ -64,6 +67,7 @@ function train(nb_epochs, nb_batches, LR, indice_val)
   -- print('--------------Epoch : '..nb_epochs..' ---------------')
   print('--------------indice_val : '..indice_val..' ---------------')
   xlua.progress(0, nb_epochs)
+  local optimState = {LearningRate = LR}
 
   index_train = {}
   for i = 1, NB_SEQUENCES - 1 do
@@ -71,6 +75,7 @@ function train(nb_epochs, nb_batches, LR, indice_val)
   end
   table.remove(index_train, indice_val)
 
+  local err = torch.Tensor(nb_epochs)
   for epoch = 1, nb_epochs do
     --indice = torch.random(1, NB_SEQUENCES - 1)
     indice = torch.random(1, #index_train)
@@ -103,36 +108,50 @@ function train(nb_epochs, nb_batches, LR, indice_val)
         -- optim.adam(feval, parameters, optimState)
     end
     xlua.progress(epoch, nb_epochs)
-    -- err[epoch] = evaluate(load_seq_by_id(1))
+    err[epoch] = evaluate(load_seq_by_id(indice_val))
   end
   performance = evaluate(load_seq_by_id(indice_val))
-  return performance -- training acurracy, validation
+  return performance, err -- training acurracy, validation
 end
 
--- cross-validation
+-- cross-validation ---------------------------
 -- lrSet = {0.1, 0.01, 0.001, 0.0001}
--- nb_epochSet = {100, 300, 500, 1000}
-nb_epochSet = {10, 20}
-nb_batchSet = {10}
-lrSet = {0.01}
 nb_slices = NB_SEQUENCES
-performances = torch.Tensor(#nb_epochSet, #nb_batchSet, #lrSet)
-for i, nb_epochs in pairs(nb_epochSet) do
-  for j, nb_batches in pairs(nb_batchSet) do
-    for k, lr in pairs(lrSet) do
-      print("config set:", lr, nb_epochs, nb_batches)
-      -- training, K-fold (K = 8)
-      local avgPerformance = 0
-      for indice_val = 1, nb_slices-1 do
-         avgPerformance = avgPerformance + train(nb_epochs, nb_batches, lr, indice_val)
-      end
-      performances[i][j][k] = avgPerformance / (nb_slices - 1)
-    end
-  end
-end
+nb_epochSet = {10, 20, 100, 200, 500}
+--nb_epochSet = {10, 20}
+nb_batchSet = {10, 20}
+lrSet = {0.01}
+configs = {}
+performances = torch.Tensor(#nb_epochSet * #nb_batchSet *  #lrSet)
+local count = 1
+--for i, nb_epochs in pairs(nb_epochSet) do
+  --for j, nb_batches in pairs(nb_batchSet) do
+    --for k, lr in pairs(lrSet) do
+      --print("config set:", lr, nb_epochs, nb_batches)
+      ---- training, K-fold (K = 8)
+      --local avgPerformance = 0
+      --for indice_val = 1, nb_slices-1 do
+         --avgPerformance = avgPerformance + train(nb_epochs, nb_batches, lr, indice_val)
+      --end
+      --performances[count] = avgPerformance / (nb_slices - 1)
+      --configs[count] = {'Epoch = '..nb_epochs, 'Batches = '..nb_batches, 'LR = '..lr}
+      --count = count + 1
+    --end
+  --end
+--end
 
-print(performances)
 
+-- pick the best model, apply on test set
+
+--for i = 1, performances:size(1) do
+  --print("MSE", performances[i], configs[i])
+--end
+
+-- plot error on val
+_, err = train(nb_epochs, nb_batches, LR, 2)
+gnuplot.pngfigure('supLearn.png')
+gnuplot.plot({'MSE Loss', err})
+gnuplot.plotflush()
 -- intuition
 -- data = load_seq_by_id(1)
 -- local err = 0
