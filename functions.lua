@@ -91,7 +91,7 @@ function getRandomBatchFromSeparateList(Data1,Data2, length, Mode)
          Batch[2][i]=im2
 
          im2,im3 = im3,im2 --I switch them for a better viz
-         
+
       else
          print "getRandomBatchFromSeparateList Wrong mode "
       end
@@ -281,54 +281,6 @@ end
 --    return temp_loss/nb_sample, prop_loss/nb_sample, rep_loss/nb_sample, caus_loss/nb_sample
 -- end
 
----------------------------------------------------------------------------------------
--- Function :
--- Input ():
--- Output ():
----------------------------------------------------------------------------------------
--- function real_loss_continuous(txt,use_simulate_images)
---    local REP_criterion=get_Rep_criterion_continuous()
---    local PROP_criterion=get_Prop_criterion_continuous()
---    local CAUS_criterion=get_Caus_criterion_continuous()
---    local TEMP_criterion=nn.MSDCriterion()
---
---    local truth=getTruth(txt,use_simulate_images)
---
---    local temp_loss=0
---    local prop_loss=0
---    local rep_loss=0
---    local caus_loss=0
---
---    local nb_sample=100
---
---    for i=0, nb_sample do
---       Set_prop, action_deltas =get_one_random_Prop_Set_and_action_deltas(txt ,use_simulate_images)
---       Set_temp=get_one_random_Temp_Set(#truth)
---       Caus_temp, action_deltas =get_one_random_Caus_Set_and_action_deltas(txt, txt, use_simulate_images)
---
---       joint1=torch.Tensor(1)
---       joint2=torch.Tensor(1)
---       joint3=torch.Tensor(1)
---       joint4=torch.Tensor(1)
---
---       joint1[1]=truth[Caus_temp.im1]
---       joint2[1]=truth[Caus_temp.im2]
---       caus_loss=caus_loss+CAUS_criterion:updateOutput({joint1, joint2})
---
---       joint1[1]=truth[Set_temp.im1]
---       joint2[1]=truth[Set_temp.im2]
---       temp_loss=temp_loss+TEMP_criterion:updateOutput({joint1, joint2})
---
---       joint1[1]=truth[Set_prop.im1]
---       joint2[1]=truth[Set_prop.im2]
---       joint3[1]=truth[Set_prop.im3]
---       joint4[1]=truth[Set_prop.im4]
---       prop_loss=prop_loss+PROP_criterion:updateOutput({joint1, joint2, joint3, joint4})
---       rep_loss=rep_loss+REP_criterion:updateOutput({joint1, joint2, joint3, joint4})
---    end
---
---    return temp_loss/nb_sample, prop_loss/nb_sample, rep_loss/nb_sample, caus_loss/nb_sample
--- end
 
 function load_seq_by_id(id)
    local string_preloaded_and_normalized_data = PRELOAD_FOLDER..'preloaded_'..DATA_FOLDER..'_Seq'..id..'_normalized.t7'
@@ -548,11 +500,11 @@ end
 function normalize(im)
 
    local meanStd, mean, std, im_norm, imgMerge
-   
+
    -- print("im1")
    -- image.display{image=im, win=WINDOW}
    -- io.read()
-   
+
    if file_exists(STRING_MEAN_AND_STD_FILE) then
       meanStd = torch.load(STRING_MEAN_AND_STD_FILE)
       mean = meanStd.mean
@@ -567,7 +519,7 @@ function normalize(im)
    -- print("im2",im[1][1][1])
    -- image.display{image=im, win=WINDOW}
    -- io.read()
-   
+
    if VISUALIZE_MEAN_STD then
       --imgMerge = image.toDisplayTensor({mean,std,im,im_norm})
       imgMerge = image.toDisplayTensor({mean,im,im_norm})
@@ -612,7 +564,7 @@ function visualize_image_from_seq_id(seq_id,image_id1,image_id2, another_window)
       else
          image.display{image=imgMerge,win=WINDOW}
       end
-   
+
    else
       image1 = data[image_id1]
       image.display{image=image1,win=WINDOW}

@@ -18,7 +18,7 @@ torch.manualSeed(100)
 --DATA AND LOG FOLDER NAME etc..
 --====================================
 DATA_FOLDER = 'simpleData3D'
-DATA_FOLDER = 'mobileRobot'
+--DATA_FOLDER = 'mobileRobot'
 
 PRELOAD_FOLDER = 'preload_folder/'
 lfs.mkdir(PRELOAD_FOLDER)
@@ -67,7 +67,7 @@ IM_HEIGHT = 200
 
 DATA_AUGMENTATION = 0.01
 NORMALIZE_IMAGE = true
-USE_CUDA = true
+USE_CUDA = false--true
 
 USE_SECOND_GPU = true
 

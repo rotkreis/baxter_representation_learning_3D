@@ -129,6 +129,8 @@ function doStuff_Rep(Models,criterion,Batch, coef)
    Model3=Models.Model3
    Model4=Models.Model4
 
+   State1=Model:forward(im1)--added for image 1 and 2
+   State2=Model2:forward(im2)
    State3=Model3:forward(im3)
    State4=Model4:forward(im4)
 
@@ -161,6 +163,9 @@ function actions_distance(action1, action2)
 end
 
 function get_continuous_factor_term(action1, action2)
+  -- This methods avoids having to check for actions that are close enough or
+  -- far away enough for the priors constraints by multiplying by a continuous
+  -- factor  based on sigma GAUSSIAN_SIGMA
   return math.exp((-1 * actions_distance(action1, action2))/GAUSSIAN_SIGMA)
 end
 

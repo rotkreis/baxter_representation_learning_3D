@@ -255,7 +255,7 @@ function get_one_random_Caus_Set(Infos1,Infos2)
 
    while watchDog<100 do
 
-      --Sample an action, whatever the reward is 
+      --Sample an action, whatever the reward is
       id_ref_action_begin= torch.random(1,size2-1)
       if EXTRAPOLATE_ACTION then --Look at const.lua for more details about extrapolate
          id_ref_action_end  = torch.random(1,size2)
@@ -363,7 +363,8 @@ end
 
 ------------------ CONTINUOUS actions
 
--- Making actions not be the same but close enough for the continous handling of priors
+-- Making actions not be the same but close enough for the continous handling of priors,
+-- however with the use of the SIGMA this method should not be needed
 function actions_are_close_enough(action1,action2)
   local close_enough = true
   --for each dim, check that the magnitude of the action is close
@@ -429,20 +430,12 @@ function get_two_Prop_Pair_and_actions(Infos1, Infos2)
          if EXTRAPOLATE_ACTION then --Look at const.lua for more details about extrapolate
             for id_second_action_end in ipairs(torch.totable(torch.randperm(size2))) do
                action2 = action_amplitude(Infos2, id_second_action_begin, id_second_action_end)
-               if actions_are_close_enough(action1, action2) then --is_same_action(action1, action2) then
-                  return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end, act1=action1, act2=action2}
-               else
-                  print ('get_two_Prop_Pair_and_actions did not find actions close enough, rise the CLOSE_ENOUGH_PRECISION_THRESHOLD '..CLOSE_ENOUGH_PRECISION_THRESHOLD..' for DIMENSION_IN: '..DIMENSION_IN)
-               end
+               return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end, act1=action1, act2=action2}
             end
          else --USE THE NEXT IMAGE IN THE SEQUENCE
             id_second_action_end=id_second_action_begin+1
             action2 = action_amplitude(Infos2, id_second_action_begin, id_second_action_end)
-            if actions_are_close_enough(action1, action2) then
-               return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end, act1=action1, act2=action2}
-            else
-               print ('get_two_Prop_Pair_and_actions did not find actions close enough, rise the CLOSE_ENOUGH_PRECISION_THRESHOLD '..CLOSE_ENOUGH_PRECISION_THRESHOLD..' for DIMENSION_IN: '..DIMENSION_IN)
-            end
+            return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end, act1=action1, act2=action2}
          end
       end
       watchDog=watchDog+1
@@ -510,12 +503,7 @@ function get_one_random_Caus_Set_and_actions(Infos1, Infos2)
          if Infos1.reward[id_second_action_begin]==0 and Infos1.reward[id_second_action_end]~=reward1 then
             action2 = action_amplitude(Infos1, id_second_action_begin, id_second_action_end)
             --print("action2",action2.x,action2.y,action2.z)
-
-            if actions_are_close_enough(action1, action2) then
-               return {im1=id_second_action_begin,im2=id_ref_action_begin, im3=id_second_action_end, im4=id_ref_action_end, act1=action1, act2=action2}
-            else
-               print ('get_one_random_Caus_Set_and_actions did not find actions close enough, rise the CLOSE_ENOUGH_PRECISION_THRESHOLD '..CLOSE_ENOUGH_PRECISION_THRESHOLD..' for DIMENSION_IN: '..DIMENSION_IN)
-            end
+            return {im1=id_second_action_begin,im2=id_ref_action_begin, im3=id_second_action_end, im4=id_ref_action_end, act1=action1, act2=action2}
          end
       end
       watchDog=watchDog+1
