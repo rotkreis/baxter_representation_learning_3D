@@ -161,13 +161,13 @@ end
 
 
 function actions_distance(action1, action2)
-  -- Returns a double indicating absolute value sum of the distance in each dimension among actions
+  -- Returns a double indicating the Euclidean distance among actions
   local distance = 0
   --for each dim, check that the magnitude of the action is close
   for dim=1, DIMENSION_IN do
-     distance = distance + arrondit(action1[dim] - action2[dim])
+     distance = distance + (math.pow(arrondit(action1[dim]) - arrondit(action2[dim]), 2))
   end
-  return distance
+  return math.sqrt(distance)
 end
 
 function get_continuous_factor_term(action1, action2)
