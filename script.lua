@@ -19,6 +19,7 @@ require 'definition_priors'
 require 'const'
 -- try to avoid global variable as much as possible
 
+
 function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
    local mom=0.9
    local coefL2=0,0
@@ -269,8 +270,9 @@ Tests_Todo={
    --]]
 }
 
-local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 
+
+local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 NB_SEQUENCES= #list_folders_images
 
 for nb_test=1, #Tests_Todo do

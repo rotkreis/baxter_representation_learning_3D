@@ -7,6 +7,16 @@
 -- Because it wasn't done like this before, so if you still
 -- find global variable, that's normal. You can change it
 -- and put it here.
+
+
+
+--ADDITIONNAL INFO
+-----------------
+-- Model : with Tanh at the top
+
+
+
+
 --=============================================================
 require 'lfs'
 require 'cutorch'

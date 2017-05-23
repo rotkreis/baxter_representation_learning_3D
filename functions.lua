@@ -1,5 +1,6 @@
 require 'const'
 require 'image'
+require 'Get_Continuous_Images_Set'
 ---------------------------------------------------------------------------------------
 -- Function :save_model(model,path)
 -- Input ():
@@ -106,21 +107,20 @@ function getRandomBatchFromSeparateList(Data1,Data2, length, Mode)
 
 end
 
-
-function getRandomBatchFromSeparateListContinuous(Data1,Data2, length, Mode)
-   local action_deltas = {}
+function getRandomBatchFromSeparateListContinuous(Data1,Data2, batchSize, Mode)
    local Dim=Data1.images[1]:size()
    if Mode=="Prop" or Mode=="Rep" then
-      Batch=torch.Tensor(4, length,Dim[1], Dim[2], Dim[3])
+      Batch=torch.Tensor(4, batchSize,Dim[1], Dim[2], Dim[3])
    else
-      Batch=torch.Tensor(2, length,Dim[1], Dim[2], Dim[3])
+      Batch=torch.Tensor(2, batchSize,Dim[1], Dim[2], Dim[3])
    end
 
    local im1,im2,im3,im4
 
-   for i=1, length do
+   for i=1, batchSize do
       if Mode=="Prop" or Mode=="Rep" then
-         Set, action_deltas =get_two_Prop_Pair_and_action_deltas(Data1.Infos, Data2.Infos)
+         Set =get_two_Prop_Pair_and_actions(Data1.Infos, Data2.Infos)
+         print ('getRandomBatchFromSeparateListContinuous')
          im1,im2 = Data1.images[Set.im1], Data1.images[Set.im2]
          im3,im4 = Data2.images[Set.im3], Data2.images[Set.im4]
          Batch[1][i]= im1
@@ -133,7 +133,7 @@ function getRandomBatchFromSeparateListContinuous(Data1,Data2, length, Mode)
          Batch[1][i]=im1
          Batch[2][i]=im2
       elseif Mode=="Caus" then
-         Set, action_deltas =get_one_random_Caus_Set_and_action_deltas(Data1.Infos, Data2.Infos)
+         Set =get_one_random_Caus_Set_and_actions(Data1.Infos, Data2.Infos)
 
          im1,im2,im3,im4 = Data1.images[Set.im1], Data2.images[Set.im2], Data1.images[Set.im3], Data2.images[Set.im4]
          --The last two are for viz purpose only
@@ -150,7 +150,7 @@ function getRandomBatchFromSeparateListContinuous(Data1,Data2, length, Mode)
       print("MODE :",Mode)
       visualize_set(im1,im2,im3,im4)
    end
-   return Batch, action_deltas
+   return Batch, Set.act1, Set.act2
 end
 
 
@@ -159,41 +159,41 @@ end
 -- Input (): Mode: the name of the prior being applied (Prop, Rep, Temp or Caus)
 -- Output (): TODO: NOT USED, REMOVE?
 ---------------------------------------------------------------------------------------
-function getRandomBatch(Data1, length, Mode)
-   --print('getRandomBatch: Data: ')
-   --print(Data1)
-   --print('getRandomBatch: Data.images size: '..#Data1.images)
-   --NOTE we cant do .. Data1.images:size())
-   --print(Data1.images)
-   --print(Data1.images):size())
-   local Dim=Data1.images[1]:size()
-   if Mode=="Prop" or Mode=="Rep" then
-      Batch=torch.Tensor(4, length,Dim[1], Dim[2], Dim[3])
-   else
-      Batch=torch.Tensor(2, length,Dim[1], Dim[2], Dim[3])
-   end
-
-   for i=1, length do
-      if Mode=="Prop" or Mode=="Rep" then
-         Set=get_one_random_Prop_Set(Data1.Infos)
-         Batch[1][i]=Data1.images[Set.im1]
-         Batch[2][i]=Data1.images[Set.im2]
-         Batch[3][i]=Data1.images[Set.im3]
-         Batch[4][i]=Data1.images[Set.im4]
-      elseif Mode=="Temp" then
-         Set=get_one_random_Temp_Set(#Data1.images)
-         Batch[1][i]=Data1.images[Set.im1]
-         Batch[2][i]=Data1.images[Set.im2]
-      elseif Mode=="Caus" then
-         Set=get_one_random_Caus_Set(Data1.Infos,Data1.Infos)
-         Batch[1][i]=Data1.images[Set.im1]
-         Batch[2][i]=Data1.images[Set.im2]
-      else
-         print "getRandomBatch Wrong mode "
-      end
-   end
-   return Batch
-end
+-- function get_one_random_Caus_Set_and_actions(Data1, length, Mode)
+--    --print('getRandomBatch: Data: ')
+--    --print(Data1)
+--    --print('getRandomBatch: Data.images size: '..#Data1.images)
+--    --NOTE we cant do .. Data1.images:size())
+--    --print(Data1.images)
+--    --print(Data1.images):size())
+--    local Dim=Data1.images[1]:size()
+--    if Mode=="Prop" or Mode=="Rep" then
+--       Batch=torch.Tensor(4, length,Dim[1], Dim[2], Dim[3])
+--    else
+--       Batch=torch.Tensor(2, length,Dim[1], Dim[2], Dim[3])
+--    end
+--
+--    for i=1, length do
+--       if Mode=="Prop" or Mode=="Rep" then
+--          Set=get_one_random_Prop_Set(Data1.Infos)
+--          Batch[1][i]=Data1.images[Set.im1]
+--          Batch[2][i]=Data1.images[Set.im2]
+--          Batch[3][i]=Data1.images[Set.im3]
+--          Batch[4][i]=Data1.images[Set.im4]
+--       elseif Mode=="Temp" then
+--          Set=get_one_random_Temp_Set(#Data1.images)
+--          Batch[1][i]=Data1.images[Set.im1]
+--          Batch[2][i]=Data1.images[Set.im2]
+--       elseif Mode=="Caus" then
+--          Set=get_one_random_Caus_Set(Data1.Infos,Data1.Infos)
+--          Batch[1][i]=Data1.images[Set.im1]
+--          Batch[2][i]=Data1.images[Set.im2]
+--       else
+--          print "getRandomBatch Wrong mode "
+--       end
+--    end
+--    return Batch
+-- end
 
 ---------------------------------------------------------------------------------------
 -- Function :	Have_Todo(list_prior,prior)
@@ -345,7 +345,7 @@ function load_seq_by_id(id)
       -- print("list_txt_button",list_txt_button)
       -- print("list_txt_state",list_txt_state)
 
-      
+
       local list=images_Paths(list_folders_images[id])
       local txt=list_txt_action[id]
       local txt_reward=list_txt_button[id]
@@ -434,7 +434,7 @@ function getInfos(txt,txt_reward,txt_state)
       Infos[dim] = {}
    end
    Infos.reward = {}
-   
+
    local reward_indice=REWARD_INDICE
 
    local tensor_state, label=tensorFromTxt(txt_state)
@@ -446,14 +446,14 @@ function getInfos(txt,txt_reward,txt_state)
    for i=1,tensor_reward:size(1) do
 
       local last_pos = {}
-      
+
       for dim=1,#INDICE_TABLE do
          id_of_dim_in_tensor = INDICE_TABLE[dim]
          local value = tensor_state[i][id_of_dim_in_tensor]
          table.insert(Infos[dim],value)
          table.insert(last_pos, value) -- For out_of_bound func
       end
-      
+
       local reward = tensor_reward[i][reward_indice]
 
       if reward~=0 then

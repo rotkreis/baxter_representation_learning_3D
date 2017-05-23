@@ -13,18 +13,28 @@ require 'printing'
 require "Get_Images_Set"
 require 'optim_priors'
 require 'definition_priors'
-
 -- THIS IS WHERE ALL THE CONSTANTS SHOULD COME FROM
 -- See const.lua file for more details
 require 'const'
 -- try to avoid global variable as much as possible
 
+function actions_distance(action1, action2)
+  local distance = 0
+  --for each dim, check that the magnitude of the action is close
+  for dim=1,DIMENSION_IN do
+     distance = distance + arrondit(action1[dim] - action2[dim])
+  end
+  return distance
+end
+
 function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
    local mom=0.9
    local coefL2=0,0
 
-   local batch, action_deltas =getRandomBatchFromSeparateListContinuous(data1,data2,BATCH_SIZE,Mode)
-
+   local batch, action1, action2 =getRandomBatchFromSeparateListContinuous(data1,data2,BATCH_SIZE,Mode)
+   print("Rico_Training actions: ")
+   print(action1)
+   print(action2)
    -- create closure to evaluate f(X) and df/dX
    local feval = function(x)
       -- just in case:
@@ -39,9 +49,9 @@ function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
       gradParameters:zero()
       if Mode=='Simpl' then print("Simpl")
       elseif Mode=='Temp' then loss,grad=doStuff_temp(Models,criterion, batch,coef)
-      elseif Mode=='Prop' then loss,grad=doStuff_Prop(Models,criterion,batch,coef)
-      elseif Mode=='Caus' then loss,grad=doStuff_Caus(Models,criterion,batch,coef)
-      elseif Mode=='Rep' then loss,grad=doStuff_Rep(Models,criterion,batch,coef)
+      elseif Mode=='Prop' then loss,grad=doStuff_Prop_continuous(Models,criterion,batch,coef, action1, action2)
+      elseif Mode=='Caus' then loss,grad=doStuff_Caus_continuous(Models,criterion,batch,coef, action1, action2)
+      elseif Mode=='Rep' then loss,grad=doStuff_Rep_continuous(Models,criterion,batch,coef, action1, action2)
       else print("Wrong Mode")
       end
       return loss,gradParameters
@@ -64,9 +74,9 @@ end
 function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
   local nb_batch=10
 
-  local REP_criterion=get_Rep_criterion_continuous(action_deltas)
-  local PROP_criterion=get_Prop_criterion_continuous(action_deltas)
-  local CAUS_criterion=get_Caus_criterion_continuous(action_deltas)
+  local REP_criterion=get_Rep_criterion_continuous()--action_deltas)
+  local PROP_criterion=get_Prop_criterion_continuous()--action_deltas)
+  local CAUS_criterion=get_Caus_criterion_continuous()--action_deltas)
   local TEMP_criterion=nn.MSDCriterion()
 
   local Temp_loss_list, Prop_loss_list, Rep_loss_list, Caus_loss_list = {},{},{},{}
@@ -99,11 +109,6 @@ function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
 
      xlua.progress(0, nb_batch)
      for numBatch=1, nb_batch do
-
-        --Get data, create if doesn't exist
-        --local indice1=torch.random(1,NB_SEQUENCES-1)
-        -- local indice2=torch.random(1,NB_SEQUENCES-1)
-
         indice1=torch.random(1,NB_SEQUENCES-1)
         indice2=torch.random(1,NB_SEQUENCES-1)
         ------------- only one list used----------
@@ -148,33 +153,17 @@ function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
      print("Loss Prop", Prop_loss/nb_batch/BATCH_SIZE)
      print("Loss Caus", Caus_loss/nb_batch/BATCH_SIZE)
      print("Loss Rep", Rep_loss/nb_batch/BATCH_SIZE)
-
-     save_model(Models.Model1,NAME_SAVE+'Continuous')
+     print("Saving continuous model in ".. NAME_SAVE..'Continuous')
+     model_name = NAME_SAVE..'Continuous'
+     save_model(Models.Model1,model_name)
   end
 end
 
 Tests_Todo={
    {"Prop","Temp","Caus","Rep"}
-   --[[
-      {"Rep","Caus","Prop"},
-      {"Rep","Caus","Temp"},
-      {"Rep","Prop","Temp"},
-      {"Prop","Caus","Temp"},
-      {"Rep","Caus"},
-      {"Prop","Caus"},
-      {"Temp","Caus"},
-      {"Temp","Prop"},
-      {"Rep","Prop"},
-      {"Rep","Temp"},
-      {"Rep"},
-      {"Temp"},
-      {"Caus"},
-      {"Prop"}
-   --]]
 }
 
 local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
-
 NB_SEQUENCES= #list_folders_images
 
 for nb_test=1, #Tests_Todo do

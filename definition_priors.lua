@@ -57,7 +57,7 @@ end
 
 ----- CONTINUOUS VERSION OF THE SAME PRIORS
 
-function get_Rep_criterion_continuous(action_deltas)
+function get_Rep_criterion_continuous()--(action_deltas)
    h1 = nn.Identity()()
    h2 = nn.Identity()()
    h3 = nn.Identity()()
@@ -79,11 +79,11 @@ function get_Rep_criterion_continuous(action_deltas)
    return gmod
 end
 
-function get_gaussian_sigma()
-  return 0.5
-end
+-- function get_gaussian_sigma()
+--   return GAUSSIAN_SIGMA
+-- end
 
-function get_Prop_criterion_continuous(action_deltas)
+function get_Prop_criterion_continuous()--(action_deltas)
    h1 = nn.Identity()()
    h2 = nn.Identity()()
    h3 = nn.Identity()()
@@ -97,28 +97,27 @@ function get_Prop_criterion_continuous(action_deltas)
 
    madd = nn.CSubTable()({norm,norm2})
    sqr=nn.Square()(madd)
+   out = nn.Sum(1,1)(sqr)
 
    -- modification for continuous prior:
-   actions_distance = nn.CSubTable()({action_deltas[1], action_deltas[2]})
-   squared_distance = nn.Square()(actions_distance)
-   discounted_squared_distance = squared_distance/ get_gaussian_sigma() --TODO Division in nn
-   continuous_factor_term = nn.Exp()(nn.MulConstant(-1)(discounted_squared_distance))
-   continuous_loss = nn.CMulTable()({continuous_factor_term, sqr})
-
-   out = nn.Sum(1,1)(continuous_loss) --TODO same for PROP and CAUSALITY
+   --actions_distance = nn.CSubTable()({action_deltas[1], action_deltas[2]})
+  --  squared_distance = nn.Square()(actions_distance)
+  --  discounted_squared_distance = squared_distance/ get_gaussian_sigma() --TODO Division in nn
+  --  continuous_factor_term = nn.Exp()(nn.MulConstant(-1)(discounted_squared_distance))
+  --  continuous_loss = nn.CMulTable()({continuous_factor_term, sqr})
+  --  out = nn.Sum(1,1)(continuous_loss) --TODO same for PROP and CAUSALITY
 
    gmod = nn.gModule({h1, h2, h3, h4}, {out})
    return gmod
 end
 
-function get_Caus_criterion_continuous(action_deltas)
+function get_Caus_criterion_continuous()--(action_deltas)
    h1 = nn.Identity()()
    h2 = nn.Identity()()
 
-   print('get_Caus_criterion_continuous: h1:')
-   print (h1)
-   print('get_Caus_criterion_continuous: adding action_deltas term a_delta:')
-   print (action_deltas)
+   --print('get_Caus_criterion_continuous: h1:')
+   --print (h1)
+   --print('get_Caus_criterion_continuous: adding action_deltas term with value:')   print (action_deltas)
 
    h_h1 = nn.CSubTable()({h2,h1})
 

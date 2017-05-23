@@ -8,10 +8,15 @@
 -- find global variable, that's normal. You can change it
 -- and put it here.
 --=============================================================
+
+
 require 'lfs'
 require 'cutorch'
 torch.manualSeed(100)
 
+--=====================================
+--DATA AND LOG FOLDER NAME etc..
+--====================================
 DATA_FOLDER = 'simpleData3D'
 DATA_FOLDER = 'mobileRobot'
 
@@ -21,14 +26,16 @@ lfs.mkdir(PRELOAD_FOLDER)
 LOG_FOLDER = 'Log/'
 MODEL_PATH = LOG_FOLDER
 
-MODEL_FILE_STRING  = MODEL_PATH..'13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'
-
 MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'
 
 STRING_MEAN_AND_STD_FILE = PRELOAD_FOLDER..'meanStdImages_'..DATA_FOLDER..'.t7'
 
-EXTRAPOLATE_ACTION = false
+now = os.date("*t")
+DAY = now.year..'_'..now.yday..'__'..now.hour..'_'..now.min..'_'..now.sec
+NAME_SAVE= 'model'..DAY
 
+
+--===========================================================
 -- if you want to visualize images, use 'qlua' instead of 'th'
 --===========================================================
 VISUALIZE_IMAGES_TAKEN = false
@@ -40,15 +47,20 @@ if VISUALIZE_IMAGES_TAKEN or VISUALIZE_CAUS_IMAGE or VISUALIZE_IMAGE_CROP or VIS
    --Creepy, but need a placeholder, to prevent many window to pop
    WINDOW = image.display(image.lena())
 end
---===========================================================
 
+
+--==================================================
+-- Hyperparams : Learning rate, batchsize, USE_CUDA etc...
+--==================================================
 RELOAD_MODEL = false
 
+EXTRAPOLATE_ACTION = false
 LR=0.0001
 
 SGD_METHOD = 'adam' -- Can be adam or adagrad
 BATCH_SIZE = 3 -- TRYING TO HAVE BIGGER BATCH
 NB_EPOCHS=20
+GAUSSIAN_SIGMA = 0.5
 
 IM_LENGTH = 200
 IM_HEIGHT = 200
@@ -63,12 +75,20 @@ if USE_CUDA and USE_SECOND_GPU then
    cutorch.setDevice(2)
 end
 
-now = os.date("*t")
 
-DAY = now.year..'_'..now.yday..'__'..now.hour..'_'..now.min..'_'..now.sec
+--======================================================
+--Continuous actions SETTINGS
+--======================================================
 
-NAME_SAVE= 'model'..DAY
+USE_CONTINUOUS = false --Todo, a switch between those two ?
+CLOSE_ENOUGH_PRECISION_THRESHOLD = 0.6
+ACTION_AMPLITUDE = 0.01
+GAUSSIAN_SIGMA = 0.5
 
+
+--================================================
+-- dataFolder specific constants : filename, dim_in, dim_out
+--===============================================
 if DATA_FOLDER == 'simpleData3D' then
    -- Create actions that weren't done by the robot
    -- by sampling randomly states (begin point and end point)
@@ -87,15 +107,14 @@ if DATA_FOLDER == 'simpleData3D' then
 
    INDICE_TABLE = {2,3,4} --column indice for coordinate in state file (respectively x,y,z)
 
-   DEFAULT_PRECISION = 0.05
+   DEFAULT_PRECISION = 0.05 -- for 'arrondit' function 
    FILENAME_FOR_REWARD = "is_pressed"
    FILENAME_FOR_ACTION = "endpoint_action"
    FILENAME_FOR_STATE = "endpoint_state"
 
    SUB_DIR_IMAGE = 'recorded_cameras_head_camera_2_image_compressed'
 
-else -- mobileRobot
-
+else -- DATA_FOLDER == mobileRobot
    DEFAULT_PRECISION = 0.1
    CLAMP_CAUSALITY = false
 
@@ -115,3 +134,5 @@ else -- mobileRobot
    SUB_DIR_IMAGE = 'recorded_camera_top'
    
 end
+
+
