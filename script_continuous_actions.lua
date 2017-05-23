@@ -18,23 +18,11 @@ require 'definition_priors'
 require 'const'
 -- try to avoid global variable as much as possible
 
-function actions_distance(action1, action2)
-  local distance = 0
-  --for each dim, check that the magnitude of the action is close
-  for dim=1,DIMENSION_IN do
-     distance = distance + arrondit(action1[dim] - action2[dim])
-  end
-  return distance
-end
-
 function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
    local mom=0.9
    local coefL2=0,0
 
    local batch, action1, action2 =getRandomBatchFromSeparateListContinuous(data1,data2,BATCH_SIZE,Mode)
-   print("Rico_Training actions: ")
-   print(action1)
-   print(action2)
    -- create closure to evaluate f(X) and df/dX
    local feval = function(x)
       -- just in case:
