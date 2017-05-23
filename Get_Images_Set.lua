@@ -25,30 +25,6 @@ function images_Paths(folder_containing_jpgs)
 end
 
 ---------------------------------------------------------------------------------------
--- Function : images_Paths(path)
--- Input (Path): path of a Folder which contains jpg images
--- Output : list of the jpg files path
----------------------------------------------------------------------------------------
--- function get_images_paths(folder_containing_jpgs)
---    local listImage={}
---    print('get_images_paths: ', folder_containing_jpgs)
---    --folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
---
---    for file in paths.files(folder_containing_jpgs) do
---       --print('getting image path:  '..file)
---       -- We only load files that match the extension
---       if file:find('jpg' .. '$') then
---          -- and insert the ones we care about in our table
---          table.insert(listImage, paths.concat(folder_containing_jpgs,file))
---          --print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
---       end
---    end
---    table.sort(listImage) --print('got_images_paths from Path: '..folder_containing_jpgs)
---    print(listImage)
---    return listImage
--- end
-
----------------------------------------------------------------------------------------
 -- Function :
 -- Input ():
 -- Output ():
@@ -365,14 +341,14 @@ end
 
 -- Making actions not be the same but close enough for the continous handling of priors,
 -- however with the use of the SIGMA this method should not be needed
-function actions_are_close_enough(action1,action2)
-  local close_enough = true
-  --for each dim, check that the magnitude of the action is close
-  for dim=1,DIMENSION_IN do
-     close_enough = close_enough and arrondit(action1[dim] - action2[dim]) < CLOSE_ENOUGH_PRECISION_THRESHOLD
-  end
-  return close_enough
-end
+-- function actions_are_close_enough(action1,action2)
+--   local close_enough = true
+--   --for each dim, check that the magnitude of the action is close
+--   for dim=1,DIMENSION_IN do
+--      close_enough = close_enough and arrondit(action1[dim] - action2[dim]) < CLOSE_ENOUGH_PRECISION_THRESHOLD
+--   end
+--   return close_enough
+-- end
 
 function get_one_random_Prop_Set_and_actions(Infos1)
    return get_two_Prop_Pair_and_actions(Infos1,Infos1)
@@ -510,3 +486,30 @@ function get_one_random_Caus_Set_and_actions(Infos1, Infos2)
    end
    error("CAUS WATCHDOG ATTACK!!!!!!!!!!!!!!!!!!")
 end
+
+
+
+
+---------------------------------------------------------------------------------------
+-- Function : images_Paths(path)
+-- Input (Path): path of a Folder which contains jpg images
+-- Output : list of the jpg files path
+---------------------------------------------------------------------------------------
+-- function get_images_paths(folder_containing_jpgs)
+--    local listImage={}
+--    print('get_images_paths: ', folder_containing_jpgs)
+--    --folder_containing_jpgs="./data_baxter" -- TODO: make it work by passing it as a parameter
+--
+--    for file in paths.files(folder_containing_jpgs) do
+--       --print('getting image path:  '..file)
+--       -- We only load files that match the extension
+--       if file:find('jpg' .. '$') then
+--          -- and insert the ones we care about in our table
+--          table.insert(listImage, paths.concat(folder_containing_jpgs,file))
+--          --print('Inserted image :  '..paths.concat(folder_containing_jpgs,file))
+--       end
+--    end
+--    table.sort(listImage) --print('got_images_paths from Path: '..folder_containing_jpgs)
+--    print(listImage)
+--    return listImage
+-- end

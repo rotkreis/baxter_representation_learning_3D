@@ -42,12 +42,12 @@ for seqStr in lfs.dir(imagesFolder) do
                reprStr = reprStr..repr[{1,i}]..' '
             end
             outStr = outStr..fullImagesPath..' '..reprStr..'\n'
-            
+
          end
       end
    end
-end        
-        
+end
+
 file = io.open(path..'/saveImagesAndRepr.txt', 'w')
 file:write(outStr)
 file:close()

@@ -12,7 +12,6 @@ require 'optim'
 require 'xlua'   -- xlua provides useful tools, like progress bars
 require 'nngraph'
 require 'image'
---require 'Get_Baxter_Files'
 require 'Get_Images_Set' -- for images_Paths(Path) Get_HeadCamera_View_Files
 require 'functions'
 require 'const'
@@ -323,8 +322,11 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
          imgs_test = imgs[#imgs]
       else
          print("Preloaded Data Does Not Exists. Loading Training and Test and saving to "..current_preload_file)
-         local imgs, imgs_test = loadTrainTest(list_folders_images,crossValStep, PRELOAD_FOLDER)
-         torch.save(current_preload_file, imgs)
+
+				 local imgs = torch.load(DATA) --local imgs, imgs_test = loadTrainTest(list_folders_images,crossValStep, PRELOAD_FOLDER)
+				 imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values
+
+				 torch.save(current_preload_file, imgs)
       end
 
       -- we use last list as test
