@@ -350,7 +350,6 @@ function clamp_causality_prior_value(value, prec, action_amplitude)
    return value
 end
 
-
 function sign(value)
    if value < 0 then
       return -1

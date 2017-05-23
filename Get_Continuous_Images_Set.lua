@@ -70,9 +70,6 @@ function get_two_Prop_Pair_and_actions(Infos1, Infos2)
          if EXTRAPOLATE_ACTION then --Look at const.lua for more details about extrapolate
             for id_second_action_end in ipairs(torch.totable(torch.randperm(size2))) do
                action2 = action_amplitude(Infos2, id_second_action_begin, id_second_action_end)
-               print('get_two_Prop_Pair_and_actions')
-               print(action1)
-               print(action2)
                if actions_are_close_enough(action1, action2) then --is_same_action(action1, action2) then
                   return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end, act1=action1, act2=action2}
                else
@@ -82,9 +79,6 @@ function get_two_Prop_Pair_and_actions(Infos1, Infos2)
          else --USE THE NEXT IMAGE IN THE SEQUENCE
             id_second_action_end=id_second_action_begin+1
             action2 = action_amplitude(Infos2, id_second_action_begin, id_second_action_end)
-            print('get_two_Prop_Pair_and_actions')
-            print(action1)
-            print(action2)
             if actions_are_close_enough(action1, action2) then
                return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end, act1=action1, act2=action2}
             else
@@ -123,7 +117,6 @@ function get_one_random_Caus_Set_and_actions(Infos1, Infos2)
          else
             id_ref_action_end  = id_ref_action_begin+1
          end
-
       until(Infos2.reward[id_ref_action_begin]==0 and Infos2.reward[id_ref_action_end]~=0)
 
       reward1 = Infos2.reward[id_ref_action_end]
@@ -161,6 +154,8 @@ function get_one_random_Caus_Set_and_actions(Infos1, Infos2)
 
             if actions_are_close_enough(action1, action2) then
                return {im1=id_second_action_begin,im2=id_ref_action_begin, im3=id_second_action_end, im4=id_ref_action_end, act1=action1, act2=action2}
+            else
+               print ('get_one_random_Caus_Set_and_actions did not find actions close enough, rise the CLOSE_ENOUGH_PRECISION_THRESHOLD '..CLOSE_ENOUGH_PRECISION_THRESHOLD..' for DIMENSION_IN: '..DIMENSION_IN)
             end
          end
       end
