@@ -240,7 +240,6 @@ function doStuff_Prop_continuous(Models,criterion,Batch, coef, action1, action2)
    output=criterion:forward({State1, State2, State3, State4})
    --we backward with a starting gradient initialized at 1
    GradOutputs=criterion:backward({State1, State2, State3, State4},torch.ones(1))
-
    continuous_factor_term = get_continuous_factor_term(action1, action2)
 
    --common_factor = nn.CMulTable()({common_factor_times_coef, GradOutputs[1]/Batch[1]:size(1)})
@@ -298,9 +297,3 @@ function doStuff_Rep_continuous(Models,criterion,Batch, coef, action1, action2)
 
    return output:mean(), coef*GradOutputs[1]:cmul(GradOutputs[1]):mean()
 end
-
-
-
--- function get_gaussian_sigma()
---   return GAUSSIAN_SIGMA
--- end
