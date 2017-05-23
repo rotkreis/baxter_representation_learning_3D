@@ -60,8 +60,8 @@ EXTRAPOLATE_ACTION = false
 LR=0.001
 
 SGD_METHOD = 'adam' -- Can be adam or adagrad
-BATCH_SIZE = 3 -- TRYING TO HAVE BIGGER BATCH
-NB_EPOCHS=2
+BATCH_SIZE = 1 -- TRYING TO HAVE BIGGER BATCH
+NB_EPOCHS=20
 GAUSSIAN_SIGMA = 0.5
 
 IM_LENGTH = 200
@@ -130,7 +130,7 @@ else -- DATA_FOLDER == mobileRobot
    MAX_TABLE = {10000,10000} -- for x,y
 
    DIMENSION_IN = 2
-   DIMENSION_OUT= 4
+   DIMENSION_OUT= 2
 
    REWARD_INDICE = 1
    INDICE_TABLE = {1,2} --column indice for coordinate in state file (respectively x,y)

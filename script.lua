@@ -63,7 +63,10 @@ function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
 end
 
 function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
-   local nb_batch=10
+
+   local nb_batch= math.ceil(NB_SEQUENCES*90/BATCH_SIZE/(4+4+2+2))
+   --90 is the average number of images per sequences, div by 12 because the network see 12 images per iteration
+   -- (4*2 for rep and prop, 2*2 for temp and caus)
 
    local REP_criterion=get_Rep_criterion()
    local PROP_criterion=get_Prop_criterion()
@@ -85,11 +88,6 @@ function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
    print(Rep)
    print(Caus)
 
-   local coef_Temp=1
-   local coef_Prop=1
-   local coef_Rep=1
-   local coef_Caus=1
-   local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
    print(NB_SEQUENCES..' : sequences')
 
@@ -125,22 +123,22 @@ function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
          assert(data2, "Something went wrong while loading data2")
 
          if Temp then
-            Loss,Grad=Rico_Training(Models,'Temp',data1,data2,TEMP_criterion, coef_Temp,LR,BATCH_SIZE)
+            Loss,Grad=Rico_Training(Models,'Temp',data1,data2,TEMP_criterion, COEF_TEMP,LR,BATCH_SIZE)
             Grad_Temp=Grad_Temp+Grad
             Temp_loss=Temp_loss+Loss
          end
          if Prop then
-            Loss,Grad=Rico_Training(Models,'Prop',data1,data2, PROP_criterion, coef_Prop,LR,BATCH_SIZE)
+            Loss,Grad=Rico_Training(Models,'Prop',data1,data2, PROP_criterion, COEF_PROP,LR,BATCH_SIZE)
             Grad_Prop=Grad_Prop+Grad
             Prop_loss=Prop_loss+Loss
          end
          if Rep then
-            Loss,Grad=Rico_Training(Models,'Rep',data1,data2,REP_criterion, coef_Rep,LR,BATCH_SIZE)
+            Loss,Grad=Rico_Training(Models,'Rep',data1,data2,REP_criterion, COEF_REP,LR,BATCH_SIZE)
             Grad_Rep=Grad_Rep+Grad
             Rep_loss=Rep_loss+Loss
          end
          if Caus then
-            Loss,Grad=Rico_Training(Models,'Caus',data1,data2,CAUS_criterion,coef_Caus,LR,BATCH_SIZE)
+            Loss,Grad=Rico_Training(Models,'Caus',data1,data2,CAUS_criterion,COEF_CAUS,LR,BATCH_SIZE)
             Grad_Caus=Grad_Caus+Grad
             Caus_loss=Caus_loss+Loss
          end
