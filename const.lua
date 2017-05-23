@@ -23,6 +23,7 @@ MODEL_PATH = LOG_FOLDER
 
 MODEL_FILE_STRING  = MODEL_PATH..'13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'
 
+-- MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'
 MODEL_ARCHITECTURE_FILE = './models/minimalNetModel'
 
 STRING_MEAN_AND_STD_FILE = PRELOAD_FOLDER..'meanStdImages_'..DATA_FOLDER..'.t7'
