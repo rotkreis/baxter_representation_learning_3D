@@ -1,4 +1,3 @@
-
 function doStuff_temp(Models,criterion,Batch,coef)
    -- Returns the loss and the gradient
    local coef= coef or 1

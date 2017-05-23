@@ -88,6 +88,9 @@ function getRandomBatchFromSeparateList(Data1,Data2, length, Mode)
 
          Batch[1][i]=im1
          Batch[2][i]=im2
+
+         im2,im3 = im3,im2 --I switch them for a better viz
+         
       else
          print "getRandomBatchFromSeparateList Wrong mode "
       end
@@ -337,10 +340,10 @@ function load_seq_by_id(id)
    else   -- DATA DOESN'T EXIST AT ALL
       list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 
-      print("list_folders_images",list_folders_images)
-      print("list_folders_images",list_txt_action)
-      print("list_txt_button",list_txt_button)
-      print("list_txt_state",list_txt_state)
+      -- print("list_folders_images",list_folders_images)
+      -- print("list_folders_images",list_txt_action)
+      -- print("list_txt_button",list_txt_button)
+      -- print("list_txt_state",list_txt_state)
 
       
       local list=images_Paths(list_folders_images[id])
@@ -358,11 +361,11 @@ function scaleAndCrop(img)
    -- Why do i scale and crop after ? Because this is the way it's done under python,
    -- so we need to do the same conversion
 
-   local lengthBeforeCrop = 320 --Tuned by hand, that way, when you scale then crop, the image is 200x200
+   -- local lengthBeforeCrop = 320 --Tuned by hand, that way, when you scale then crop, the image is 200x200
 
-   local lengthAfterCrop = IM_LENGTH
-   local height = IM_HEIGHT
-   local formatBefore=lengthBeforeCrop.."x"..height
+   -- local lengthAfterCrop = IM_LENGTH
+   -- local height = IM_HEIGHT
+   -- local formatBefore=lengthBeforeCrop.."x"..height
 
    local format=IM_LENGTH.."x"..IM_HEIGHT
    local imgAfter=image.scale(img,format)
@@ -381,6 +384,7 @@ function scaleAndCrop(img)
          imgAfter
 
       local imgMerge = image.toDisplayTensor({img,imgAfterPadded})
+      print("Before and After scale")
       image.display{image=imgMerge,win=WINDOW}
       io.read()
    end
@@ -486,12 +490,13 @@ function calculate_mean_and_std()
 
    for seqStr in lfs.dir(imagesFolder) do
       if string.find(seqStr,'record') then
-         local imagesPath = imagesFolder..'/'..seqStr..'/recorded_cameras_head_camera_2_image_compressed'
+         print("seqStr",seqStr)
+         local imagesPath = imagesFolder..'/'..seqStr..'/'..SUB_DIR_IMAGE
          for imageStr in lfs.dir(imagesPath) do
             if string.find(imageStr,'jpg') then
                totImg = totImg + 1
                local fullImagesPath = imagesPath..'/'..imageStr
-               local img=image.load(fullImagesPath,3,'byte'):float()
+               local img=image.load(fullImagesPath,3,'float')
                img = scaleAndCrop(img)
 
                mean[1] = mean[1]:add(img[{1,{},{}}])
@@ -508,11 +513,11 @@ function calculate_mean_and_std()
 
    for seqStr in lfs.dir(imagesFolder) do
       if string.find(seqStr,'record') then
-         local imagesPath = imagesFolder..'/'..seqStr..'/recorded_cameras_head_camera_2_image_compressed'
+         local imagesPath = imagesFolder..'/'..seqStr..'/'..SUB_DIR_IMAGE
          for imageStr in lfs.dir(imagesPath) do
             if string.find(imageStr,'jpg') then
                local fullImagesPath = imagesPath..'/'..imageStr
-               local img=image.load(fullImagesPath,3,'byte'):float()
+               local img=image.load(fullImagesPath,3,'float')
                img = scaleAndCrop(img)
                std[1] = std[1]:add(torch.pow(img[{1,{},{}}]-mean[1],2))
                std[2] = std[2]:add(torch.pow(img[{2,{},{}}]-mean[2],2))
@@ -542,6 +547,13 @@ end
 
 
 function normalize(im)
+
+   local meanStd, mean, std, im_norm, imgMerge
+   
+   -- print("im1")
+   -- image.display{image=im, win=WINDOW}
+   -- io.read()
+   
    if file_exists(STRING_MEAN_AND_STD_FILE) then
       meanStd = torch.load(STRING_MEAN_AND_STD_FILE)
       mean = meanStd.mean
@@ -551,10 +563,17 @@ function normalize(im)
    end
 
    im_norm = torch.add(im,-mean)
-   im_norm = torch.cdiv(im_norm, std)
+   --im_norm = torch.cdiv(im_norm, std)
 
+   -- print("im2",im[1][1][1])
+   -- image.display{image=im, win=WINDOW}
+   -- io.read()
+   
    if VISUALIZE_MEAN_STD then
-      imgMerge = image.toDisplayTensor({mean,std,im,im_norm})
+      --imgMerge = image.toDisplayTensor({mean,std,im,im_norm})
+      imgMerge = image.toDisplayTensor({mean,im,im_norm})
+
+      print("Mean, im, im_norm")
       image.display{image=imgMerge, win=WINDOW}
       io.read()
    end
@@ -564,9 +583,11 @@ end
 
 function getImageFormated(im)
    if im=='' or im==nil then error("im is nil, this is not an image") end
-   local img=image.load(im,3,'byte'):float()
+   local img=image.load(im,3,'float')
    img = scaleAndCrop(img)
-   img = normalize(img)
+   if NORMALIZE_IMAGE then
+      img = normalize(img)
+   end
    return img
 end
 
@@ -578,7 +599,7 @@ function file_exists(name)
 end
 
 
-function visualize_image_from_seq_id(seq_id,image_id1,image_id2)
+function visualize_image_from_seq_id(seq_id,image_id1,image_id2, another_window)
    local data = load_seq_by_id(seq_id).images
    local image1
 
@@ -586,7 +607,13 @@ function visualize_image_from_seq_id(seq_id,image_id1,image_id2)
       image1 = data[image_id1]
       local image2 = data[image_id2]
       local imgMerge = image.toDisplayTensor({image1,image2})
-      image.display{image=imgMerge,win=WINDOW}
+
+      if another_window then
+         image.display{image=imgMerge,win=a}
+      else
+         image.display{image=imgMerge,win=WINDOW}
+      end
+   
    else
       image1 = data[image_id1]
       image.display{image=image1,win=WINDOW}

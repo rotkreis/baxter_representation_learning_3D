@@ -207,6 +207,10 @@ function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
 
          local data1 = load_seq_by_id(indice1)
          local data2 = load_seq_by_id(indice2)
+         
+         -- local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
+         -- print("list_folders_images",list_folders_images[indice1])
+         -- print("list_folders_images",list_folders_images[indice2])
 
          assert(data1, "Something went wrong while loading data1")
          assert(data2, "Something went wrong while loading data2")
@@ -275,7 +279,7 @@ for nb_test=1, #Tests_Todo do
       Model = torch.load(MODEL_FILE_STRING):double()
    else
       require(MODEL_ARCHITECTURE_FILE)
-      Model=getModel(DIMENSION)
+      Model=getModel(DIMENSION_OUT)
       --graph.dot(Model.fg, 'Our Model')
    end
 
