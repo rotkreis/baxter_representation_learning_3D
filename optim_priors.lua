@@ -148,11 +148,8 @@ function doStuff_Rep(Models,criterion,Batch, coef)
    return output:mean(), coef*GradOutputs[1]:cmul(GradOutputs[1]):mean()
 end
 
-
 --------------------------------------------------------------
 ----CONTINUOUS ACTION PRIORS VERSION
-
-
 function actions_distance(action1, action2)
   -- Returns a double indicating the Euclidean distance among actions
   local distance = 0
@@ -233,16 +230,12 @@ function doStuff_Prop_continuous(Models,criterion,Batch, coef, action1, action2)
    output=criterion:forward({State1, State2, State3, State4})
    --we backward with a starting gradient initialized at 1
    GradOutputs=criterion:backward({State1, State2, State3, State4},torch.ones(1))
-   continuous_factor_term = get_continuous_factor_term(action1, action2)
 
-   --common_factor = nn.CMulTable()({common_factor_times_coef, GradOutputs[1]/Batch[1]:size(1)})
-   Model:backward(im1, continuous_factor_term * coef *GradOutputs[1]/Batch[1]:size(1))--Model:backward(im1,continuous_factor_term * coef*GradOutputs[1]/Batch[1]:size(1))
-   --common_factor = nn.CMulTable()({common_factor_times_coef, GradOutputs[2]/Batch[1]:size(1)})
+   continuous_factor_term = get_continuous_factor_term(action1, action2)
+   Model:backward(im1, continuous_factor_term * coef *GradOutputs[1]/Batch[1]:size(1))
    Model2:backward(im2, continuous_factor_term * coef *GradOutputs[2]/Batch[1]:size(1))
-   --common_factor = nn.CMulTable()({common_factor_times_coef, GradOutputs[3]/Batch[1]:size(1)})
    Model3:backward(im3,continuous_factor_term * coef *GradOutputs[3]/Batch[1]:size(1))
-   --common_factor = nn.CMulTable()({common_factor_times_coef, GradOutputs[4]/Batch[1]:size(1)})
-   Model4:backward(im4,continuous_factor_term * coef *GradOutputs[4]/Batch[1]:size(1)) --Model4:backward(im4,continuous_factor_term * coef*GradOutputs[4]/Batch[1]:size(1))
+   Model4:backward(im4,continuous_factor_term * coef *GradOutputs[4]/Batch[1]:size(1))
 
    return output:mean(), coef*GradOutputs[1]:cmul(GradOutputs[1]):mean()
 end

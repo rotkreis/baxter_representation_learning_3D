@@ -73,7 +73,7 @@ function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
   local Temp_grad_list,Prop_grad_list,Rep_grad_list,Caus_grad_list = {},{},{},{}
   local list_errors,list_MI, list_corr={},{},{}
 
-  local Prop=Have_Todo(Prior_Used,'Prop')
+  local Prop=Have_Todo(Prior_Used,'Prop') --rename applies_prior()
   local Temp=Have_Todo(Prior_Used,'Temp')
   local Rep=Have_Todo(Prior_Used,'Rep')
   local Caus=Have_Todo(Prior_Used,'Caus')
@@ -160,7 +160,7 @@ for nb_test=1, #Tests_Todo do
       Model = torch.load(MODEL_FILE_STRING):double()
    else
       require(MODEL_ARCHITECTURE_FILE)
-      Model=getModel(DIMENSION)
+      Model= getModel(DIMENSION_OUT)
       --graph.dot(Model.fg, 'Our Model')
    end
 

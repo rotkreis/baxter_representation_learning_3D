@@ -75,7 +75,6 @@ if USE_CUDA and USE_SECOND_GPU then
    cutorch.setDevice(2)
 end
 
-
 --======================================================
 --Continuous actions SETTINGS
 --======================================================
@@ -83,8 +82,9 @@ end
 USE_CONTINUOUS = false --Todo, a switch between those two ?
 CLOSE_ENOUGH_PRECISION_THRESHOLD = 0.6
 ACTION_AMPLITUDE = 0.01
-GAUSSIAN_SIGMA = 0.5
-
+-- this parameter eliminates the need of finding close enough actions for assessing all priors but the temporal.
+-- If the actions are too far away, they will make the gradient 0 and will not be considered for the update rule
+GAUSSIAN_SIGMA = 0.1
 
 --================================================
 -- dataFolder specific constants : filename, dim_in, dim_out
@@ -107,7 +107,7 @@ if DATA_FOLDER == 'simpleData3D' then
 
    INDICE_TABLE = {2,3,4} --column indice for coordinate in state file (respectively x,y,z)
 
-   DEFAULT_PRECISION = 0.05 -- for 'arrondit' function 
+   DEFAULT_PRECISION = 0.05 -- for 'arrondit' function
    FILENAME_FOR_REWARD = "is_pressed"
    FILENAME_FOR_ACTION = "endpoint_action"
    FILENAME_FOR_STATE = "endpoint_state"
@@ -132,7 +132,5 @@ else -- DATA_FOLDER == mobileRobot
    FILENAME_FOR_REWARD = "reward"
 
    SUB_DIR_IMAGE = 'recorded_camera_top'
-   
+
 end
-
-
