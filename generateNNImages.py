@@ -9,7 +9,7 @@ import sys
 
 
 # Some parameters
-nbr_neighbors=2
+nbr_neighbors=4
 
 lastModelFile = open('lastModel.txt')
 
@@ -60,7 +60,7 @@ for img_name,id,dist,state in data:
 	img = mpimg.imread(img_name)
 	imgplot = plt.imshow(img)
 	state_str='[' + ",".join(['{:.3f}'.format(float(x)) for x in state]) + "]"
-	a.set_title(seq_name + "/" + base_name + ": " + state_str)
+	a.set_title(seq_name + "/" + base_name + ": \n" + state_str)
 
 	for i in range(0,nbr_neighbors):
 		a=fig.add_subplot(1,nbr_neighbors+1,i+2)
@@ -74,7 +74,7 @@ for img_name,id,dist,state in data:
 		dist_str = ' d=' + '{:.4f}'.format(dist[i+1])
 		
 		state_str='[' + ",".join(['{:.3f}'.format(float(x)) for x in states[id[i+1]]]) + "]"
-		a.set_title(seq_name_n + "/" + base_name_n + ": " + state_str +dist_str)
+		a.set_title(seq_name_n + "/" + base_name_n + ": \n" + state_str +dist_str)
 		a.axis('off')
 		
 	plt.tight_layout()
