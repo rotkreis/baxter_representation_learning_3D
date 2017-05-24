@@ -2,7 +2,7 @@ require 'nn'
 --network-----mini size net for cpu test runs only--------------------------------------------------
 
 function getModel(Dimension)
-	nbFilter = 12
+	nbFilter = 6
 	net = nn.Sequential()
 	-- https://github.com/torch/nn/blob/master/doc/convolution.md#spatialconvolution
 	net:add(nn.SpatialConvolution(3, nbFilter, 3, 3, 1,1, (3-1)/2, (3-1)/2))
@@ -19,7 +19,7 @@ function getModel(Dimension)
 	net:add(nn.Linear(100, 3))
 	local method = 'xavier'
 	local net = require('weight-init')(net, method)
-	print("Net\n" .. net:__tostring());
+	print("Simple Net: \n" .. net:__tostring());
 	return net
 end
 
