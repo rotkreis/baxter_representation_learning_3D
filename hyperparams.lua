@@ -1,5 +1,5 @@
---DATA_FOLDER = 'simpleData3D'
-DATA_FOLDER = 'mobileRobot'
+DATA_FOLDER = 'simpleData3D'
+-- DATA_FOLDER = 'mobileRobot'
 
 print("============ DATA USED =========\n",
       DATA_FOLDER,
@@ -27,7 +27,7 @@ COEF_TEMP=0.3
 COEF_PROP=0.3
 COEF_REP=0.3
 COEF_CAUS=1
-DIMENSION_OUT= 4
+DIMENSION_OUT= 3
 
 
 --======================================================
@@ -39,4 +39,3 @@ ACTION_AMPLITUDE = 0.01
 -- The following parameter eliminates the need of finding close enough actions for assessing all priors except for the temporal.one.
 -- If the actions are too far away, they will make the gradient 0 and will not be considered for the update rule
 GAUSSIAN_SIGMA = 0.1
-

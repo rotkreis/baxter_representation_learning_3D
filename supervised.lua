@@ -41,7 +41,7 @@ end
 ---------------- model & criterion ---------------------------
 -- TODO load modle using minimalNetModel (now )
 require(MODEL_ARCHITECTURE_FILE) -- minimalnetmodel
-Model = getModel(DIMENSION) -- DIMENSION = 3
+Model = getModel(DIMENSION_OUT) -- DIMENSION = 3
 parameters, gradParameters = Model:getParameters()
 criterion = nn.MSECriterion()
 function reinitNet()
@@ -52,10 +52,10 @@ end
 
 function getLabel(data, index)
   -- get label of image i in data sequence
-  local label = torch.Tensor(3)
-  label[1] = data.Infos[1][index]
-  label[2] = data.Infos[2][index]
-  label[3] = data.Infos[3][index]
+  local label = torch.Tensor(DIMENSION_IN)
+  for i = 1, DIMENSION_IN do
+    label[i] = data.Infos[i][index]
+  end
   return label
 end
 
@@ -75,7 +75,7 @@ end
 
 
 
-function train(Model, nb_epochs, nb_batches, LR, indice_val)
+function train(Model, nb_epochs, nb_batches, LR, indice_val, verbose, final)
   -- For simpleData3D at the moment. Training using sequences 1-7, 8 as test.
   -- Given an indice_val, train and return the *errors* on training set as well
   -- as on validation set.
@@ -84,18 +84,20 @@ function train(Model, nb_epochs, nb_batches, LR, indice_val)
   -- TODO perhaps plot graphs (though not for everyone?)
   -- TODO print hyperparameters, or can be done where called
   collectgarbage()
+  local final = final or 0
   Model:clearState()
   -- print('--------------Validation set : '..indice_val..' ---------------')
-  -- xlua.progress(0, nb_epochs)
-  logger = optim.Logger('Log/sup'..'ep'..nb_epochs..'ba'..nb_batches..'LR'..LR..'val'..indice_val..'.log')
+  if verbose == 1 then xlua.progress(0, nb_epochs) end
+  logger = optim.Logger('Log/' ..DATA_FOLDER..'sup_ep'..nb_epochs..'ba'..nb_batches..'LR'..LR..'val'..indice_val..'.log')
   logger:setNames{'Validation Accuracy'}
-  logger:display(false)
+  -- logger:display(false)
 
   local optimState = {LearningRate = LR}
   index_train = {}
   for i = 1, NB_SEQUENCES - 1 do
     index_train[i] = i
   end
+  if final == 1 then index_train[NB_SEQUENCES] = NB_SEQUENCES end
   table.remove(index_train, indice_val)
 
   local err_val = torch.Tensor(nb_epochs)
@@ -131,7 +133,8 @@ function train(Model, nb_epochs, nb_batches, LR, indice_val)
     logger:add{err_val[epoch]}
     logger:style{'+-'}
     logger:plot()
-    -- xlua.progress(epoch, nb_epochs)
+    if verbose == 1 then print(err_val[epoch]) end
+    if verbose == 1 then xlua.progress(epoch, nb_epochs) end
   end
   performance_val = err_val[nb_epochs]-- final error
   return performance_val, err_val
@@ -160,7 +163,7 @@ function cross_validation()
         reinitNet();
         local avgPerformance = 0
         for indice_val = 1, K do
-           avgPerformance = avgPerformance + train(Model, nb_epochs, nb_batches, lr, indice_val)
+           avgPerformance = avgPerformance + train(Model, nb_epochs, nb_batches, lr, indice_val, 0)
         end
         performances[count] = avgPerformance / K
         configs[count] = {'Epoch = '..nb_epochs, 'Batches = '..nb_batches, 'LR = '..lr}
@@ -182,14 +185,16 @@ function cross_validation()
 end
 
 ---------------- single run -----------------
--- training (hyper)parameters
--- local LR = 0.01
--- local nb_epochs = 30
--- local nb_batches = 10
--- local err = torch.Tensor(nb_epochs)
--- indice_test = NB_SEQUENCES
--- local indice_val = 3
--- _, err = train(Model, nb_epochs, nb_batches, LR, indice_val)
+-- (hyper)parameters for training
+local LR = 0.001
+local nb_epochs = 30
+local nb_batches = 30
+local err = torch.Tensor(nb_epochs)
+-- local indice_val = NB_SEQUENCES
+local indice_val = 1
+_, err = train(Model, nb_epochs, nb_batches, LR, indice_val, 1, 1)
+print(evaluate(load_seq_by_id(indice_val)))
+printSamples(indice_val, 3)
 -- torch.save('supervised.Model', Model)
 
 ------------- cross_validation ------------------
@@ -197,9 +202,9 @@ end
 
 
 ---------- intuition ---------------------------
-print('-------validation------------')
-printSamples(1, 3)
-print('-------training------------')
-printSamples(1, 3)
+-- print('-------validation------------')
+-- printSamples(1, 3)
+-- print('-------training------------')
+-- printSamples(1, 3)
 -- reinitNet()
 -- _, err = train(Model, nb_epochs, nb_batches, LR, indice_val)

@@ -11,7 +11,7 @@
 -- Hyperparameters are located in a different file (hyperparameters.lua)
 --=============================================================
 require 'lfs'
-require 'cutorch'
+-- require 'cutorch'
 require 'hyperparams'
 --torch.manualSeed(100)
 
@@ -56,11 +56,11 @@ IM_HEIGHT = 200
 --===========================================================
 -- CUDA CONSTANTS
 --===========================================================
-USE_CUDA = true --false
+USE_CUDA = false --false
 USE_SECOND_GPU = true
 
 if USE_CUDA and USE_SECOND_GPU then
-   cutorch.setDevice(2)
+  --  cutorch.setDevice(2)
 end
 
 --================================================
