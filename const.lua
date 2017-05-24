@@ -20,7 +20,7 @@ DATA_FOLDER = 'mobileRobot'
 
 print("============ DATA USED =========\n",
       DATA_FOLDER,
-      "\n============================")
+      "\n================================")
 
 PRELOAD_FOLDER = 'preload_folder/'
 lfs.mkdir(PRELOAD_FOLDER)
@@ -28,7 +28,8 @@ lfs.mkdir(PRELOAD_FOLDER)
 LOG_FOLDER = 'Log/'
 MODEL_PATH = LOG_FOLDER
 
-MODEL_ARCHITECTURE_FILE = './models/topUniqueSimplerWOTanh'
+--MODEL_ARCHITECTURE_FILE = './models/topUniqueSimplerWOTanh'
+MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'  --TODO: add latest model
 
 STRING_MEAN_AND_STD_FILE = PRELOAD_FOLDER..'meanStdImages_'..DATA_FOLDER..'.t7'
 
@@ -75,7 +76,7 @@ COEF_PROP=0.3
 COEF_REP=0.3
 COEF_CAUS=1
 
-USE_CUDA = true
+USE_CUDA = false--true
 
 USE_SECOND_GPU = true
 
@@ -88,9 +89,8 @@ end
 --======================================================
 
 USE_CONTINUOUS = false --Todo, a switch between those two ?
-CLOSE_ENOUGH_PRECISION_THRESHOLD = 0.6
 ACTION_AMPLITUDE = 0.01
--- this parameter eliminates the need of finding close enough actions for assessing all priors but the temporal.
+-- The following parameter eliminates the need of finding close enough actions for assessing all priors except for the temporal.one.
 -- If the actions are too far away, they will make the gradient 0 and will not be considered for the update rule
 GAUSSIAN_SIGMA = 0.1
 

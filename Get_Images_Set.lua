@@ -151,7 +151,7 @@ function tensorFromTxt(path)
    return torch.Tensor(data), labels
 end
 
---============== Tools to get action from get state ===========
+--============== Tools to get action from the state ===========
 --=============================================================
 function action_amplitude(infos,id1, id2)
    local action = {}
@@ -161,7 +161,6 @@ function action_amplitude(infos,id1, id2)
    end
    return action
 end
-
 
 function is_same_action(action1,action2)
    local same_action = true
@@ -230,7 +229,6 @@ function get_two_Prop_Pair(Infos1, Infos2)
                -- print("id_ref_action_begin,id_ref_action_end,id_second_action_begin,id_second_action_end",id_ref_action_begin,id_ref_action_end,id_second_action_begin,id_second_action_end)
                -- print("action1",action1[1],action1[2],action1[3])
                -- print("action2",action2[1],action2[2],action2[3])
-
                return {im1=id_ref_action_begin,im2=id_ref_action_end,im3=id_second_action_begin,im4=id_second_action_end}
             end
          end
@@ -364,15 +362,15 @@ end
 ------------------ CONTINUOUS actions
 
 -- Making actions not be the same but close enough for the continous handling of priors,
--- however with the use of the SIGMA this method should not be needed
-function actions_are_close_enough(action1,action2)
-  local close_enough = true
-  --for each dim, check that the magnitude of the action is close
-  for dim=1,DIMENSION_IN do
-     close_enough = close_enough and arrondit(action1[dim] - action2[dim]) < CLOSE_ENOUGH_PRECISION_THRESHOLD
-  end
-  return close_enough
-end
+-- however with the use of the GAUSSIAN_SIGMA this method should not be needed
+-- function actions_are_close_enough(action1,action2)
+--   local close_enough = true
+--   --for each dim, check that the magnitude of the action is close
+--   for dim=1,DIMENSION_IN do
+--      close_enough = close_enough and arrondit(action1[dim] - action2[dim]) < CLOSE_ENOUGH_PRECISION_THRESHOLD
+--   end
+--   return close_enough
+-- end
 
 function get_one_random_Prop_Set_and_actions(Infos1)
    return get_two_Prop_Pair_and_actions(Infos1,Infos1)
