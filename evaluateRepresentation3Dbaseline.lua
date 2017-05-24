@@ -25,7 +25,6 @@ require 'string'
 require 'MSDC'
 
 -----------------SETTINGS
-USE_CUDA = false
 --nb_part = 50
 -- if not USE_CUDA then
 -- 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
@@ -38,8 +37,19 @@ USE_CUDA = false
 -- 	--BATCH_SIZE = 2 --60
 -- end
 
-require(MODEL_ARCHITECTURE_FILE)
-Model = getModel()
+
+if RELOAD_MODEL then
+	 Model = torch.load(MODEL_FILE_STRING):double()
+else
+	 require(MODEL_ARCHITECTURE_FILE)
+	 Model=getModel(DIMENSION_OUT)
+	 --graph.dot(Model.fg, 'Our Model')
+end
+
+if USE_CUDA then
+	 Model=Model:cuda()
+end
+
 
 ---------------------------------------
 --MODEL_NAME, name = 'Save97Win/reprLearner1d.t7', '97'
@@ -53,7 +63,7 @@ LOADING = false --true
 
 
 print('Running main script with USE_CUDA flag: '..tostring(USE_CUDA))
-print('NB_BATCHES: '..NB_BATCHES.." LearningRate: "..LR.." BATCH_SIZE: "..BATCH_SIZE..". Using data folder: "..DATA_FOLDER.." Model file Torch: "..MODEL_ARCHITECTURE_FILE..'Preloaded DATA: '..DATA)
+print('DIMENSION_OUT: '..DIMENSION_OUT.." LearningRate: "..LR.." BATCH_SIZE: "..BATCH_SIZE..". Using data folder: "..DATA_FOLDER.." Model file Torch: "..MODEL_ARCHITECTURE_FILE..'Preloaded DATA: '..DATA)
 
 local function getReprFromImgs(imgs, PRELOAD_FOLDER, epresentations_name, model_full_path)
   -- we save all metrics that are going to be used in the network for
@@ -425,7 +435,7 @@ function createModels(MODEL_FULL_PATH)
          os.exit()
       end
    else
-      model=getModel()
+      model=getModel(DIMENSION_OUT)
       print(model)
    end
 

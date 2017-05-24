@@ -29,6 +29,8 @@ end
 local  model = torch.load(path..'/'..modelString)
 if USE_CUDA then
   model = model:cuda()
+else
+  model = model:double()
 end
 
 outStr = ''
@@ -41,11 +43,11 @@ for seqStr in lfs.dir(imagesFolder) do
          if string.find(imageStr,'jpg') then
             local fullImagesPath = imagesPath..'/'..imageStr
             local reprStr = ''
+            --img = getImageFormated(fullImagesPath):cuda():reshape(1,3,200,200)
             if USE_CUDA then
               img = getImageFormated(fullImagesPath):cuda():reshape(1,3,200,200)
             else
-              img = getImageFormated(fullImagesPath):reshape(1,3,200,200)  --TODO IF NOT USING CUDA THIS DOES NOT WORK:: In 1 module of nn.Sequential: /home/natalia/torch/install/share/lua/5.1/nn/THNN.lua:110: bad argument #3 to 'v' (cannot convert 'struct THDoubleTensor *' to 'struct THFloatTensor *')
-
+              img = getImageFormated(fullImagesPath):double():reshape(1,3,200,200)  --TODO IF NOT USING CUDA, THIS DOES NOT WORK either way, with :cuda() nor without: In 1 module of nn.Sequential: /home/natalia/torch/install/share/lua/5.1/nn/THNN.lua:110: bad argument #3 to 'v' (cannot convert 'struct THDoubleTensor *' to 'struct THFloatTensor *')
             end
             repr = model:forward(img)
             for i=1,repr:size(2) do
