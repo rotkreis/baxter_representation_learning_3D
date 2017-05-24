@@ -8,7 +8,7 @@ import random
 import sys
 
 # Some parameters
-nbr_neighbors=4
+nbr_neighbors=10
 
 lastModelFile = open('lastModel.txt')
 
@@ -79,6 +79,6 @@ for img_name,id,dist,state in data:
 
 	plt.tight_layout()
 	output_file = path_to_neighbour + seq_name + "_" + base_name + "_" + 'Neigbors.png'
-	print('Saved nearest neighbor image to '+output_file)
+	#print('Saved nearest neighbor image to '+output_file)
 	plt.savefig(output_file,bbox_inches='tight')
         plt.close() # efficiency: avoids keeping all images into RAM
