@@ -79,3 +79,4 @@ for img_name,id,dist,state in data:
 		
 	plt.tight_layout()
 	plt.savefig(path_to_neighbour + seq_name + "_" + base_name + "_" + 'Neigbors.png',bbox_inches='tight')
+        plt.close()
