@@ -221,7 +221,7 @@ for nb_test=1, #Tests_Todo do
 
    local Priors=Tests_Todo[nb_test]
    local Log_Folder=Get_Folder_Name(LOG_FOLDER,Priors)
-   print("Test actuel : "..LOG_FOLDER)
+   print("Current test : "..LOG_FOLDER)
    train_Epoch(Models,Priors,Log_Folder,LR, USE_CONTINUOUS)
 end
 
