@@ -7,7 +7,6 @@ import shutil
 import random
 import sys
 
-
 # Some parameters
 nbr_neighbors=4
 
@@ -39,9 +38,10 @@ distances, indices = nbrs.kneighbors(states)
 
 #Generate mosaics
 path_to_neighbour = path_to_model + '/NearestNeighbors/'
-print "path_to_neighbour",path_to_neighbour 
+print "path_to_neighbour",path_to_neighbour
 #shutil.rmtree('NearestNeighbors', 1)
-os.mkdir(path_to_neighbour)
+if not os.path.exists(path_to_neighbour):
+	os.mkdir(path_to_neighbour)
 
 if nbr_images == -1:
 	data= zip(images,indices,distances,states)
@@ -67,16 +67,18 @@ for img_name,id,dist,state in data:
 		img_name=images[id[i+1]]
 		img = mpimg.imread(img_name)
 		imgplot = plt.imshow(img)
-		
+
 		base_name_n= os.path.splitext(os.path.basename(img_name))[0]
 		seq_name_n= img_name.split("/")[1]
 
 		dist_str = ' d=' + '{:.4f}'.format(dist[i+1])
-		
+
 		state_str='[' + ",".join(['{:.3f}'.format(float(x)) for x in states[id[i+1]]]) + "]"
 		a.set_title(seq_name_n + "/" + base_name_n + ": \n" + state_str +dist_str)
 		a.axis('off')
-		
+
 	plt.tight_layout()
-	plt.savefig(path_to_neighbour + seq_name + "_" + base_name + "_" + 'Neigbors.png',bbox_inches='tight')
-        plt.close()
+	output_file = path_to_neighbour + seq_name + "_" + base_name + "_" + 'Neigbors.png'
+	print('Saved nearest neighbor image to '+output_file)
+	plt.savefig(output_file,bbox_inches='tight')
+        plt.close() # efficiency: avoids keeping all images into RAM

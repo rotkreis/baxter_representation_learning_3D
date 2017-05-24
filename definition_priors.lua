@@ -53,7 +53,3 @@ function get_Caus_criterion()
    gmod = nn.gModule({h1, h2}, {out})
    return gmod
 end
-
--- function get_gaussian_sigma()
---   return GAUSSIAN_SIGMA
--- end

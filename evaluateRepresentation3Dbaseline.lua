@@ -26,17 +26,17 @@ require 'MSDC'
 
 -----------------SETTINGS
 USE_CUDA = false
-nb_part = 50
-if not USE_CUDA then
-	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
-	--  by making "nb_part" larger than 50: -- ToDo: find a value less than 80 and more than 50 for data_baxter_short_seqs and <100 for data_baxter?
-	nb_part= 60
-	MODEL_ARCHITECTURE_FILE ='./models/minimalNetModel' -- TODO update model_file='./models/topTripleFM_Split'
-	--BATCH_SIZE= 1
-else
-	MODEL_ARCHITECTURE_FILE ='./models/topTripleFM_Split'
-	--BATCH_SIZE = 2 --60
-end
+--nb_part = 50
+-- if not USE_CUDA then
+-- 	--	If there is RAM memory problems, one can try to split the dataset in more parts in order to load less image into RAM at one time.
+-- 	--  by making "nb_part" larger than 50: -- ToDo: find a value less than 80 and more than 50 for data_baxter_short_seqs and <100 for data_baxter?
+-- 	nb_part= 60
+-- 	--MODEL_ARCHITECTURE_FILE ='./models/minimalNetModel' -- './models/topTripleFM_Split'
+-- 	--BATCH_SIZE= 1
+-- --else
+-- 	--MODEL_ARCHITECTURE_FILE ='./models/topTripleFM_Split'
+-- 	--BATCH_SIZE = 2 --60
+-- end
 
 require(MODEL_ARCHITECTURE_FILE)
 Model = getModel()
@@ -53,7 +53,7 @@ LOADING = false --true
 
 
 print('Running main script with USE_CUDA flag: '..tostring(USE_CUDA))
-print('nb_parts per batch: '..nb_part.." LearningRate: "..LR.." BATCH_SIZE: "..BATCH_SIZE..". Using data folder: "..DATA_FOLDER.." Model file Torch: "..MODEL_ARCHITECTURE_FILE..'Preloaded DATA: '..DATA)
+print('NB_BATCHES: '..NB_BATCHES.." LearningRate: "..LR.." BATCH_SIZE: "..BATCH_SIZE..". Using data folder: "..DATA_FOLDER.." Model file Torch: "..MODEL_ARCHITECTURE_FILE..'Preloaded DATA: '..DATA)
 
 local function getReprFromImgs(imgs, PRELOAD_FOLDER, epresentations_name, model_full_path)
   -- we save all metrics that are going to be used in the network for
@@ -143,7 +143,7 @@ local function RandomBatch(X,y,BATCH_SIZE)
    return batch, y_temp
 end
 
-function Rico_Training(model,batch,y,reconstruct, LR)
+function Rico_Training_evaluation(model,batch,y,reconstruct, LR, USE_CONTINUOUS) --TODO USE ONLY ONE, SAME AS IN SCRIPT-> move to functions?
    local criterion
    local optimizer = optim.adam
    if reconstruct then
@@ -277,13 +277,13 @@ function train(X,y, reconstruct, NB_SEQUENCES)
 
    for epoch=1, NB_EPOCH do
       local lossTemp=0
-      for numBatch=1, NB_BATCH do
+      for numBatch=1, NB_BATCHES do
          batch_temp, y = RandomBatch(X_train,y_train,BATCH_SIZE)
-         lossTemp = lossTemp + Rico_Training(model,batch_temp,y, reconstruct, LR)
+         lossTemp = lossTemp + Rico_Training_evaluation(model,batch_temp,y, reconstruct, LR)
       end
 
       if epoch==NB_EPOCH then
-         print("lossTemp",lossTemp/NB_BATCH)
+         print("lossTemp",lossTemp/NB_BATCHES)
 
          if reconstruct then
             print("Test accuracy = ",accuracy_reconstruction(X_test,y_test,model))
@@ -311,8 +311,8 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
 
    NB_SEQUENCES = #list_folders_images
 	 print('createPreloadedDataFolder for NB_SEQUENCES: '..NB_SEQUENCES)
-   local part = 1 --
-   local next_part_start_index = part
+   --local part = 1 --
+   local next_part_start_index = 1
    for crossValStep=1, NB_SEQUENCES do
       models = createModels(model_full_path)
       currentLogFolder=LOG_FOLDER..'CrossVal'..crossValStep..'/' --*
@@ -358,8 +358,9 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
       -- corr=Print_performance(models, imgs_test,txt_test,"First_Test",currentLogFolder,truth,false)
       -- print("Correlation before training : ", corr)
       -- table.insert(list_corr,corr)
-      print("Training with NB_SEQUENCES "..NB_SEQUENCES..' nb_batches: '..nb_batches)
-			nb_batches = math.floor(#imgs/BATCH_SIZE)
+
+			NB_BATCHES = math.floor(#imgs/BATCH_SIZE)
+			print("Training with NB_SEQUENCES "..NB_SEQUENCES..' NB_BATCHES: '..NB_BATCHES)
       for epoch=1, NB_EPOCHS do
          print('--------------Epoch : '..epoch..' ---------------')
          local lossTemp=0
@@ -368,7 +369,7 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
          local lossCaus=0
          local causAdded = 0
 
-         for numBatch=1,nb_batches do
+         for numBatch=1,NB_BATCHES do
             indice1= torch.random(1,NB_SEQUENCES)
             repeat indice2= torch.random(1,NB_SEQUENCES) until (indice1 ~= indice2)
 
@@ -381,18 +382,18 @@ function createPreloadedDataFolder(list_folders_images,list_txt,LOG_FOLDER,use_s
 						-- local data2 = load_seq_by_id(indice2)
 
             batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BATCH_SIZE,"Temp")--batch(imgs1,imgs2,txt1,txt2,BATCH_SIZE,"Temp")
-            lossTemp = lossTemp + Rico_Training(models,'Temp',batch, coef_Temp,LR)
+            lossTemp = lossTemp + Rico_Training_evaluation(models,'Temp',batch, coef_Temp,LR)
 
             batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BATCH_SIZE,"Caus")
-            lossCaus = lossCaus + Rico_Training(models, 'Caus',batch, 1,LR)
+            lossCaus = lossCaus + Rico_Training_evaluation(models, 'Caus',batch, 1,LR)
 
             batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BATCH_SIZE,"Prop")
-            lossProp = lossProp + Rico_Training(models, 'Prop',batch, coef_Prop,LR)
+            lossProp = lossProp + Rico_Training_evaluation(models, 'Prop',batch, coef_Prop,LR)
 
             batch=getRandomBatchFromSeparateListContinuous(imgs1,imgs2,BATCH_SIZE,"Rep")
-            lossRep = lossRep + Rico_Training(models,'Rep',batch, coef_Rep,LR)
+            lossRep = lossRep + Rico_Training_evaluation(models,'Rep',batch, coef_Rep,LR)
 
-            xlua.progress(numBatch, nb_batches)
+            xlua.progress(numBatch, NB_BATCHES)
 
          end
          --corr=Print_performance(models, imgs_test,txt_test,"Test",currentLogFolder,truth,false)
@@ -537,9 +538,9 @@ reconstructingTask = true
 local dataAugmentation=true
 --local list_folders_images, list_txt=Get_HeadCamera_HeadMvt() local _, list_txt=Get_HeadCamera_HeadMvt(DATA_FOLDER)
 
-if not file_exists(PRELOAD_FOLDER) then
-   lfs.mkdir(PRELOAD_FOLDER)
-end
+-- if not file_exists(PRELOAD_FOLDER) then   --TODO  needed? Remove and leave in const only once
+--    lfs.mkdir(PRELOAD_FOLDER)
+-- end
 if not file_exists(LOG_FOLDER) then
    lfs.mkdir(LOG_FOLDER)
 end
@@ -558,7 +559,7 @@ if #list_folders_images >0 then
 	print('images_paths (First test:)'..list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
-	part_test=1
+	--part_test=1
 	--Data_test=load_Part_list(list_image_paths,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test) --avoid, call only  load_seq_by_id(seq_id)
 	--Data_test=load_Part_list(list,txt,txt_reward,IM_LENGTH,IM_HEIGHT,DATA_AUGMENTATION,txt_state)
 	data_test=load_seq_by_id(seq_id)
@@ -582,9 +583,9 @@ if #list_folders_images >0 then
 	imgs[1], imgs[#imgs] = imgs[#imgs], imgs[1] -- Because during database creation we swapped those values
 
 	if reconstructingTask then
-	   y = getHandPosFromTxts(list_txt, nb_part, 1)
+	   y = getHandPosFromTxts(list_txt, NB_BATCHES, 1)-- nb_part, 1)
 	else
-	   y = getHandPosRewardsFromTxts(list_txt, nb_part, 1)
+	   y = getHandPosRewardsFromTxts(list_txt, NB_BATCHES, 1)--nb_part, 1)
 	end
 
 	--X = HeadPosFromTxts(list_txt,true)
