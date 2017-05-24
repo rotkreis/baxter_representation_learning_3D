@@ -79,6 +79,7 @@ function train(Model, nb_epochs, nb_batches, LR, indice_val)
   -- For simpleData3D at the moment. Training using sequences 1-7, 8 as test.
   -- Given an indice_val, train and return the *errors* on training set as well
   -- as on validation set.
+  -- Can be made general directly to mobileRobot?
   -- TODO generate logs
   -- TODO perhaps plot graphs (though not for everyone?)
   -- TODO print hyperparameters, or can be done where called
@@ -137,31 +138,31 @@ function train(Model, nb_epochs, nb_batches, LR, indice_val)
 end
 
 ------- cross-validation ---------------------------
-nb_slices = NB_SEQUENCES
-nb_epochSet = {30,50,100}
-nb_batchSet = {10, 20, 30,}
-lrSet = {0.01, 0.001, 0.0001}
-configs = {}
-nb_config = #nb_epochSet * #nb_batchSet *  #lrSet
-performances = torch.Tensor(nb_config)
-local count = 1
 
 function cross_validation()
 -- K-fold cross-valition on epoch size, batch size, and learning rate
--- computing
+  K = NB_SEQUENCES - 1
+  nb_epochSet = {30,50}
+  nb_batchSet = {10, 20, 30}
+  lrSet = {0.01, 0.001, 0.0001}
+  configs = {}
+  nb_config = #nb_epochSet * #nb_batchSet *  #lrSet
+  performances = torch.Tensor(nb_config)
+  local count = 1
   print("iterating over configs")
   xlua.progress(0, nb_config)
+-- computing
   for i, nb_epochs in pairs(nb_epochSet) do
     for j, nb_batches in pairs(nb_batchSet) do
       for k, lr in pairs(lrSet) do
-        -- training, K-fold (K = 8)
+        -- training, K-fold
         -- how to make sure each time a new model? DONE, cf reinitNet()
         reinitNet();
         local avgPerformance = 0
-        for indice_val = 1, nb_slices-1 do
+        for indice_val = 1, K do
            avgPerformance = avgPerformance + train(Model, nb_epochs, nb_batches, lr, indice_val)
         end
-        performances[count] = avgPerformance / (nb_slices - 1)
+        performances[count] = avgPerformance / K
         configs[count] = {'Epoch = '..nb_epochs, 'Batches = '..nb_batches, 'LR = '..lr}
         print(performances[count])
         print(configs[count])
@@ -191,14 +192,14 @@ end
 -- _, err = train(Model, nb_epochs, nb_batches, LR, indice_val)
 -- torch.save('supervised.Model', Model)
 
---------------- cross_validation ------------------
-cross_validation()
+------------- cross_validation ------------------
+-- cross_validation()
 
 
 ---------- intuition ---------------------------
--- print('-------validation------------')
--- printSamples(indice_val, 3)
--- print('-------training------------')
--- printSamples(1, 3)
+print('-------validation------------')
+printSamples(1, 3)
+print('-------training------------')
+printSamples(1, 3)
 -- reinitNet()
 -- _, err = train(Model, nb_epochs, nb_batches, LR, indice_val)

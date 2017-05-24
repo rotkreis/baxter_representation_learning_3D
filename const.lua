@@ -12,8 +12,8 @@ require 'lfs'
 --require 'cutorch'
 torch.manualSeed(100)
 
-DATA_FOLDER = 'simpleData3D'
---DATA_FOLDER = 'mobileRobot'
+-- DATA_FOLDER = 'simpleData3D'
+DATA_FOLDER = 'mobileRobot'
 
 PRELOAD_FOLDER = 'preload_folder/'
 lfs.mkdir(PRELOAD_FOLDER)
