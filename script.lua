@@ -20,12 +20,57 @@ require 'const'
 -- try to avoid global variable as much as possible
 
 
-function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
+-- function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
+--    local mom=0.9
+--    local coefL2=0,0
+--
+--    local batch=getRandomBatchFromSeparateList(data1,data2,BATCH_SIZE,Mode)
+--
+--    -- create closure to evaluate f(X) and df/dX
+--    local feval = function(x)
+--       -- just in case:
+--       collectgarbage()
+--
+--       -- get new parameters
+--       if x ~= parameters then
+--          parameters:copy(x)
+--       end
+--
+--       -- reset gradients
+--       gradParameters:zero()
+--       if Mode=='Simpl' then print("Simpl")
+--       elseif Mode=='Temp' then loss,grad=doStuff_temp(Models,criterion, batch,coef)
+--       elseif Mode=='Prop' then loss,grad=doStuff_Prop(Models,criterion,batch,coef)
+--       elseif Mode=='Caus' then loss,grad=doStuff_Caus(Models,criterion,batch,coef)
+--       elseif Mode=='Rep' then loss,grad=doStuff_Rep(Models,criterion,batch,coef)
+--       else print("Wrong Mode")
+--       end
+--       return loss,gradParameters
+--    end
+--    --sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
+--    --parameters, loss=optim.sgd(feval, parameters, sgdState)
+--    optimState={learningRate=LR}
+--
+--    if SGD_METHOD == 'adagrad' then
+--       parameters,loss=optim.adagrad(feval,parameters,optimState)
+--    else
+--       parameters,loss=optim.adam(feval,parameters,optimState)
+--    end
+--
+--    -- loss[1] table of one value transformed in just a value
+--    -- grad[1] we use just the first gradient to print the figure (there are 2 or 4 gradient normally)
+--    return loss[1], grad
+-- end
+
+function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE, USE_CONTINUOUS)
    local mom=0.9
    local coefL2=0,0
 
-   local batch=getRandomBatchFromSeparateList(data1,data2,BATCH_SIZE,Mode)
-
+   if USE_CONTINUOUS then
+     batch, action1, action2 = getRandomBatchFromSeparateListContinuous(data1,data2,BATCH_SIZE,Mode)
+   else
+     batch = getRandomBatchFromSeparateList(data1,data2,BATCH_SIZE,Mode)
+   end
    -- create closure to evaluate f(X) and df/dX
    local feval = function(x)
       -- just in case:
@@ -40,9 +85,24 @@ function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
       gradParameters:zero()
       if Mode=='Simpl' then print("Simpl")
       elseif Mode=='Temp' then loss,grad=doStuff_temp(Models,criterion, batch,coef)
-      elseif Mode=='Prop' then loss,grad=doStuff_Prop(Models,criterion,batch,coef)
-      elseif Mode=='Caus' then loss,grad=doStuff_Caus(Models,criterion,batch,coef)
-      elseif Mode=='Rep' then loss,grad=doStuff_Rep(Models,criterion,batch,coef)
+      elseif Mode=='Prop' then
+        if USE_CONTINUOUS then
+           loss,grad=doStuff_Prop_continuous(Models,criterion,batch,coef, action1, action2)
+        else
+           loss,grad=doStuff_Prop(Models,criterion,batch,coef)
+        end
+      elseif Mode=='Caus' then
+         if USE_CONTINUOUS then
+            loss,grad=doStuff_Caus_continuous(Models,criterion,batch,coef, action1, action2)
+         else
+            loss,grad=doStuff_Caus(Models,criterion,batch,coef)
+         end
+      elseif Mode=='Rep' then
+        if USE_CONTINUOUS then
+           loss,grad=doStuff_Rep_continuous(Models,criterion,batch,coef, action1, action2)
+        else
+           loss,grad=doStuff_Rep(Models,criterion,batch,coef)
+        end
       else print("Wrong Mode")
       end
       return loss,gradParameters
@@ -65,7 +125,7 @@ end
 function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
 
    local nb_batch= math.ceil(NB_SEQUENCES*90/BATCH_SIZE/(4+4+2+2))
-   --90 is the average number of images per sequences, div by 12 because the network see 12 images per iteration
+   --90 is the average number of images per sequences, div by 12 because the network sees 12 images per iteration
    -- (4*2 for rep and prop, 2*2 for temp and caus)
 
    local REP_criterion=get_Rep_criterion()
@@ -89,7 +149,7 @@ function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
    print(Caus)
 
 
-   print(NB_SEQUENCES..' : sequences')
+   print(NB_SEQUENCES..' : sequences. '..nb_batch..' batches')
 
    for epoch=1, NB_EPOCHS do
       print('--------------Epoch : '..epoch..' ---------------')
@@ -123,22 +183,22 @@ function train_Epoch(Models,Prior_Used,LOG_FOLDER,LR)
          assert(data2, "Something went wrong while loading data2")
 
          if Temp then
-            Loss,Grad=Rico_Training(Models,'Temp',data1,data2,TEMP_criterion, COEF_TEMP,LR,BATCH_SIZE)
+            Loss,Grad=Rico_Training(Models,'Temp',data1,data2,TEMP_criterion, COEF_TEMP,LR,BATCH_SIZE, USE_CONTINUOUS)
             Grad_Temp=Grad_Temp+Grad
             Temp_loss=Temp_loss+Loss
          end
          if Prop then
-            Loss,Grad=Rico_Training(Models,'Prop',data1,data2, PROP_criterion, COEF_PROP,LR,BATCH_SIZE)
+            Loss,Grad=Rico_Training(Models,'Prop',data1,data2, PROP_criterion, COEF_PROP,LR,BATCH_SIZE, USE_CONTINUOUS)
             Grad_Prop=Grad_Prop+Grad
             Prop_loss=Prop_loss+Loss
          end
          if Rep then
-            Loss,Grad=Rico_Training(Models,'Rep',data1,data2,REP_criterion, COEF_REP,LR,BATCH_SIZE)
+            Loss,Grad=Rico_Training(Models,'Rep',data1,data2,REP_criterion, COEF_REP,LR,BATCH_SIZE, USE_CONTINUOUS)
             Grad_Rep=Grad_Rep+Grad
             Rep_loss=Rep_loss+Loss
          end
          if Caus then
-            Loss,Grad=Rico_Training(Models,'Caus',data1,data2,CAUS_criterion,COEF_CAUS,LR,BATCH_SIZE)
+            Loss,Grad=Rico_Training(Models,'Caus',data1,data2,CAUS_criterion,COEF_CAUS,LR,BATCH_SIZE, USE_CONTINUOUS)
             Grad_Caus=Grad_Caus+Grad
             Caus_loss=Caus_loss+Loss
          end

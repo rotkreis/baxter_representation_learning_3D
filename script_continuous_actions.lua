@@ -16,51 +16,16 @@ require 'definition_priors'
 -- THIS IS WHERE ALL THE CONSTANTS SHOULD COME FROM
 -- See const.lua file for more details
 require 'const'
+require 'script'
 -- try to avoid global variable as much as possible
 
-function Rico_Training(Models,Mode,data1,data2,criterion,coef,LR,BATCH_SIZE)
-   local mom=0.9
-   local coefL2=0,0
-
-   local batch, action1, action2 =getRandomBatchFromSeparateListContinuous(data1,data2,BATCH_SIZE,Mode)
-   -- create closure to evaluate f(X) and df/dX
-   local feval = function(x)
-      -- just in case:
-      collectgarbage()
-
-      -- get new parameters
-      if x ~= parameters then
-         parameters:copy(x)
-      end
-
-      -- reset gradients
-      gradParameters:zero()
-      if Mode=='Simpl' then print("Simpl")
-      elseif Mode=='Temp' then loss,grad=doStuff_temp(Models,criterion, batch,coef)
-      elseif Mode=='Prop' then loss,grad=doStuff_Prop_continuous(Models,criterion,batch,coef, action1, action2)
-      elseif Mode=='Caus' then loss,grad=doStuff_Caus_continuous(Models,criterion,batch,coef, action1, action2)
-      elseif Mode=='Rep' then loss,grad=doStuff_Rep_continuous(Models,criterion,batch,coef, action1, action2)
-      else print("Wrong Mode")
-      end
-      return loss,gradParameters
-   end
-   --sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
-   --parameters, loss=optim.sgd(feval, parameters, sgdState)
-   optimState={learningRate=LR}
-
-   if SGD_METHOD == 'adagrad' then
-      parameters,loss=optim.adagrad(feval,parameters,optimState)
-   else
-      parameters,loss=optim.adam(feval,parameters,optimState)
-   end
-
-   -- loss[1] table of one value transformed in just a value
-   -- grad[1] we use just the first gradient to print the figure (there are 2 or 4 gradient normally)
-   return loss[1], grad
-end
+USE_CONTINUOUS = true
 
 function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
-  local nb_batch=10
+  local nb_batch= math.ceil(NB_SEQUENCES*90/BATCH_SIZE/(4+4+2+2))
+  --90 is the average number of images per sequences, div by 12 because the network sees 12 images per iteration
+  -- (4*2 for rep and prop, 2*2 for temp and caus)
+
 
   local REP_criterion=get_Rep_criterion()
   local PROP_criterion=get_Prop_criterion()
@@ -88,7 +53,7 @@ function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
   local coef_Caus=1
   local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
-  print(NB_SEQUENCES..' : sequences')
+  print(NB_SEQUENCES..' : sequences. '..nb_batch..' batches')
 
   for epoch=1, NB_EPOCHS do
      print('--------------Epoch : '..epoch..' ---------------')
@@ -113,22 +78,22 @@ function train_Epoch_continuous(Models, Prior_Used, LOG_FOLDER, LR)
         assert(data2, "Something went wrong while loading data2")
 
         if Temp then
-           Loss,Grad=Rico_Training(Models,'Temp',data1,data2,TEMP_criterion, coef_Temp,LR,BATCH_SIZE)
+           Loss,Grad=Rico_Training(Models,'Temp',data1,data2,TEMP_criterion, coef_Temp,LR,BATCH_SIZE, USE_CONTINUOUS)
            Grad_Temp=Grad_Temp+Grad
            Temp_loss=Temp_loss+Loss
         end
         if Prop then
-           Loss,Grad=Rico_Training(Models,'Prop',data1,data2, PROP_criterion, coef_Prop,LR,BATCH_SIZE)
+           Loss,Grad=Rico_Training(Models,'Prop',data1,data2, PROP_criterion, coef_Prop,LR,BATCH_SIZE, USE_CONTINUOUS)
            Grad_Prop=Grad_Prop+Grad
            Prop_loss=Prop_loss+Loss
         end
         if Rep then
-           Loss,Grad=Rico_Training(Models,'Rep',data1,data2,REP_criterion, coef_Rep,LR,BATCH_SIZE)
+           Loss,Grad=Rico_Training(Models,'Rep',data1,data2,REP_criterion, coef_Rep,LR,BATCH_SIZE, USE_CONTINUOUS)
            Grad_Rep=Grad_Rep+Grad
            Rep_loss=Rep_loss+Loss
         end
         if Caus then
-           Loss,Grad=Rico_Training(Models,'Caus',data1,data2,CAUS_criterion,coef_Caus,LR,BATCH_SIZE)
+           Loss,Grad=Rico_Training(Models,'Caus',data1,data2,CAUS_criterion,coef_Caus,LR,BATCH_SIZE, USE_CONTINUOUS)
            Grad_Caus=Grad_Caus+Grad
            Caus_loss=Caus_loss+Loss
         end

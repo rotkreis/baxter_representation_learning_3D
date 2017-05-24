@@ -28,8 +28,8 @@ lfs.mkdir(PRELOAD_FOLDER)
 LOG_FOLDER = 'Log/'
 MODEL_PATH = LOG_FOLDER
 
---MODEL_ARCHITECTURE_FILE = './models/topUniqueSimplerWOTanh'
-MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'  --TODO: add latest model
+MODEL_ARCHITECTURE_FILE = './models/topUniqueSimplerWOTanh'
+--MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'
 
 STRING_MEAN_AND_STD_FILE = PRELOAD_FOLDER..'meanStdImages_'..DATA_FOLDER..'.t7'
 
@@ -63,7 +63,6 @@ LR=0.001
 SGD_METHOD = 'adam' -- Can be adam or adagrad
 BATCH_SIZE = 3 -- TRYING TO HAVE BIGGER BATCH
 NB_EPOCHS=2
-GAUSSIAN_SIGMA = 0.5
 
 IM_LENGTH = 200
 IM_HEIGHT = 200
@@ -88,7 +87,7 @@ end
 --Continuous actions SETTINGS
 --======================================================
 
-USE_CONTINUOUS = false --Todo, a switch between those two ?
+USE_CONTINUOUS = false --Todo, a switch between those two ?  -- Requires calling getRandomBatchFromSeparateListContinuous instead of getRandomBatchFromSeparateList
 ACTION_AMPLITUDE = 0.01
 -- The following parameter eliminates the need of finding close enough actions for assessing all priors except for the temporal.one.
 -- If the actions are too far away, they will make the gradient 0 and will not be considered for the update rule
@@ -122,7 +121,7 @@ if DATA_FOLDER == 'simpleData3D' then
 
    SUB_DIR_IMAGE = 'recorded_cameras_head_camera_2_image_compressed'
 
-else -- DATA_FOLDER == mobileRobot
+elseif DATA_FOLDER == 'mobileRobot' then
    DEFAULT_PRECISION = 0.1
    CLAMP_CAUSALITY = false
 
@@ -141,4 +140,30 @@ else -- DATA_FOLDER == mobileRobot
 
    SUB_DIR_IMAGE = 'recorded_camera_top'
 
+elseif DATA_FOLDER == 'realBaxterPushingObjects' then
+  -- Leni's real Baxter data on  ISIR dataserver. It is named "data_archive_sim_1".
+  DEFAULT_PRECISION = 0.1
+  -- CLAMP_CAUSALITY = false
+  --
+  -- MIN_TABLE = {-10000,-10000} -- for x,y
+  -- MAX_TABLE = {10000,10000} -- for x,y
+  --
+  -- DIMENSION_IN = 2
+  -- DIMENSION_OUT= 4
+  --
+  -- REWARD_INDICE = 1
+  -- INDICE_TABLE = {1,2} --column indice for coordinate in state file (respectively x,y)
+  --
+  -- FILENAME_FOR_ACTION = "action"
+  -- FILENAME_FOR_STATE = "state"
+  -- FILENAME_FOR_REWARD = "reward"
+  --
+  -- SUB_DIR_IMAGE = 'recorded_camera_top'
+
+else
+  print("No supported data folder provided, please add either of simpleData3D, mobileRobot or Leni's realBaxterPushingObjects")
+  os.exit()
 end
+
+
+print("\n USE_CUDA ",USE_CUDA," \n USE_CONTINUOUS ACTIONS: ",USE_CONTINUOUS)
