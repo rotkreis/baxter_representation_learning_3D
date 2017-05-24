@@ -31,20 +31,28 @@ require(MODEL_ARCHITECTURE_FILE) -- minimalnetmodel
 Model = getModel(DIMENSION) -- DIMENSION = 3
 parameters, gradParameters = Model:getParameters()
 criterion = nn.MSECriterion()
+function reinitNet()
+  -- reinit weights for cross-validation
+  local method = 'xavier'
+  Model = require('weight-init')(Model, method)
+end
 
-
--- simple evaluation
+function getLabel(data, index)
+  -- get label of image i in data sequence
+  local label = torch.Tensor(3)
+  label[1] = data.Infos[1][index]
+  label[2] = data.Infos[2][index]
+  label[3] = data.Infos[3][index]
+  return label
+end
+-- simple evaluation of acurracy
 function evaluate(data)
   local n = (#data.images)
   local err = 0
   for i = 1,n do
     local input = data.images[i]:double()
-    local truth = torch.Tensor(3)
-    truth[1] = data.Infos[1][i]
-    truth[2] = data.Infos[2][i]
-    truth[3] = data.Infos[3][i]
+    local truth = getLabel(data, i)
     output = Model:forward(input)
-    -- err = err + (output - truth):pow(2):sum() / truth:pow(2):sum()
     err = err + (output - truth):pow(2):sum()
   end
   err = err / n
@@ -52,50 +60,48 @@ function evaluate(data)
 end
 
 
--- training
-local LR = 0.001
-local nb_epochs = 50
-local nb_batches = 20
-local err = torch.Tensor(nb_epochs)
 
--- train & test
-indice_test = NB_SEQUENCES
-
-function train(nb_epochs, nb_batches, LR, indice_val)
+function train(Model, nb_epochs, nb_batches, LR, indice_val)
+  -- For simpleData3D at the moment. Training using sequences 1-7, 8 as test.
+  -- Given an indice_val, train and return the *errors* on training set as well
+  -- as on validation set.
+  -- TODO generate logs
+  -- TODO perhaps plot graphs (though not for everyone?)
+  -- TODO print hyperparameters, or can be done where called
   collectgarbage()
   Model:clearState()
-  -- print('--------------Epoch : '..nb_epochs..' ---------------')
-  print('--------------indice_val : '..indice_val..' ---------------')
+  print('--------------Validation set : '..indice_val..' ---------------')
   xlua.progress(0, nb_epochs)
-  local optimState = {LearningRate = LR}
+  logger = optim.Logger('Log/sup'..'ep'..nb_epochs..'ba'..nb_batches..'LR'..LR..'val'..indice_val..'.log')
+  logger:setNames{'Validation Accuracy'}
+  logger:display(false)
 
+  local optimState = {LearningRate = LR}
   index_train = {}
   for i = 1, NB_SEQUENCES - 1 do
     index_train[i] = i
   end
   table.remove(index_train, indice_val)
 
-  local err = torch.Tensor(nb_epochs)
+  local err_val = torch.Tensor(nb_epochs)
+  local err_train = torch.Tensor(nb_epochs)
   for epoch = 1, nb_epochs do
-    --indice = torch.random(1, NB_SEQUENCES - 1)
+    -- load data sequence
     indice = torch.random(1, #index_train)
     local data = load_seq_by_id(index_train[indice])
     assert(data, "Error loading data")
+
     for batch = 1, nb_batches do
         n = #data.Infos[1]
         i = torch.random(1, n)
-        input = data.images[i]:double()
-        label = torch.Tensor(3)
-        label[1] = data.Infos[1][i]
-        label[2] = data.Infos[2][i]
-        label[3] = data.Infos[3][i]
-
+        local input = data.images[i]:double()
+        local label = getLabel(data, i)
+        -- closure for optim
         local feval = function(x)
             collectgarbage()
             if x ~= parameters then
                 parameters:copy(x)
             end
-            -- calculation
             gradParameters:zero()
             local state = Model:forward(input)
             local loss = criterion:forward(state,label)
@@ -104,99 +110,103 @@ function train(nb_epochs, nb_batches, LR, indice_val)
             Model:backward(input, dloss_dstate)
             return loss, gradParameters
         end
-        optim.adagrad(feval, parameters, optimState)
-        -- optim.adam(feval, parameters, optimState)
+        optim.adagrad(feval, parameters, optimState) -- or adam
     end
     xlua.progress(epoch, nb_epochs)
-    err[epoch] = evaluate(load_seq_by_id(indice_val))
-    print(err[epoch])
+    err_val[epoch] = evaluate(load_seq_by_id(indice_val))
+    logger:add{err_val[epoch]}
+    logger:style{'+-'}
+    logger:plot()
+    print(err_val[epoch])
+  -- error on training set, too slow
+    -- local avg = 0
+    -- for i = 1, #index_train do
+    --   avg = avg + evaluate(load_seq_by_id(i))
+    -- end
+    -- err_train[epoch] = avg / #index_train
   end
-  performance = evaluate(load_seq_by_id(indice_val)) -- final error
-  return performance, err  -- on validation set only, TODO add training set
+  performance_val = err_val[nb_epochs]-- final error
+  return performance_val, err_val
 end
 
--- cross-validation ---------------------------
--- lrSet = {0.1, 0.01, 0.001, 0.0001}
+------- cross-validation ---------------------------
 nb_slices = NB_SEQUENCES
-nb_epochSet = {10, 20, 100, 200, 500}
---nb_epochSet = {10, 20}
-nb_batchSet = {10, 20}
-lrSet = {0.01}
+nb_epochSet = {30, 50}
+nb_batchSet = {10}
+lrSet = {0.01, 0.001}
 configs = {}
 performances = torch.Tensor(#nb_epochSet * #nb_batchSet *  #lrSet)
 local count = 1
---for i, nb_epochs in pairs(nb_epochSet) do
-  --for j, nb_batches in pairs(nb_batchSet) do
-    --for k, lr in pairs(lrSet) do
-      --print("config set:", lr, nb_epochs, nb_batches)
-      ---- training, K-fold (K = 8)
-      --local avgPerformance = 0
-      --for indice_val = 1, nb_slices-1 do
-         --avgPerformance = avgPerformance + train(nb_epochs, nb_batches, lr, indice_val)
-      --end
-      --performances[count] = avgPerformance / (nb_slices - 1)
-      --configs[count] = {'Epoch = '..nb_epochs, 'Batches = '..nb_batches, 'LR = '..lr}
-      --count = count + 1
-    --end
-  --end
---end
 
-
+function cross_validation()
+-- K-fold cross-valition on epoch size, batch size, and learning rate
+-- computing
+  for i, nb_epochs in pairs(nb_epochSet) do
+    for j, nb_batches in pairs(nb_batchSet) do
+      for k, lr in pairs(lrSet) do
+        print("config set:", lr, nb_epochs, nb_batches)
+        -- training, K-fold (K = 8)
+        -- how to make sure each time a new model?
+        -- Model = getModel(DIMENSION)
+        reinitNet();
+        local avgPerformance = 0
+        for indice_val = 1, nb_slices-1 do
+           avgPerformance = avgPerformance + train(Model, nb_epochs, nb_batches, lr, indice_val)
+        end
+        performances[count] = avgPerformance / (nb_slices - 1)
+        configs[count] = {'Epoch = '..nb_epochs, 'Batches = '..nb_batches, 'LR = '..lr}
+        count = count + 1
+      end
+    end
+  end
+-- print errors
+  for i = 1, performances:size(1) do
+    print("MSE", performances[i], configs[i])
+  end
 -- pick the best model, apply on test set
+end
 
---for i = 1, performances:size(1) do
-  --print("MSE", performances[i], configs[i])
---end
-
--- plot error on val
-local indice_val = 2
-_, err = train(nb_epochs, nb_batches, LR, indice_val)
-gnuplot.pngfigure('supLearn.png')
-gnuplot.plot({'MSE Loss', err})
-gnuplot.plotflush()
+---------------- single run -----------------
+-- training (hyper)parameters
+local LR = 0.01
+local nb_epochs = 10
+local nb_batches = 10
+local err = torch.Tensor(nb_epochs)
+indice_test = NB_SEQUENCES
+local indice_val = 3
+_, err = train(Model, nb_epochs, nb_batches, LR, indice_val)
+-- gnuplot.pngfigure('supLearn.png')
+-- gnuplot.plot({'MSE Loss', err})
+-- gnuplot.plotflush()
 torch.save('supervised.Model', Model)
-print(err)
 
--- intuition ---------------------------
-print('validation')
+cross_validation()
+
+-- plot error on val ----------
+
+---------- intuition ---------------------------
+print('-------validation------------')
 data = load_seq_by_id(indice_val)
-for i = 1,5 do
+for i = 1,2 do
   local input = data.images[i]:double()
-  local truth = torch.Tensor(3)
-  truth[1] = data.Infos[1][i]
-  truth[2] = data.Infos[2][i]
-  truth[3] = data.Infos[3][i]
+  local truth = getLabel(data, i)
   output = Model:forward(input)
-  print('pair')
+  print('**** ---- ****')
   print('truth')
   print(truth)
   print('output')
   print(output)
 end
 
-print('training')
-data = load_seq_by_id(indice_val)
-for i = 1,5 do
+print('-------training------------')
+data = load_seq_by_id(1)
+for i = 1,2 do
   local input = data.images[i]:double()
-  local truth = torch.Tensor(3)
-  truth[1] = data.Infos[1][i]
-  truth[2] = data.Infos[2][i]
-  truth[3] = data.Infos[3][i]
+  local truth = getLabel(data, i)
   output = Model:forward(input)
-  print('pair')
+  print('**** ---- ****')
   print('truth')
   print(truth)
   print('output')
   print(output)
 end
-  -- err = err + (output - truth):pow(2):sum() / truth:pow(2):sum()
-
--- --load data ----------------------------
---local indice1 = 8
---local data1 = load_seq_by_id(indice1)
---print(#data1.images)
---label = torch.Tensor(#data1.Infos[1],3)
---label[{{}, 1}] = torch.DoubleTensor(data1.Infos[1])
---label[{{}, 2}] = torch.DoubleTensor(data1.Infos[2])
---label[{{}, 3}] = torch.DoubleTensor(data1.Infos[3])
---print(data1.Infos[1])
