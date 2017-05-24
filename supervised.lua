@@ -25,10 +25,10 @@ require 'const'
 local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
 NB_SEQUENCES = #list_folders_images
 
--- model & criterion
--- Model = torch.load(MODEL_FILE_STRING):double()
+---------------- model & criterion ---------------------------
+-- TODO load modle using minimalNetModel (now )
 require(MODEL_ARCHITECTURE_FILE) -- minimalnetmodel
-Model = getModel(DIMENSION) -- 3
+Model = getModel(DIMENSION) -- DIMENSION = 3
 parameters, gradParameters = Model:getParameters()
 criterion = nn.MSECriterion()
 
@@ -54,8 +54,8 @@ end
 
 -- training
 local LR = 0.001
-local nb_epochs = 200
-local nb_batches = 10
+local nb_epochs = 50
+local nb_batches = 20
 local err = torch.Tensor(nb_epochs)
 
 -- train & test
@@ -109,9 +109,10 @@ function train(nb_epochs, nb_batches, LR, indice_val)
     end
     xlua.progress(epoch, nb_epochs)
     err[epoch] = evaluate(load_seq_by_id(indice_val))
+    print(err[epoch])
   end
-  performance = evaluate(load_seq_by_id(indice_val))
-  return performance, err -- training acurracy, validation
+  performance = evaluate(load_seq_by_id(indice_val)) -- final error
+  return performance, err  -- on validation set only, TODO add training set
 end
 
 -- cross-validation ---------------------------
@@ -148,27 +149,49 @@ local count = 1
 --end
 
 -- plot error on val
-_, err = train(nb_epochs, nb_batches, LR, 2)
+local indice_val = 2
+_, err = train(nb_epochs, nb_batches, LR, indice_val)
 gnuplot.pngfigure('supLearn.png')
 gnuplot.plot({'MSE Loss', err})
 gnuplot.plotflush()
--- intuition
--- data = load_seq_by_id(1)
--- local err = 0
--- for i = 1,5 do
---   local input = data.images[i]:double()
---   local truth = torch.Tensor(3)
---   truth[1] = data.Infos[1][i]
---   truth[2] = data.Infos[2][i]
---   truth[3] = data.Infos[3][i]
---   output = Model:forward(input)
---   print('pair')
---   print('truth')
---   print(truth)
---   print('output')
---   print(output)
+torch.save('supervised.Model', Model)
+print(err)
+
+-- intuition ---------------------------
+print('validation')
+data = load_seq_by_id(indice_val)
+for i = 1,5 do
+  local input = data.images[i]:double()
+  local truth = torch.Tensor(3)
+  truth[1] = data.Infos[1][i]
+  truth[2] = data.Infos[2][i]
+  truth[3] = data.Infos[3][i]
+  output = Model:forward(input)
+  print('pair')
+  print('truth')
+  print(truth)
+  print('output')
+  print(output)
+end
+
+print('training')
+data = load_seq_by_id(indice_val)
+for i = 1,5 do
+  local input = data.images[i]:double()
+  local truth = torch.Tensor(3)
+  truth[1] = data.Infos[1][i]
+  truth[2] = data.Infos[2][i]
+  truth[3] = data.Infos[3][i]
+  output = Model:forward(input)
+  print('pair')
+  print('truth')
+  print(truth)
+  print('output')
+  print(output)
+end
   -- err = err + (output - truth):pow(2):sum() / truth:pow(2):sum()
--- --load data
+
+-- --load data ----------------------------
 --local indice1 = 8
 --local data1 = load_seq_by_id(indice1)
 --print(#data1.images)
