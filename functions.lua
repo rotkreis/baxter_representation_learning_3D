@@ -12,7 +12,7 @@ function save_model(model)
    lfs.mkdir(path)
    file_string = path..'/'..NAME_SAVE..'.t7'
 
-   os.execute("cp const.lua "..path)
+   os.execute("cp hyperparams.lua "..path)
 
    print("Saved at : "..path)
    torch.save(file_string,model)
