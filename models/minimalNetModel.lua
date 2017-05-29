@@ -2,27 +2,29 @@ require 'nn'
 --network-----mini size net for cpu test runs only--------------------------------------------------
 
 function getModel(Dimension)
-	nbFilter = 32
-	n2 = 12
+	nbFilter = 12
+	n2 = 3
+	alpha = 0.1
 	net = nn.Sequential()
 	-- https://github.com/torch/nn/blob/master/doc/convolution.md#spatialconvolution
 	net:add(nn.SpatialConvolution(3, nbFilter, 3, 3, 1,1, (3-1)/2, (3-1)/2))
-	-- net:add(nn.ReLU())
-	net:add(nn.ELU(0.1))
+	net:add(nn.ReLU())
+	-- net:add(nn.ELU(alpha))
 	net:add(nn.SpatialMaxPooling(2,2,2,2))
 
 	net:add(nn.SpatialConvolution(nbFilter, n2, 3, 3, 1,1, (3-1)/2, (3-1)/2))
-	-- net:add(nn.ReLU())
-	net:add(nn.ELU(0.1))
+	net:add(nn.ReLU())
+	-- net:add(nn.ELU(alpha))
 	net:add(nn.SpatialMaxPooling(2,2,2,2))
 
 	net:add(nn.View(n2 * 50 * 50))
 	net:add(nn.Linear(n2 * 50 * 50, 100))
-	net:add(nn.ELU(0.1))
+	net:add(nn.ReLU())
+	-- net:add(nn.ELU(alpha))
 	net:add(nn.Linear(100, Dimension))
 	local method = 'xavier'
 	local net = require('weight-init')(net, method)
-	print("Simple Net: \n" .. net:__tostring());
+	-- print("Simple Net: \n" .. net:__tostring());
 	return net
 end
 

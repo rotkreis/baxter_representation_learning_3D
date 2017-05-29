@@ -462,7 +462,6 @@ function normalize(im)
    -- print("im1")
    -- image.display{image=im, win=WINDOW}
    -- io.read()
-
    if file_exists(STRING_MEAN_AND_STD_FILE) then
       meanStd = torch.load(STRING_MEAN_AND_STD_FILE)
       mean = meanStd.mean
@@ -472,8 +471,7 @@ function normalize(im)
    end
 
    im_norm = torch.add(im,-mean)
-   --im_norm = torch.cdiv(im_norm, std)
-
+  --  im_norm = torch.cdiv(im_norm, std) -- TODO for supervised learning, without this, in imagesAndReprToTxt the output does not correspond to the right state. In fact, necessary for simpleData3D, unnecessary for mobileRobot. Because the latter didn't use this in the first place?
    -- print("im2",im[1][1][1])
    -- image.display{image=im, win=WINDOW}
    -- io.read()

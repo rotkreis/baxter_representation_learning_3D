@@ -1,5 +1,5 @@
-DATA_FOLDER = 'simpleData3D'
--- DATA_FOLDER = 'mobileRobot'
+-- DATA_FOLDER = 'simpleData3D'
+DATA_FOLDER = 'mobileRobot'
 
 print("============ DATA USED =========\n",
       DATA_FOLDER,
