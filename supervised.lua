@@ -47,6 +47,8 @@ criterion = nn.MSECriterion()
 function reinitNet()
   -- reinit weights for cross-validation
   local method = 'xavier'
+  Model:clearState()
+  Model:reset()
   Model = require('weight-init')(Model, method)
 end
 
@@ -75,7 +77,7 @@ end
 
 
 
-function train(Model, nb_epochs, nb_batches, LR, indice_val, verbose, final)
+function train(nb_epochs, nb_batches, LR, indice_val, verbose, final)
   -- For simpleData3D at the moment. Training using sequences 1-7, 8 as test.
   -- Given an indice_val, train and return the *errors* on training set as well
   -- as on validation set.
@@ -90,13 +92,15 @@ function train(Model, nb_epochs, nb_batches, LR, indice_val, verbose, final)
   if verbose == 1 then xlua.progress(0, nb_epochs) end
   logger = optim.Logger('Log/' ..DATA_FOLDER..'sup_ep'..nb_epochs..'ba'..nb_batches..'LR'..LR..'val'..indice_val..'.log')
   logger:setNames{'Validation Accuracy'}
-  -- logger:display(false)
+  if verbose == 0 then logger:display(false) end
 
   local optimState = {LearningRate = LR}
+  -- i = NB_SEQUENCES is the test set
   index_train = {}
   for i = 1, NB_SEQUENCES - 1 do
     index_train[i] = i
   end
+  -- if final evaluation
   if final == 1 then index_train[NB_SEQUENCES] = NB_SEQUENCES end
   table.remove(index_train, indice_val)
 
@@ -145,7 +149,7 @@ end
 function cross_validation()
 -- K-fold cross-valition on epoch size, batch size, and learning rate
   K = NB_SEQUENCES - 1
-  nb_epochSet = {30,50}
+  nb_epochSet = {35}
   nb_batchSet = {10, 20, 30}
   lrSet = {0.01, 0.001, 0.0001}
   configs = {}
@@ -163,7 +167,7 @@ function cross_validation()
         reinitNet();
         local avgPerformance = 0
         for indice_val = 1, K do
-           avgPerformance = avgPerformance + train(Model, nb_epochs, nb_batches, lr, indice_val, 0)
+           avgPerformance = avgPerformance + train(nb_epochs, nb_batches, lr, indice_val, 0, 0)
         end
         performances[count] = avgPerformance / K
         configs[count] = {'Epoch = '..nb_epochs, 'Batches = '..nb_batches, 'LR = '..lr}
@@ -187,14 +191,21 @@ end
 ---------------- single run -----------------
 -- (hyper)parameters for training
 local LR = 0.001
-local nb_epochs = 30
+local nb_epochs = 50
 local nb_batches = 30
 local err = torch.Tensor(nb_epochs)
 -- local indice_val = NB_SEQUENCES
-local indice_val = 1
-_, err = train(Model, nb_epochs, nb_batches, LR, indice_val, 1, 1)
+local indice_val = NB_SEQUENCES
+print(parameters:sum())
+_, err = train(nb_epochs, nb_batches, LR, indice_val, 1, 1)
 print(evaluate(load_seq_by_id(indice_val)))
+print("results from"..indice_val.."is")
 printSamples(indice_val, 3)
+print(parameters:sum())
+reinitNet()
+print("after reinitiation")
+print(parameters:sum())
+
 -- torch.save('supervised.Model', Model)
 
 ------------- cross_validation ------------------
