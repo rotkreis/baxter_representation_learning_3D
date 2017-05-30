@@ -7,7 +7,6 @@ require 'math'
 require 'string'
 --require 'cunn'
 require 'nngraph'
-require 'MSDC'
 require 'functions'
 require 'printing'
 require "Get_Images_Set"
@@ -36,7 +35,6 @@ function printSamples(Model, indice, n)
     print(truth)
     print('output')
     print(output)
-    print(input)
   end
 end
 
@@ -76,29 +74,30 @@ function evaluate(Model, data)
   return err
 end
 
-
-
-function train(Model, nb_epochs, nb_batches, LR, indice_val, verbose, final)
+function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
   -- For simpleData3D at the moment. Training using sequences 1-7, 8 as test.
   -- Given an indice_val, train and return the *errors* on training set as well
   -- as on validation set.
   -- Can be made general directly to mobileRobot?
   -- Test set has always sequnce id NB_SEQUENCES (last one)
   collectgarbage()
-  local final = final or 0
   Model:clearState()
+  local final = final or 0
+  local verbose = verbose or 0
+  local nb_batches = math.ceil(NB_SEQUENCES * 90 / batchSize)
+
   local parameters, gradParameters = Model:getParameters()
   -- print('--------------Validation set : '..indice_val..' ---------------')
   if verbose == 1 then
     xlua.progress(0, nb_epochs)
-    logger = optim.Logger('Log/' ..DATA_FOLDER..'sup_ep'..nb_epochs..'ba'..nb_batches..'LR'..LR..'val'..indice_val..'.log')
+    logger = optim.Logger('Log/' ..DATA_FOLDER..'Epoch'..nb_epochs..'Batch'..batchSize..'LR'..LR..'val'..indice_val..'.log')
     logger:setNames{'Validation Accuracy'}
-    logger:display(false)
   end
+  logger:display(false)
 
   local optimState = {LearningRate = LR}
   -- i = NB_SEQUENCES is the test set
-  index_train = {}
+  local index_train = {}
   for i = 1, NB_SEQUENCES - 1 do
     index_train[i] = i
   end
@@ -108,30 +107,36 @@ function train(Model, nb_epochs, nb_batches, LR, indice_val, verbose, final)
 
   local err_val = torch.Tensor(nb_epochs)
   for epoch = 1, nb_epochs do
-    -- load data sequence
-    indice = torch.random(1, #index_train)
-    local data = load_seq_by_id(index_train[indice])
-    assert(data, "Error loading data")
-
     for batch = 1, nb_batches do
-        n = #data.Infos[1]
-        i = torch.random(1, n)
-        local input = data.images[i]:double()
-        local label = getLabel(data, i)
-        -- closure for optim
-        local feval = function(x)
-            collectgarbage()
-            if x ~= parameters then
-                parameters:copy(x)
-            end
-            gradParameters:zero()
-            local state = Model:forward(input)
-            local loss = criterion:forward(state,label)
-            local dloss_dstate = criterion:backward(state, label)
-            Model:backward(input, dloss_dstate)
-            return loss, gradParameters
-        end
-        optim.adagrad(feval, parameters, optimState) -- or adam
+      -- load data sequence
+      local indice = torch.random(1, #index_train)
+      local data = load_seq_by_id(index_train[indice])
+      assert(data, "Error loading data")
+
+      -- need to change input and labels into batches!
+      local n = #data.Infos[1]
+      local dim = #data.images[1]
+      local batch = torch.Tensor(batchSize, dim[1], dim[2], dim[3])
+      local labels = torch.Tensor(batchSize, DIMENSION_OUT)
+      for k = 1, batchSize do
+        i = torch.random(1,n)
+        batch[k] = data.images[i]:double()
+        labels[k] = getLabel(data,i)
+      end
+      -- closure for optim
+      local feval = function(x)
+          collectgarbage()
+          if x ~= parameters then
+              parameters:copy(x)
+          end
+          gradParameters:zero()
+          local state = Model:forward(batch)
+          local loss = criterion:forward(state,labels)
+          local dloss_dstate = criterion:backward(state, labels)
+          Model:backward(batch, dloss_dstate)
+          return loss, gradParameters
+      end
+      optim.adam(feval, parameters, optimState) -- or adam
     end
     err_val[epoch] = evaluate(Model, load_seq_by_id(indice_val))
     logger:add{err_val[epoch]}
@@ -152,7 +157,7 @@ function cross_validation()
   nb_epochSet = {30}
   -- nb_batchSet = {10}
   -- lrSet = {0.01}
-  nb_batchSet = {10, 20, 30}
+  batchSet = {10, 20, 30}
   lrSet = {0.01, 0.001, 0.0001}
   configs = {}
   nb_config = #nb_epochSet * #nb_batchSet *  #lrSet
@@ -164,7 +169,7 @@ function cross_validation()
   xlua.progress(0, nb_config)
 
   for i, nb_epochs in pairs(nb_epochSet) do
-    for j, nb_batches in pairs(nb_batchSet) do
+    for j, batchSize in pairs(batchSet) do
       for k, lr in pairs(lrSet) do
         -- training, K-fold
         -- how to make sure each time a new model? DONE, cf reinitNet()
@@ -172,13 +177,13 @@ function cross_validation()
         local avgPerf = 0
         for indice_val = 1, K do
            local Model = getModel(DIMENSION_IN)
-           avgPerf = avgPerf + train(Model, nb_epochs, nb_batches, lr, indice_val, 0, 0)
+           avgPerf = avgPerf + train(Model, nb_epochs, batchSize, lr, indice_val, 0, 0)
         end
         performances[count] = avgPerf / K
-        configs[count] = {'Epoch = '..nb_epochs, 'Batches = '..nb_batches, 'LR = '..lr}
+        configs[count] = {'Epoch = '..nb_epochs, 'Batch = '..batchSize, 'LR = '..lr}
         if performances[count] < bestPerf then -- save best config
           bestPerf = performances[count]
-          bestConfig = {nb_epochs, nb_batches, lr}
+          bestConfig = {nb_epochs, batchSize, lr}
         end
         print(performances[count])
         print(configs[count])
@@ -202,18 +207,17 @@ end
 
 ---------------- single run -----------------
 function test_run()
-  local LR = 0.01 --(hyper)parameters for training
-  local nb_epochs = 30
-  local nb_batches = 30
+  local LR = 0.001 --(hyper)parameters for training
+  local nb_epochs = 10
+  local batchSize = 10
   local err = torch.Tensor(nb_epochs)
   -- local indice_val = NB_SEQUENCES
   local indice_val = NB_SEQUENCES
   local Model = getModel(DIMENSION_IN)
-  _, err = train(Model,nb_epochs, nb_batches, LR, indice_val, 1, 1)
+  _, err = train(Model,nb_epochs, batchSize, LR, indice_val, 1, 1)
   print(evaluate(Model, load_seq_by_id(indice_val)))
-  print("results from data seq "..indice_val.."with parameters (epoch, batch, lr)"..nb_epochs.." "..nb_batches.." "..LR.." is")
-  printSamples(Model, indice_val, 3)
-  save_model(Model)
+  print("results from data seq "..indice_val.."with parameters (epoch, batch, lr)"..nb_epochs.." "..batchSize.." "..LR.." is")
+  -- save_model(Model)
 ------ test if reinitiation works --------
 -- print(parameters:sum())
 -- reinitNet()
@@ -221,19 +225,27 @@ function test_run()
 -- print(parameters:sum())
 end
 
+----------------- run ----------
 -- cross_validation()
--- test_run()
 
---------- writes output states in a text file ---------
-if file_exists('lastModel.txt') then
-  f = io.open('lastModel.txt', 'r')
-  path = f:read()
-  modelString = f:read()
-  print('MODEL: '..modelString)
-  f:close()
-else
-  error("lastModel.txt not found")
-end
+test_run()
 
-local Model = torch.load(path..'/'..modelString):double()
-printSamples(Model, 8, 1)
+data = load_seq_by_id(1)
+-- print(#data.images[1])
+-- print(#data.Infos[1])
+-- print(getLabel(data,3))
+-- print(data.Infos[1])
+
+
+--------- load model test---------
+-- if file_exists('lastModel.txt') then
+--   f = io.open('lastModel.txt', 'r')
+--   path = f:read()
+--   modelString = f:read()
+--   print('MODEL: '..modelString)
+--   f:close()
+-- else
+--   error("lastModel.txt not found")
+-- end
+-- local Model = torch.load(path..'/'..modelString):double()
+-- printSamples(Model, 8, 1)
