@@ -1,3 +1,4 @@
+-- TODO change local var batchsize to global BATCH_SIZE
 require 'nn'
 require 'optim'
 require 'image'
@@ -21,12 +22,15 @@ require 'paths'
 require 'const'
 -- try to avoid global variable as much as possible
 
-local list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
+local list_folders_images, list_txt_action,list_txt_button, list_txt_state, list_txt_posButton=Get_HeadCamera_View_Files(DATA_FOLDER)
 NB_SEQUENCES = #list_folders_images
 
-function printSamples(Model, indice, n)
+-- function for testing
+-- indice: data sequnce
+-- number: how many samples
+function printSamples(Model, indice, number)
   data = load_seq_by_id(indice)
-  for i = 1,n do
+  for i = 1,number do
     local input = data.images[i]:double()
     local truth = getLabel(data, i)
     output = Model:forward(input)
@@ -35,6 +39,7 @@ function printSamples(Model, indice, n)
     print(truth)
     print('output')
     print(output)
+    -- print(input[{1,1,{}}])
   end
 end
 
@@ -51,11 +56,16 @@ function reinitNet()
   Model = require('weight-init')(Model, method)
 end
 
-function getLabel(data, index)
+----- adding the case of relative postioning -------
+function getLabel(data, index, relative)
   -- get label of image i in data sequence
+  local relative = 1 -- TODO only when testing
   local label = torch.Tensor(DIMENSION_IN)
   for i = 1, DIMENSION_IN do
     label[i] = data.Infos[i][index]
+  end
+  if relative == 1 then
+    label = label - data.posButton-- TODO change data's sturecture to include posB
   end
   return label
 end
@@ -85,6 +95,8 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
   local final = final or 0
   local verbose = verbose or 0
   local nb_batches = math.ceil(NB_SEQUENCES * 90 / batchSize)
+  local LR = LR
+  local LRhalflife = 5
 
   local parameters, gradParameters = Model:getParameters()
   -- print('--------------Validation set : '..indice_val..' ---------------')
@@ -94,19 +106,28 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
     logger:setNames{'Validation Accuracy'}
   end
   logger:display(false)
-
   local optimState = {LearningRate = LR}
   -- i = NB_SEQUENCES is the test set
   local index_train = {}
   for i = 1, NB_SEQUENCES - 1 do
     index_train[i] = i
   end
-  -- if final evaluation
-  if final == 1 then index_train[NB_SEQUENCES] = NB_SEQUENCES end
+  if final == 1 then
+    index_train[NB_SEQUENCES] = NB_SEQUENCES
+    local indice_val = NB_SEQUENCES
+  end
   table.remove(index_train, indice_val)
 
   local err_val = torch.Tensor(nb_epochs)
+  local LRcount = 0
   for epoch = 1, nb_epochs do
+    LRcount = LRcount + 1
+    if LRcount == LRhalflife then
+      LR = LR * 0.5
+      LRcount = 0
+      print("Learning rate reduced by half")
+    end
+    optimState = {LearningRate = LR}
     for batch = 1, nb_batches do
       -- load data sequence
       local indice = torch.random(1, #index_train)
@@ -117,7 +138,7 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
       local n = #data.Infos[1]
       local dim = #data.images[1]
       local batch = torch.Tensor(batchSize, dim[1], dim[2], dim[3])
-      local labels = torch.Tensor(batchSize, DIMENSION_OUT)
+      local labels = torch.Tensor(batchSize, DIMENSION_IN)
       for k = 1, batchSize do
         i = torch.random(1,n)
         batch[k] = data.images[i]:double()
@@ -217,7 +238,8 @@ function test_run()
   _, err = train(Model,nb_epochs, batchSize, LR, indice_val, 1, 1)
   print(evaluate(Model, load_seq_by_id(indice_val)))
   print("results from data seq "..indice_val.."with parameters (epoch, batch, lr)"..nb_epochs.." "..batchSize.." "..LR.." is")
-  -- save_model(Model)
+  printSamples(Model, indice_val, 3)
+  save_model(Model)
 ------ test if reinitiation works --------
 -- print(parameters:sum())
 -- reinitNet()
@@ -231,10 +253,9 @@ end
 test_run()
 
 data = load_seq_by_id(1)
--- print(#data.images[1])
+-- print(data.images[1][{1,1,{}}])
 -- print(#data.Infos[1])
--- print(getLabel(data,3))
--- print(data.Infos[1])
+print(data.posButton)
 
 
 --------- load model test---------
@@ -248,4 +269,4 @@ data = load_seq_by_id(1)
 --   error("lastModel.txt not found")
 -- end
 -- local Model = torch.load(path..'/'..modelString):double()
--- printSamples(Model, 8, 1)
+-- printSamples(Model, 8, 3)

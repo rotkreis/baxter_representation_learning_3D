@@ -247,20 +247,22 @@ function load_seq_by_id(id)
    if file_exists(string_preloaded_and_normalized_data) then
       data = torch.load(string_preloaded_and_normalized_data)
    else   -- DATA DOESN'T EXIST AT ALL
-      list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files(DATA_FOLDER)
+      list_folders_images, list_txt_action,list_txt_button, list_txt_state, list_txt_posButton=Get_HeadCamera_View_Files(DATA_FOLDER)
 
       -- print("list_folders_images",list_folders_images)
       -- print("list_folders_images",list_txt_action)
       -- print("list_txt_button",list_txt_button)
       -- print("list_txt_state",list_txt_state)
 
-
       local list=images_Paths(list_folders_images[id])
       local txt=list_txt_action[id]
       local txt_reward=list_txt_button[id]
       local txt_state=list_txt_state[id]
+      local txt_posButton = list_txt_posButton[id]
+      -- print(txt_posButton)
+      -- print("quopo")
 
-      data = load_Part_list(list,txt,txt_reward,txt_state)
+      data = load_Part_list(list, txt, txt_reward, txt_state, txt_posButton)
       torch.save(string_preloaded_and_normalized_data,data)
    end
    return data
@@ -307,7 +309,7 @@ end
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function load_Part_list(list,txt,txt_reward,txt_state)
+function load_Part_list(list,txt,txt_reward,txt_state,txt_posButton)
 
    assert(list, "list not found")
    assert(txt, "Txt not found")
@@ -316,12 +318,27 @@ function load_Part_list(list,txt,txt_reward,txt_state)
 
    local im={}
    local Infos=getInfos(txt,txt_reward,txt_state)
+   local posButton = getButtonPosition(txt_posButton)
 
    for i=1, #(Infos[1]) do
       table.insert(im,getImageFormated(list[i]))
    end
 
-   return {images=im,Infos=Infos}
+   return {images=im,Infos=Infos, posButton=posButton}
+end
+
+function getButtonPosition(txt)
+  posButton = torch.Tensor(DIMENSION)
+  for line in io.lines(txt) do
+    local col = 1
+    if line:sub(1,1) ~= '#' then
+      for value in line:gmatch'%S+' do
+        posButton[col] = tonumber(value)
+        col = col + 1
+      end
+    end
+  end
+  return posButton
 end
 
 function is_out_of_bound(list_pos)

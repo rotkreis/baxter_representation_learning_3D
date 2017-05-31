@@ -42,23 +42,20 @@ for seqStr in lfs.dir(imagesFolder) do
       for imageStr in lfs.dir(imagesPath) do
          if string.find(imageStr,'jpg') then
             local fullImagesPath = imagesPath..'/'..imageStr
-            print(fullImagesPath)
             local reprStr = ''
             --img = getImageFormated(fullImagesPath):cuda():reshape(1,3,200,200)
             if USE_CUDA then
               img = getImageFormated(fullImagesPath):cuda():reshape(1,3,200,200)
             else
-              img = getImageFormated(fullImagesPath):double():reshape(1,3,200,200)  --TODO IF NOT USING CUDA, THIS DOES NOT WORK either way, with :cuda() nor without: In 1 module of nn.Sequential: /home/natalia/torch/install/share/lua/5.1/nn/THNN.lua:110: bad argument #3 to 'v' (cannot convert 'struct THDoubleTensor *' to 'struct THFloatTensor *')
+              img = getImageFormated(fullImagesPath):double():reshape(1, 3,200,200) --TODO IF NOT USING CUDA, THIS DOES NOT WORK either way, with :cuda() nor without: In 1 module of nn.Sequential: /home/natalia/torch/install/share/lua/5.1/nn/THNN.lua:110: bad argument #3 to 'v' (cannot convert 'struct THDoubleTensor *' to 'struct THFloatTensor *')
             end
             -- very strange that this img is not normalized!
             repr = model:forward(img)
-            -- print(img)
-            print(repr)
+            -- print(repr)
             for i=1,repr:size(1) do
                reprStr = reprStr..repr[i]..' '
             end
             outStr = outStr..fullImagesPath..' '..reprStr..'\n'
-
          end
       end
    end

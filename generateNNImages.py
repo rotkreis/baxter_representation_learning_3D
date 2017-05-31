@@ -8,7 +8,7 @@ import random
 import sys
 
 # Some parameters
-nbr_neighbors=5
+nbr_neighbors=3
 
 lastModelFile = open('lastModel.txt')
 
