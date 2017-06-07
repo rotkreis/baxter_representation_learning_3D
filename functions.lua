@@ -247,22 +247,33 @@ function load_seq_by_id(id)
    if file_exists(string_preloaded_and_normalized_data) then
       data = torch.load(string_preloaded_and_normalized_data)
    else   -- DATA DOESN'T EXIST AT ALL
-      list_folders_images, list_txt_action,list_txt_button, list_txt_state, list_txt_posButton=Get_HeadCamera_View_Files(DATA_FOLDER)
-
+     print("load_seq_by_id input file DOES NOT exists (input id "..id..") Getting files and saving them to "..string_preloaded_and_normalized_data..' from DATA_FOLDER '..DATA_FOLDER)
+     if RELATIVE == 1 then
+       list_folders_images, list_txt_action,list_txt_button, list_txt_state, list_txt_posButton=Get_HeadCamera_View_Files(DATA_FOLDER)
+     else
+       list_folders_images, list_txt_action,list_txt_button, list_txt_state = Get_HeadCamera_View_Files(DATA_FOLDER)
+     end
+     if #list_folders_images == 0 then
+       error("load_seq_by_id: list_folders_images returned by Get_HeadCamera_View_Files is empty! ",#list_folders_images)
+     end
       -- print("list_folders_images",list_folders_images)
       -- print("list_folders_images",list_txt_action)
       -- print("list_txt_button",list_txt_button)
       -- print("list_txt_state",list_txt_state)
-
       local list=images_Paths(list_folders_images[id])
       local txt=list_txt_action[id]
       local txt_reward=list_txt_button[id]
       local txt_state=list_txt_state[id]
-      local txt_posButton = list_txt_posButton[id]
+      if RELATIVE == 1 then
+        local txt_posButton = list_txt_posButton[id]
+      end
       -- print(txt_posButton)
       -- print("quopo")
-
-      data = load_Part_list(list, txt, txt_reward, txt_state, txt_posButton)
+      if RELATIVE == 1 then
+        data = load_Part_list(list, txt, txt_reward, txt_state, txt_posButton)
+      else
+        data = load_Part_list(list, txt, txt_reward, txt_state)
+      end
       torch.save(string_preloaded_and_normalized_data,data)
    end
    return data
@@ -318,13 +329,18 @@ function load_Part_list(list,txt,txt_reward,txt_state,txt_posButton)
 
    local im={}
    local Infos=getInfos(txt,txt_reward,txt_state)
-   local posButton = getButtonPosition(txt_posButton)
+   if RELATIVE == 1 then
+     local posButton = getButtonPosition(txt_posButton)
+   end
 
    for i=1, #(Infos[1]) do
       table.insert(im,getImageFormated(list[i]))
    end
-
-   return {images=im,Infos=Infos, posButton=posButton}
+   if RELATIVE == 1 then
+     return {images=im,Infos=Infos, posButton=posButton}
+   else
+     return {images=im,Infos=Infos}
+   end
 end
 
 function getButtonPosition(txt)

@@ -136,6 +136,7 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final, eval
     end
     optimState = {LearningRate = LR}
     for batch = 1, nb_batches do
+      -- xlua.progress(0, nb_batches)
       -- load data sequence
       local indice = torch.random(1, #index_train)
       local data = load_seq_by_id(index_train[indice])
@@ -164,6 +165,7 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final, eval
           Model:backward(batch, dloss_dstate)
           return loss, gradParameters
       end
+      -- xlua.progress(batch, nb_batches)
       optim.adam(feval, parameters, optimState) -- or adam
     end
     err_val[epoch] = evaluate(Model, load_seq_by_id(indice_val))
