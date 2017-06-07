@@ -57,14 +57,13 @@ function reinitNet()
 end
 
 ----- adding the case of relative postioning -------
-function getLabel(data, index, relative)
+function getLabel(data, index)
   -- get label of image i in data sequence
-  local relative = 1 -- TODO only when testing
   local label = torch.Tensor(DIMENSION_IN)
   for i = 1, DIMENSION_IN do
     label[i] = data.Infos[i][index]
   end
-  if relative == 1 then
+  if RELATIVE == 1 then
     label = label - data.posButton-- TODO change data's sturecture to include posB
   end
   return label
@@ -84,7 +83,7 @@ function evaluate(Model, data)
   return err
 end
 
-function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
+function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final, evalTrain)
   -- For simpleData3D at the moment. Training using sequences 1-7, 8 as test.
   -- Given an indice_val, train and return the *errors* on training set as well
   -- as on validation set.
@@ -92,14 +91,17 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
   -- Test set has always sequnce id NB_SEQUENCES (last one)
   collectgarbage()
   Model:clearState()
+  if RELATIVE == 1 then
+    print("============ Using relative states =========")
+  end
   local final = final or 0
   local verbose = verbose or 0
+  local evalTrain = evalTrain or 0 -- output only evaluation on train set, as sanity check
   local nb_batches = math.ceil(NB_SEQUENCES * 90 / batchSize)
   local LR = LR
   local LRhalflife = 5
 
   local parameters, gradParameters = Model:getParameters()
-  -- print('--------------Validation set : '..indice_val..' ---------------')
   if verbose == 1 then
     xlua.progress(0, nb_epochs)
     logger = optim.Logger('Log/' ..DATA_FOLDER..'Epoch'..nb_epochs..'Batch'..batchSize..'LR'..LR..'val'..indice_val..'.log')
@@ -107,7 +109,8 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
   end
   logger:display(false)
   local optimState = {LearningRate = LR}
-  -- i = NB_SEQUENCES is the test set
+
+  -- Generate index, i = NB_SEQUENCES is the test set
   local index_train = {}
   for i = 1, NB_SEQUENCES - 1 do
     index_train[i] = i
@@ -117,6 +120,10 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
     local indice_val = NB_SEQUENCES
   end
   table.remove(index_train, indice_val)
+
+  if evalTrain == 1 then
+    local indice_val = index_train[1]
+  end
 
   local err_val = torch.Tensor(nb_epochs)
   local LRcount = 0
@@ -134,11 +141,11 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
       local data = load_seq_by_id(index_train[indice])
       assert(data, "Error loading data")
 
-      -- need to change input and labels into batches!
       local n = #data.Infos[1]
       local dim = #data.images[1]
       local batch = torch.Tensor(batchSize, dim[1], dim[2], dim[3])
       local labels = torch.Tensor(batchSize, DIMENSION_IN)
+      -- get batches
       for k = 1, batchSize do
         i = torch.random(1,n)
         batch[k] = data.images[i]:double()
@@ -171,9 +178,9 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final)
 end
 
 ------- cross-validation ---------------------------
-
 function cross_validation()
--- K-fold cross-valition on epoch size, batch size, and learning rate
+  -- K-fold cross-valition on epoch size, batch size, and learning rate
+  -- need improving!
   K = NB_SEQUENCES - 1
   nb_epochSet = {30}
   -- nb_batchSet = {10}
@@ -213,11 +220,11 @@ function cross_validation()
       end
     end
   end
--- print errors
+  -- print errors
   -- for i = 2, performances:size(2) do
   --   print("MSE", performances[i], configs[i])
   -- end
--- pick the best model, apply on test set
+  -- pick the best model, apply on test set
   min, index = torch.min(performances, 1)
   print("best-model", configs[index[1]])
   local Model = getModel(DIMENSION_IN)
@@ -228,35 +235,30 @@ end
 
 ---------------- single run -----------------
 function test_run()
-  local LR = 0.001 --(hyper)parameters for training
-  local nb_epochs = 10
+  local LR = 0.01 --(hyper)parameters for training
+  local nb_epochs = 20
   local batchSize = 10
   local err = torch.Tensor(nb_epochs)
   -- local indice_val = NB_SEQUENCES
   local indice_val = NB_SEQUENCES
   local Model = getModel(DIMENSION_IN)
+  print(Model)
   _, err = train(Model,nb_epochs, batchSize, LR, indice_val, 1, 1)
   print(evaluate(Model, load_seq_by_id(indice_val)))
   print("results from data seq "..indice_val.."with parameters (epoch, batch, lr)"..nb_epochs.." "..batchSize.." "..LR.." is")
   printSamples(Model, indice_val, 3)
   save_model(Model)
------- test if reinitiation works --------
--- print(parameters:sum())
--- reinitNet()
--- print("after reinitiation")
--- print(parameters:sum())
+  ------ test if reinitiation works --------
+  -- print(parameters:sum())
+  -- reinitNet()
+  -- print("after reinitiation")
+  -- print(parameters:sum())
 end
 
 ----------------- run ----------
 -- cross_validation()
 
 test_run()
-
-data = load_seq_by_id(1)
--- print(data.images[1][{1,1,{}}])
--- print(#data.Infos[1])
-print(data.posButton)
-
 
 --------- load model test---------
 -- if file_exists('lastModel.txt') then
@@ -270,3 +272,10 @@ print(data.posButton)
 -- end
 -- local Model = torch.load(path..'/'..modelString):double()
 -- printSamples(Model, 8, 3)
+--------- load model test---------
+
+----------------- codes for testing -----------------
+-- data = load_seq_by_id(2)
+-- print(data.images[1][{1,1,{}}])
+-- print(#data.Infos[1])
+-- print(data.posButton)

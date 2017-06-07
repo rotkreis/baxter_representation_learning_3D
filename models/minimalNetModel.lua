@@ -2,7 +2,7 @@ require 'nn'
 --network-----mini size net for cpu test runs only--------------------------------------------------
 
 function getModel(Dimension)
-	nbFilter = 32
+	nbFilter = 12
 	n2 = 3
 	alpha = 0.1
 	net = nn.Sequential()
