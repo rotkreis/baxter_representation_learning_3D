@@ -117,12 +117,12 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final, eval
   local LRhalflife = 5
 
   local parameters, gradParameters = Model:getParameters()
-  if verbose == 1 then
+  if verbose then
     xlua.progress(0, nb_epochs)
     logger = optim.Logger('Log/' ..DATA_FOLDER..'Epoch'..nb_epochs..'Batch'..batchSize..'LR'..LR..'val'..indice_val..'.log')
     logger:setNames{'Validation Accuracy'}
+    logger:display(false)
   end
-  logger:display(false)
   local optimState = {LearningRate = LR}
 
   -- Generate index, i = NB_SEQUENCES is the test set
@@ -130,13 +130,13 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final, eval
   for i = 1, NB_SEQUENCES - 1 do
     index_train[i] = i
   end
-  if final == 1 then
+  if final then
     index_train[NB_SEQUENCES] = NB_SEQUENCES
     local indice_val = NB_SEQUENCES
   end
   table.remove(index_train, indice_val)
 
-  if evalTrain == 1 then
+  if evalTrain then
     local indice_val = index_train[1]
   end
 
@@ -189,54 +189,55 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final, eval
       optim.adam(feval, parameters, optimState) -- or adam
     end
     err_val[epoch] = evaluate(Model, load_seq_by_id(indice_val))
-    logger:add{err_val[epoch]}
-    logger:style{'+-'}
-    logger:plot()
-    if verbose == 1 then print(err_val[epoch]) end
-    if verbose == 1 then xlua.progress(epoch, nb_epochs) end
+    if verbose then
+      logger:add{err_val[epoch]}
+      logger:style{'+-'}
+      logger:plot()
+      print(err_val[epoch])
+      xlua.progress(epoch, nb_epochs)
+    end
   end
   performance_val = err_val[nb_epochs]-- final error
   return performance_val, err_val
 end
 
 ------- cross-validation ---------------------------
-function cross_validation()
+function cross_validation(K)
   -- K-fold cross-valition on epoch size, batch size, and learning rate
   -- need improving!
-  K = NB_SEQUENCES - 1
-  nb_epochSet = {30}
-  -- nb_batchSet = {10}
+  local nb_epochSet = {10}
+  local nb_batchSet = {10}
   -- lrSet = {0.01}
-  batchSet = {10, 20, 30}
-  lrSet = {0.01, 0.001, 0.0001}
+  local lrSet = {0.01}
   configs = {}
   nb_config = #nb_epochSet * #nb_batchSet *  #lrSet
   performances = torch.Tensor(nb_config)
   bestConfig = {}
-  bestPerf = 1
+  bestPerf = 100
   local count = 1
   print("iterating over configs")
   xlua.progress(0, nb_config)
 
   for i, nb_epochs in pairs(nb_epochSet) do
-    for j, batchSize in pairs(batchSet) do
+    for j, batchSize in pairs(nb_batchSet) do
       for k, lr in pairs(lrSet) do
         -- training, K-fold
-        -- how to make sure each time a new model? DONE, cf reinitNet()
-        -- reinitNet();
         local avgPerf = 0
+        configs[count] = {'Epoch = '..nb_epochs, 'Batch = '..batchSize, 'LR = '..lr}
+        print(configs[count])
         for indice_val = 1, K do
            local Model = getModel(DIMENSION_IN)
+           if USE_CUDA then
+             Model = Model:cuda()
+           end
            avgPerf = avgPerf + train(Model, nb_epochs, batchSize, lr, indice_val, 0, 0)
         end
         performances[count] = avgPerf / K
-        configs[count] = {'Epoch = '..nb_epochs, 'Batch = '..batchSize, 'LR = '..lr}
         if performances[count] < bestPerf then -- save best config
           bestPerf = performances[count]
           bestConfig = {nb_epochs, batchSize, lr}
         end
         print(performances[count])
-        print(configs[count])
         count = count + 1
         xlua.progress(count - 1, nb_config)
       end
@@ -250,9 +251,12 @@ function cross_validation()
   min, index = torch.min(performances, 1)
   print("best-model", configs[index[1]])
   local Model = getModel(DIMENSION_IN)
-  train(bestConfig[1], bestConfig[2], bestConfig[3], NB_SEQUENCES, 1, 1)
+  if USE_CUDA then
+    Model = Model:cuda()
+  end
+  train(Model, bestConfig[1], bestConfig[2], bestConfig[3], NB_SEQUENCES, 1, 1)
   print(evaluate(Model, load_seq_by_id(NB_SEQUENCES)))
-  torch.save('results/sup.t7', configs[index[1]])
+  save_model(Model)
 end
 
 ---------------- single run -----------------
@@ -281,9 +285,9 @@ function test_run()
 end
 
 ----------------- run ----------
--- cross_validation()
+cross_validation(1)
 
-test_run()
+-- test_run()
 
 --------- load model test---------
 -- if file_exists('lastModel.txt') then
