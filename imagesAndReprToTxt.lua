@@ -3,7 +3,7 @@ require 'torch'
 require 'image'
 require 'nn'
 require 'nngraph'
--- require 'cunn'
+require 'cunn'
 
 require 'const'
 require 'functions'
@@ -52,8 +52,14 @@ for seqStr in lfs.dir(imagesFolder) do
             -- very strange that this img is not normalized!
             repr = model:forward(img)
             -- print(repr)
-            for i=1,repr:size(1) do
-               reprStr = reprStr..repr[i]..' '
+            if USE_CUDA then
+              for i=1, repr:size(2) do
+                reprStr = reprStr..repr[{1,i}]..' '
+              end
+            else
+              for i=1,repr:size(1) do
+                 reprStr = reprStr..repr[i]..' '
+              end
             end
             outStr = outStr..fullImagesPath..' '..reprStr..'\n'
          end
