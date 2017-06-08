@@ -6,7 +6,7 @@ require 'torch'
 require 'xlua'
 require 'math'
 require 'string'
---require 'cunn'
+require 'cunn'
 require 'nngraph'
 require 'functions'
 require 'printing'
@@ -33,6 +33,10 @@ function printSamples(Model, indice, number)
   for i = 1,number do
     local input = data.images[i]:double()
     local truth = getLabel(data, i)
+    if USE_CUDA then
+      input = input:reshape(1, input:size(1), input:size(2), input:size(3))
+      input = input:cuda()
+    end
     output = Model:forward(input)
     print('**** ---- ****')
     print('truth')
@@ -47,7 +51,12 @@ end
 -- TODO load modle using minimalNetModel (now )
 require(MODEL_ARCHITECTURE_FILE) -- minimalnetmodel
 -- Model = getModel(DIMENSION_IN)
-criterion = nn.MSECriterion()
+if USE_CUDA then
+  criterion = nn.MSECriterion():cuda()
+else
+  criterion = nn.MSECriterion()
+end
+
 function reinitNet()
   -- reinit weights for cross-validation
   local method = 'xavier'
@@ -76,8 +85,14 @@ function evaluate(Model, data)
   for i = 1,n do
     local input = data.images[i]:double()
     local truth = getLabel(data, i)
+    if USE_CUDA then
+      input = input:reshape(1, input:size(1), input:size(2), input:size(3))
+      input = input:cuda()
+      truth = truth:cuda()
+    end
     output = Model:forward(input)
-    err = err + (output - truth):pow(2):sum()
+    -- err = err + (output - truth):pow(2):sum()
+    err = err + criterion:forward(output, truth)
   end
   err = err / n
   return err
@@ -153,6 +168,11 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final, eval
         labels[k] = getLabel(data,i)
       end
       -- closure for optim
+      if USE_CUDA then
+        batch = batch:cuda()
+        labels = labels:cuda()
+      end
+
       local feval = function(x)
           collectgarbage()
           if x ~= parameters then
@@ -237,14 +257,17 @@ end
 
 ---------------- single run -----------------
 function test_run()
-  local LR = 0.01 --(hyper)parameters for training
+  local LR = 0.001 --(hyper)parameters for training
   local nb_epochs = 20
-  local batchSize = 10
+  local batchSize = 15
   local err = torch.Tensor(nb_epochs)
   -- local indice_val = NB_SEQUENCES
   local indice_val = NB_SEQUENCES
+  print("Using Model", MODEL_ARCHITECTURE_FILE)
   local Model = getModel(DIMENSION_IN)
-  print(Model)
+  if USE_CUDA then
+    Model = Model:cuda()
+  end
   _, err = train(Model,nb_epochs, batchSize, LR, indice_val, 1, 1)
   print(evaluate(Model, load_seq_by_id(indice_val)))
   print("results from data seq "..indice_val.."with parameters (epoch, batch, lr)"..nb_epochs.." "..batchSize.." "..LR.." is")

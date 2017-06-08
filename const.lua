@@ -11,7 +11,7 @@
 -- Hyperparameters are located in a different file (hyperparameters.lua)
 --=============================================================
 require 'lfs'
--- require 'cutorch'
+require 'cutorch'
 require 'hyperparams'
 --torch.manualSeed(100)
 
@@ -27,7 +27,8 @@ MODEL_PATH = LOG_FOLDER
 MODEL_FILE_STRING  = MODEL_PATH..'13_09_adagrad4_coef1/Everything/Save13_09_adagrad4_coef1.t7'
 
 -- MODEL_ARCHITECTURE_FILE = './models/topUniqueSimpler'
-MODEL_ARCHITECTURE_FILE = './models/minimalNetModel'
+-- MODEL_ARCHITECTURE_FILE = './models/minimalNetModel'
+MODEL_ARCHITECTURE_FILE = './models/topUniqueSimplerWOTanh'
 
 STRING_MEAN_AND_STD_FILE = PRELOAD_FOLDER..'meanStdImages_'..DATA_FOLDER..'.t7'
 
@@ -56,7 +57,7 @@ IM_HEIGHT = 200
 --===========================================================
 -- CUDA CONSTANTS
 --===========================================================
-USE_CUDA = false --false
+USE_CUDA = true --false
 USE_SECOND_GPU = true
 
 if USE_CUDA and USE_SECOND_GPU then
