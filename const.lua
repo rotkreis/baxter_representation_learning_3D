@@ -84,7 +84,7 @@ if DATA_FOLDER == 'simpleData3D' then
    FILENAME_FOR_REWARD = "is_pressed"
    FILENAME_FOR_ACTION = "endpoint_action"
    FILENAME_FOR_STATE = "endpoint_state"
-
+   FILENAME_FOR_POSITION = "position"
    SUB_DIR_IMAGE = 'recorded_cameras_head_camera_2_image_compressed'
 
 elseif DATA_FOLDER == 'pushingButton3DAugmented' then

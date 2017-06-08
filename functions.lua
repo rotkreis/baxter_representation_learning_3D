@@ -248,7 +248,7 @@ function load_seq_by_id(id)
       data = torch.load(string_preloaded_and_normalized_data)
    else   -- DATA DOESN'T EXIST AT ALL
      print("load_seq_by_id input file DOES NOT exists (input id "..id..") Getting files and saving them to "..string_preloaded_and_normalized_data..' from DATA_FOLDER '..DATA_FOLDER)
-     if RELATIVE == 1 then
+     if RELATIVE then
        list_folders_images, list_txt_action,list_txt_button, list_txt_state, list_txt_posButton=Get_HeadCamera_View_Files(DATA_FOLDER)
      else
        list_folders_images, list_txt_action,list_txt_button, list_txt_state = Get_HeadCamera_View_Files(DATA_FOLDER)
@@ -264,16 +264,13 @@ function load_seq_by_id(id)
       local txt=list_txt_action[id]
       local txt_reward=list_txt_button[id]
       local txt_state=list_txt_state[id]
-      if RELATIVE == 1 then
-        local txt_posButton = list_txt_posButton[id]
+      local txt_posButton
+      if RELATIVE then
+        txt_posButton = list_txt_posButton[id]
       end
       -- print(txt_posButton)
       -- print("quopo")
-      if RELATIVE == 1 then
-        data = load_Part_list(list, txt, txt_reward, txt_state, txt_posButton)
-      else
-        data = load_Part_list(list, txt, txt_reward, txt_state)
-      end
+      data = load_Part_list(list, txt, txt_reward, txt_state, txt_posButton)
       torch.save(string_preloaded_and_normalized_data,data)
    end
    return data
@@ -329,14 +326,15 @@ function load_Part_list(list,txt,txt_reward,txt_state,txt_posButton)
 
    local im={}
    local Infos=getInfos(txt,txt_reward,txt_state)
-   if RELATIVE == 1 then
+   if RELATIVE then
+     print(txt_posButton)
      local posButton = getButtonPosition(txt_posButton)
    end
 
    for i=1, #(Infos[1]) do
       table.insert(im,getImageFormated(list[i]))
    end
-   if RELATIVE == 1 then
+   if RELATIVE then
      return {images=im,Infos=Infos, posButton=posButton}
    else
      return {images=im,Infos=Infos}

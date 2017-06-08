@@ -72,7 +72,7 @@ function getLabel(data, index)
   for i = 1, DIMENSION_IN do
     label[i] = data.Infos[i][index]
   end
-  if RELATIVE == 1 then
+  if RELATIVE then
     label = label - data.posButton-- TODO change data's sturecture to include posB
   end
   return label
@@ -106,18 +106,19 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final, eval
   -- Test set has always sequnce id NB_SEQUENCES (last one)
   collectgarbage()
   Model:clearState()
-  if RELATIVE == 1 then
+  if RELATIVE then
     print("============ Using relative states =========")
   end
-  local final = final or 0
-  local verbose = verbose or 0
-  local evalTrain = evalTrain or 0 -- output only evaluation on train set, as sanity check
+  local final = final or false
+  local verbose = verbose or false
+  local evalTrain = evalTrain or false -- output only evaluation on train set, as sanity check
   local nb_batches = math.ceil(NB_SEQUENCES * 90 / batchSize)
   local LR = LR
-  local LRhalflife = 5
+  local LRhalflife = 10
 
   local parameters, gradParameters = Model:getParameters()
   if verbose then
+    print("============ Verbose mode =========")
     xlua.progress(0, nb_epochs)
     logger = optim.Logger('Log/' ..DATA_FOLDER..'Epoch'..nb_epochs..'Batch'..batchSize..'LR'..LR..'val'..indice_val..'.log')
     logger:setNames{'Validation Accuracy'}
@@ -143,12 +144,12 @@ function train(Model, nb_epochs, batchSize, LR, indice_val, verbose, final, eval
   local err_val = torch.Tensor(nb_epochs)
   local LRcount = 0
   for epoch = 1, nb_epochs do
-    LRcount = LRcount + 1
     if LRcount == LRhalflife then
       LR = LR * 0.5
       LRcount = 0
-      print("Learning rate reduced by half")
+      print("Learning rate reduced by half at epoch ", epoch)
     end
+    LRcount = LRcount + 1
     optimState = {LearningRate = LR}
     for batch = 1, nb_batches do
       -- xlua.progress(0, nb_batches)
@@ -205,10 +206,10 @@ end
 function cross_validation(K)
   -- K-fold cross-valition on epoch size, batch size, and learning rate
   -- need improving!
-  local nb_epochSet = {10}
-  local nb_batchSet = {10}
+  local nb_epochSet = {30}
+  local nb_batchSet = {16,32}
   -- lrSet = {0.01}
-  local lrSet = {0.01}
+  local lrSet = {0.01,0.001}
   configs = {}
   nb_config = #nb_epochSet * #nb_batchSet *  #lrSet
   performances = torch.Tensor(nb_config)
@@ -217,6 +218,7 @@ function cross_validation(K)
   local count = 1
   print("iterating over configs")
   xlua.progress(0, nb_config)
+  print("Using Model", MODEL_ARCHITECTURE_FILE)
 
   for i, nb_epochs in pairs(nb_epochSet) do
     for j, batchSize in pairs(nb_batchSet) do
@@ -226,11 +228,14 @@ function cross_validation(K)
         configs[count] = {'Epoch = '..nb_epochs, 'Batch = '..batchSize, 'LR = '..lr}
         print(configs[count])
         for indice_val = 1, K do
+          --  indice_val = torch.random(1, NB_SEQUENCES-1)
+           print("validation sequence id: ", indice_val)
            local Model = getModel(DIMENSION_IN)
            if USE_CUDA then
              Model = Model:cuda()
            end
-           avgPerf = avgPerf + train(Model, nb_epochs, batchSize, lr, indice_val, 0, 0)
+           avgPerf = avgPerf + train(Model, nb_epochs, batchSize, lr,
+                                     indice_val, false, false, false)
         end
         performances[count] = avgPerf / K
         if performances[count] < bestPerf then -- save best config
@@ -254,7 +259,7 @@ function cross_validation(K)
   if USE_CUDA then
     Model = Model:cuda()
   end
-  train(Model, bestConfig[1], bestConfig[2], bestConfig[3], NB_SEQUENCES, 1, 1)
+  train(Model, bestConfig[1], bestConfig[2], bestConfig[3], NB_SEQUENCES, true, true, false)
   print(evaluate(Model, load_seq_by_id(NB_SEQUENCES)))
   save_model(Model)
 end
@@ -262,8 +267,8 @@ end
 ---------------- single run -----------------
 function test_run()
   local LR = 0.001 --(hyper)parameters for training
-  local nb_epochs = 20
-  local batchSize = 15
+  local nb_epochs = 50
+  local batchSize = 16
   local err = torch.Tensor(nb_epochs)
   -- local indice_val = NB_SEQUENCES
   local indice_val = NB_SEQUENCES
@@ -272,7 +277,7 @@ function test_run()
   if USE_CUDA then
     Model = Model:cuda()
   end
-  _, err = train(Model,nb_epochs, batchSize, LR, indice_val, 1, 1)
+  _, err = train(Model,nb_epochs, batchSize, LR, indice_val, true, true, false)
   print(evaluate(Model, load_seq_by_id(indice_val)))
   print("results from data seq "..indice_val.."with parameters (epoch, batch, lr)"..nb_epochs.." "..batchSize.." "..LR.." is")
   printSamples(Model, indice_val, 3)

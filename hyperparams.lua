@@ -1,6 +1,6 @@
-DATA_FOLDER = 'pushingButton3DAugmented'
+-- DATA_FOLDER = 'pushingButton3DAugmented'
 -- DATA_FOLDER = 'mobileRobot'
--- DATA_FOLDER = 'simpleData3D'
+DATA_FOLDER = 'simpleData3D'
 
 print("============ DATA USED =========\n",
       DATA_FOLDER,
@@ -13,7 +13,7 @@ print("============ DATA USED =========\n",
 -- by sampling randomly states (begin point and end point)
 -- Cannot be applied in every scenario !!!!
 EXTRAPOLATE_ACTION = false
-RELATIVE = 0 -- using relative postioning for simpleData3D or others
+RELATIVE = true -- using relative postioning for simpleData3D or others
 
 LR=0.001
 
